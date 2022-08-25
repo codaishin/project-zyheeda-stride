@@ -1,0 +1,13 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 16
+VisualStudioVersion = 16.0.0.0
+MinimumVisualStudioVersion = 16.0.0.0
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "project_zyheeda_stride.Windows", "project_zyheeda_stride.Windows\project_zyheeda_stride.Windows.csproj", "{646FEB2A-44D7-4567-8E3B-73CA0F8121A3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "project_zyheeda_stride", "project_zyheeda_stride\project_zyheeda_stride.csproj", "{54B37A96-A3FC-49F3-96E6-4CFEAABF4AC4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "project_zyheeda_stride.Linux", "project_zyheeda_stride.Linux\project_zyheeda_stride.Linux.csproj", "{C2C07B02-41F2-4091-A9CD-FD61D4ED7451}"
+EndProject
+Global
+EndGlobal
