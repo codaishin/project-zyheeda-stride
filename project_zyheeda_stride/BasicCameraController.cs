@@ -145,8 +145,7 @@ public class BasicCameraController : SyncScript {
 
 					this.yaw -= this.Input.MouseDelta.X * this.MouseRotationSpeed.X;
 					this.pitch -= this.Input.MouseDelta.Y * this.MouseRotationSpeed.Y;
-				}
-				else {
+				} else {
 					this.Input.UnlockMousePosition();
 					this.Game.IsMouseVisible = true;
 				}
