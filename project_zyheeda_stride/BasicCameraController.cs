@@ -1,11 +1,11 @@
-﻿namespace ProjectZyheeda;
-
+﻿
 using System;
 using Stride.Core;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 using Stride.Input;
 
+namespace ProjectZyheeda;
 public class BasicCameraController : SyncScript {
 	private const float MaximumPitch = MathUtil.PiOverTwo * 0.99f;
 
@@ -14,7 +14,7 @@ public class BasicCameraController : SyncScript {
 	private float yaw;
 	private float pitch;
 
-	public bool Gamepad { get; set; } = false;
+	public bool Gamepad { get; set; }
 
 	public Vector3 KeyboardMovementSpeed { get; set; } = new(5.0f);
 
@@ -31,33 +31,32 @@ public class BasicCameraController : SyncScript {
 	public override void Start() {
 		base.Start();
 
-		// Default up-direction
-		upVector = Vector3.UnitY;
+		this.upVector = Vector3.UnitY;
 
 		if (!Platform.IsWindowsDesktop) {
-			Input.Gestures.Add(new GestureConfigDrag());
-			Input.Gestures.Add(new GestureConfigComposite());
+			this.Input.Gestures.Add(new GestureConfigDrag());
+			this.Input.Gestures.Add(new GestureConfigComposite());
 		}
 	}
 
 	public override void Update() {
-		ProcessInput();
-		UpdateTransform();
+		this.ProcessInput();
+		this.UpdateTransform();
 	}
 
 	private void ProcessInput() {
-		var deltaTime = (float)Game.UpdateTime.Elapsed.TotalSeconds;
-		translation = Vector3.Zero;
-		yaw = 0f;
-		pitch = 0f;
+		var deltaTime = (float)this.Game.UpdateTime.Elapsed.TotalSeconds;
+		this.translation = Vector3.Zero;
+		this.yaw = 0f;
+		this.pitch = 0f;
 
 		{
 			var speed = 1f * deltaTime;
 
 			var dir = Vector3.Zero;
 
-			if (Gamepad && Input.HasGamePad) {
-				var padState = Input.DefaultGamePad.State;
+			if (this.Gamepad && this.Input.HasGamePad) {
+				var padState = this.Input.DefaultGamePad.State;
 				dir.Z += padState.LeftThumb.Y;
 				dir.X += padState.LeftThumb.X;
 
@@ -65,34 +64,34 @@ public class BasicCameraController : SyncScript {
 				dir.Y += padState.RightTrigger;
 
 				if ((padState.Buttons & (GamePadButton.A | GamePadButton.LeftShoulder | GamePadButton.RightShoulder)) != 0) {
-					speed *= SpeedFactor;
+					speed *= this.SpeedFactor;
 				}
 			}
 
-			if (Input.HasKeyboard) {
-				if (Input.IsKeyDown(Keys.W) || Input.IsKeyDown(Keys.Up)) {
+			if (this.Input.HasKeyboard) {
+				if (this.Input.IsKeyDown(Keys.W) || this.Input.IsKeyDown(Keys.Up)) {
 					dir.Z += 1;
 				}
-				if (Input.IsKeyDown(Keys.S) || Input.IsKeyDown(Keys.Down)) {
+				if (this.Input.IsKeyDown(Keys.S) || this.Input.IsKeyDown(Keys.Down)) {
 					dir.Z -= 1;
 				}
 
-				if (Input.IsKeyDown(Keys.A) || Input.IsKeyDown(Keys.Left)) {
+				if (this.Input.IsKeyDown(Keys.A) || this.Input.IsKeyDown(Keys.Left)) {
 					dir.X -= 1;
 				}
-				if (Input.IsKeyDown(Keys.D) || Input.IsKeyDown(Keys.Right)) {
+				if (this.Input.IsKeyDown(Keys.D) || this.Input.IsKeyDown(Keys.Right)) {
 					dir.X += 1;
 				}
 
-				if (Input.IsKeyDown(Keys.Q)) {
+				if (this.Input.IsKeyDown(Keys.Q)) {
 					dir.Y -= 1;
 				}
-				if (Input.IsKeyDown(Keys.E)) {
+				if (this.Input.IsKeyDown(Keys.E)) {
 					dir.Y += 1;
 				}
 
-				if (Input.IsKeyDown(Keys.LeftShift) || Input.IsKeyDown(Keys.RightShift)) {
-					speed *= SpeedFactor;
+				if (this.Input.IsKeyDown(Keys.LeftShift) || this.Input.IsKeyDown(Keys.RightShift)) {
+					speed *= this.SpeedFactor;
 				}
 
 				if (dir.Length() > 1f) {
@@ -100,30 +99,30 @@ public class BasicCameraController : SyncScript {
 				}
 			}
 
-			translation += dir * KeyboardMovementSpeed * speed;
+			this.translation += dir * this.KeyboardMovementSpeed * speed;
 		}
 
 		{
 			var speed = 1f * deltaTime;
 			var rotation = Vector2.Zero;
-			if (Gamepad && Input.HasGamePad) {
-				var padState = Input.DefaultGamePad.State;
+			if (this.Gamepad && this.Input.HasGamePad) {
+				var padState = this.Input.DefaultGamePad.State;
 				rotation.X += padState.RightThumb.Y;
 				rotation.Y += -padState.RightThumb.X;
 			}
 
-			if (Input.HasKeyboard) {
-				if (Input.IsKeyDown(Keys.NumPad2)) {
+			if (this.Input.HasKeyboard) {
+				if (this.Input.IsKeyDown(Keys.NumPad2)) {
 					rotation.X += 1;
 				}
-				if (Input.IsKeyDown(Keys.NumPad8)) {
+				if (this.Input.IsKeyDown(Keys.NumPad8)) {
 					rotation.X -= 1;
 				}
 
-				if (Input.IsKeyDown(Keys.NumPad4)) {
+				if (this.Input.IsKeyDown(Keys.NumPad4)) {
 					rotation.Y += 1;
 				}
-				if (Input.IsKeyDown(Keys.NumPad6)) {
+				if (this.Input.IsKeyDown(Keys.NumPad6)) {
 					rotation.Y -= 1;
 				}
 
@@ -132,47 +131,55 @@ public class BasicCameraController : SyncScript {
 				}
 			}
 
-			rotation *= KeyboardRotationSpeed * speed;
+			rotation *= this.KeyboardRotationSpeed * speed;
 
-			pitch += rotation.X;
-			yaw += rotation.Y;
+			this.pitch += rotation.X;
+			this.yaw += rotation.Y;
 		}
 
 		{
-			if (Input.HasMouse) {
-				if (Input.IsMouseButtonDown(MouseButton.Right)) {
-					Input.LockMousePosition();
-					Game.IsMouseVisible = false;
+			if (this.Input.HasMouse) {
+				if (this.Input.IsMouseButtonDown(MouseButton.Right)) {
+					this.Input.LockMousePosition();
+					this.Game.IsMouseVisible = false;
 
-					yaw -= Input.MouseDelta.X * MouseRotationSpeed.X;
-					pitch -= Input.MouseDelta.Y * MouseRotationSpeed.Y;
+					this.yaw -= this.Input.MouseDelta.X * this.MouseRotationSpeed.X;
+					this.pitch -= this.Input.MouseDelta.Y * this.MouseRotationSpeed.Y;
 				}
 				else {
-					Input.UnlockMousePosition();
-					Game.IsMouseVisible = true;
+					this.Input.UnlockMousePosition();
+					this.Game.IsMouseVisible = true;
 				}
 			}
 
-			foreach (var gestureEvent in Input.GestureEvents) {
+			foreach (var gestureEvent in this.Input.GestureEvents) {
 				switch (gestureEvent.Type) {
 					case GestureType.Drag:
 						var drag = (GestureEventDrag)gestureEvent;
 						var dragDistance = drag.DeltaTranslation;
-						yaw = -dragDistance.X * TouchRotationSpeed.X;
-						pitch = -dragDistance.Y * TouchRotationSpeed.Y;
+						this.yaw = -dragDistance.X * this.TouchRotationSpeed.X;
+						this.pitch = -dragDistance.Y * this.TouchRotationSpeed.Y;
 						break;
 
 					case GestureType.Composite:
 						var composite = (GestureEventComposite)gestureEvent;
-						translation.X =
+						this.translation.X =
 							-composite.DeltaTranslation.X *
-							TouchMovementSpeed.X;
-						translation.Y =
+							this.TouchMovementSpeed.X;
+						this.translation.Y =
 							-composite.DeltaTranslation.Y *
-							TouchMovementSpeed.Y;
-						translation.Z = MathF.Log(
+							this.TouchMovementSpeed.Y;
+						this.translation.Z = MathF.Log(
 							composite.DeltaScale + 1
-						) * TouchMovementSpeed.Z;
+						) * this.TouchMovementSpeed.Z;
+						break;
+					case GestureType.Flick:
+						break;
+					case GestureType.LongPress:
+						break;
+					case GestureType.Tap:
+						break;
+					default:
 						break;
 				}
 			}
@@ -180,9 +187,9 @@ public class BasicCameraController : SyncScript {
 	}
 
 	private void UpdateTransform() {
-		var rotation = Matrix.RotationQuaternion(Entity.Transform.Rotation);
+		var rotation = Matrix.RotationQuaternion(this.Entity.Transform.Rotation);
 
-		var right = Vector3.Cross(rotation.Forward, upVector);
+		var right = Vector3.Cross(rotation.Forward, this.upVector);
 		var up = Vector3.Cross(right, rotation.Forward);
 
 		right.Normalize();
@@ -190,19 +197,19 @@ public class BasicCameraController : SyncScript {
 
 		var currentPitch =
 			MathUtil.PiOverTwo -
-			MathF.Acos(Vector3.Dot(rotation.Forward, upVector));
-		pitch =
-			MathUtil.Clamp(currentPitch + pitch, -MaximumPitch, MaximumPitch) -
+			MathF.Acos(Vector3.Dot(rotation.Forward, this.upVector));
+		this.pitch =
+			MathUtil.Clamp(currentPitch + this.pitch, -MaximumPitch, MaximumPitch) -
 			currentPitch;
 
-		var finalTranslation = translation;
+		var finalTranslation = this.translation;
 		finalTranslation.Z = -finalTranslation.Z;
 		finalTranslation = Vector3.TransformCoordinate(finalTranslation, rotation);
 
-		Entity.Transform.Position += finalTranslation;
+		this.Entity.Transform.Position += finalTranslation;
 
-		Entity.Transform.Rotation *=
-			Quaternion.RotationAxis(right, pitch) *
-			Quaternion.RotationAxis(upVector, yaw);
+		this.Entity.Transform.Rotation *=
+			Quaternion.RotationAxis(right, this.pitch) *
+			Quaternion.RotationAxis(this.upVector, this.yaw);
 	}
 }
