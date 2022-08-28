@@ -1,11 +1,11 @@
-﻿
+﻿namespace ProjectZyheeda;
+
 using System;
 using Stride.Core;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 using Stride.Input;
 
-namespace ProjectZyheeda;
 public class BasicCameraController : SyncScript {
 	private const float MaximumPitch = MathUtil.PiOverTwo * 0.99f;
 
