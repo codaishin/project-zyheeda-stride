@@ -1,9 +1,9 @@
+namespace Tests;
+
 using System;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using Stride.Engine;
-
-namespace Tests;
 
 [SetUpFixture]
 public class TestGame {
