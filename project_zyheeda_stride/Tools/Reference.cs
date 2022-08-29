@@ -1,6 +1,7 @@
 namespace ProjectZyheeda;
 
 using System;
+using System.Linq;
 using Stride.Core;
 using Stride.Engine;
 
@@ -14,13 +15,13 @@ public class Reference<T> : IMaybe<T> {
 		return data.target;
 	}
 
-	private IMaybe<(Entity, T)> GetData(Entity entity) {
-		foreach (var component in entity.Components) {
-			if (component is T target) {
-				return Maybe.Some((entity, target));
-			}
-		}
-		return this.data;
+	private IMaybe<(Entity, T)> GetFirstMatch(Entity entity) {
+		var first = entity.Components
+			.OfType<T>()
+			.FirstOrDefault();
+		return first is not null
+			? Maybe.Some((entity, first))
+			: this.data;
 	}
 
 	private IMaybe<(Entity entity, T target)> data = Maybe.None<(Entity, T)>();
@@ -29,10 +30,10 @@ public class Reference<T> : IMaybe<T> {
 	public Entity? Entity {
 		get => this.data
 			.Map(Reference<T>.EntityOnly)
-			.Unpack(fallback: null);
+			.UnpackOr(null);
 		set => this.data = value is null
-			? Maybe.None<(Entity entity, T target)>()
-			: this.GetData(value);
+			? Maybe.None<(Entity, T)>()
+			: this.GetFirstMatch(value);
 	}
 
 	public void Match(Action<T> some, Action? none = null) {
