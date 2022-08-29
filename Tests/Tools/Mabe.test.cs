@@ -76,12 +76,12 @@ public class MaybeTest : GameTestCollection {
 	[Test]
 	public void UnpackFallbackWhenNone() {
 		var none = Maybe.None<float>();
-		Assert.That(none.Unpack(42f), Is.EqualTo(42f));
+		Assert.That(none.UnpackOr(42f), Is.EqualTo(42f));
 	}
 
 	[Test]
 	public void UnpackSome() {
 		var some = Maybe.Some(4.2f);
-		Assert.That(some.Unpack(42f), Is.EqualTo(4.2f));
+		Assert.That(some.UnpackOr(42f), Is.EqualTo(4.2f));
 	}
 }

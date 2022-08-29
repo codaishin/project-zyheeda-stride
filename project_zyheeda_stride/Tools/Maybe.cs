@@ -29,7 +29,7 @@ public static class Maybe {
 		return result;
 	}
 
-	public static T Unpack<T>(this IMaybe<T> maybe, T fallback) {
+	public static T UnpackOr<T>(this IMaybe<T> maybe, T fallback) {
 		maybe.Match(v => fallback = v);
 		return fallback;
 	}
