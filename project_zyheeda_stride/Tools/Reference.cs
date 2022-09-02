@@ -6,7 +6,7 @@ using Stride.Core;
 using Stride.Engine;
 
 [DataContract]
-public class Reference<T> : IMaybe<T> {
+public class Reference<T> : IReference, IMaybe<T> {
 	private static Entity? EntityOnly((Entity entity, T target) data) {
 		return data.entity;
 	}
