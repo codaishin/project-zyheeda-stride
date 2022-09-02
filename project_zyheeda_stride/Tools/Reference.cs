@@ -6,7 +6,8 @@ using Stride.Core;
 using Stride.Engine;
 
 [DataContract]
-public class Reference<T> : IReference, IMaybe<T> {
+public class Reference<T> : IReference, IMaybe<T>
+	where T : class {
 	private static Entity? EntityOnly((Entity entity, T target) data) {
 		return data.entity;
 	}
@@ -16,12 +17,12 @@ public class Reference<T> : IReference, IMaybe<T> {
 	}
 
 	private IMaybe<(Entity, T)> GetFirstMatch(Entity entity) {
-		var first = entity.Components
+		var first = (entity as T) ?? entity.Components
 			.OfType<T>()
 			.FirstOrDefault();
-		return first is not null
-			? Maybe.Some((entity, first))
-			: this.data;
+		return first is null
+			? this.data
+			: Maybe.Some((entity, first));
 	}
 
 	private IMaybe<(Entity entity, T target)> data = Maybe.None<(Entity, T)>();

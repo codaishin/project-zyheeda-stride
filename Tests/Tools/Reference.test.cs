@@ -41,6 +41,21 @@ public class ReferenceTest : GameTestCollection {
 	}
 
 	[Test]
+	public void MatchSomeWhenEntity() {
+		var entity = new Entity();
+		var reference = new Reference<Entity> { Entity = entity };
+		var (callSome, callNone) = (0, 0);
+		reference.Match(
+			some: c => {
+				++callSome;
+				Assert.That(c, Is.SameAs(entity));
+			},
+			none: () => ++callNone
+		);
+		Assert.That((callSome, callNone), Is.EqualTo((1, 0)));
+	}
+
+	[Test]
 	public void EntityResetWhenAssigningNull() {
 		var entity = new Entity();
 		var component = new MockComponent();
