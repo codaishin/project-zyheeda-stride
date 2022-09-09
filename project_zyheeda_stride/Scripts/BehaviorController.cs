@@ -37,8 +37,8 @@ public class BehaviorController : StartupScript, IBehavior {
 		Reference<Entity> agent
 	) {
 		return () => {
-			this.behavior = equipment
-				.Map(BehaviorController.GetBehavior)
+			this.behavior = Maybe.Some(BehaviorController.GetBehavior)
+				.Apply(equipment)
 				.Apply(agent)
 				.FlatMap();
 			this.behavior.Switch(
