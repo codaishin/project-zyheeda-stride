@@ -126,10 +126,9 @@ public class MaybeTest : GameTestCollection {
 		var snd = Maybe.Some(15);
 		var trd = Maybe.Some(23);
 
-		var partialSum = (int a) => (int b) => (int c) => a + b + c;
-
-		var result = fst
-			.Map(partialSum)
+		var sum = Maybe.Some((int a) => (int b) => (int c) => a + b + c);
+		var result = sum
+			.Apply(fst)
 			.Apply(snd)
 			.Apply(trd);
 
@@ -142,10 +141,9 @@ public class MaybeTest : GameTestCollection {
 		var snd = Maybe.None<int>();
 		var trd = Maybe.Some(23);
 
-		var lazySum = (int a) => (int b) => (int c) => a + b + c;
-
-		var result = fst
-			.Map(lazySum)
+		var sum = Maybe.Some((int a) => (int b) => (int c) => a + b + c);
+		var result = sum
+			.Apply(fst)
 			.Apply(snd)
 			.Apply(trd);
 

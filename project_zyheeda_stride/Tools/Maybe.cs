@@ -45,10 +45,7 @@ public static class Maybe {
 		this IMaybe<Func<TIn, TOut>> apply,
 		IMaybe<TIn> maybe
 	) {
-		return apply.Switch(
-			some: func => maybe.Map(func),
-			none: () => Maybe.None<TOut>()
-		);
+		return apply.FlatMap(func => maybe.Map(func));
 	}
 
 	private class WithValue<T> : IMaybe<T> {
