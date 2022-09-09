@@ -1,27 +1,12 @@
 namespace ProjectZyheeda;
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 public static class Either {
-
-	public class ValueGetter<TError> {
-		public IEither<TError, T> WithValue<T>(T value) {
-			return new Either.WithValue<TError, T>(value);
-		}
-	}
-
-	public class ErrorGetter<T> {
-		public IEither<TError, T> WithError<TError>(TError error) {
-			return new Either.WithError<TError, T>(error);
-		}
-	}
-
-	public static ValueGetter<TError> NoError<TError>() {
-		return new ValueGetter<TError>();
-	}
-
-	public static ErrorGetter<T> NoValue<T>() {
-		return new ErrorGetter<T>();
+	public static IEitherPartial<TErrorOrT> New<TErrorOrT>(TErrorOrT errorOrValue) {
+		return new Either.Partial<TErrorOrT> { errorOrValue = errorOrValue };
 	}
 
 	public static IEither<TError, TOut> Map<TError, T, TOut>(
@@ -29,8 +14,8 @@ public static class Either {
 		Func<T, TOut> map
 	) {
 		return either.Switch(
-			error: e => Either.NoValue<TOut>().WithError(e),
-			value: v => Either.NoError<TError>().WithValue(map(v))
+			error => Either.New(error).WithNoValue<TOut>(),
+			value => Either.New(map(value)).WithNoError<TError>()
 		);
 	}
 
@@ -39,15 +24,25 @@ public static class Either {
 		Func<T, IEither<TError, TOut>> map
 	) {
 		return either.Switch(
-			error: e => Either.NoValue<TOut>().WithError(e),
-			value: v => map(v)
+			error => Either.New(error).WithNoValue<TOut>(),
+			value => map(value)
 		);
 	}
 
 	public static T UnpackOr<TError, T>(this IEither<TError, T> maybe, T fallback) {
 		return maybe.Switch(
-			error: _ => fallback,
-			value: v => v
+			_ => fallback,
+			value => value
+		);
+	}
+
+	public static TError UnpackErrorOr<TError, T>(
+		this IEither<TError, T> maybe,
+		TError fallback
+	) {
+		return maybe.Switch(
+			error => error,
+			_ => fallback
 		);
 	}
 
@@ -57,8 +52,8 @@ public static class Either {
 		Action<T> value
 	) {
 		var action = either.Switch<Action>(
-			error: e => () => error(e),
-			value: v => () => value(v)
+			e => () => error(e),
+			v => () => value(v)
 		);
 		action();
 	}
@@ -76,12 +71,40 @@ public static class Either {
 		return apply.FlatMap(func => either.Map(v => func(v)));
 	}
 
-	private class WithValue<TError, T> : IEither<TError, T> {
-		private readonly T value;
+	public static IEither<IEnumerable<TError>, TOut> Apply<TError, TIn, TOut>(
+		this IEither<IEnumerable<TError>, Func<TIn, TOut>> apply,
+		IEither<TError, TIn> either
+	) {
+		return apply.Switch(
+			errors => either.Switch(
+				error => Either.New(errors.Append(error)).WithNoValue<TOut>(),
+				value => Either.New(errors).WithNoValue<TOut>()
+			),
+			func => either.Switch(
+				error => Either.New(Either.FirstError(error)).WithNoValue<TOut>(),
+				value => Either.New(func(value)).WithNoError<IEnumerable<TError>>()
+			)
+		);
+	}
 
-		public WithValue(T value) {
-			this.value = value;
+	private static IEnumerable<TError> FirstError<TError>(TError error) {
+		yield return error;
+	}
+
+	private struct Partial<TErrorOrT> : IEitherPartial<TErrorOrT> {
+		public TErrorOrT errorOrValue;
+
+		public IEither<TError, TErrorOrT> WithNoError<TError>() {
+			return new Either.WithValue<TError, TErrorOrT> { value = this.errorOrValue };
 		}
+
+		public IEither<TErrorOrT, T> WithNoValue<T>() {
+			return new Either.WithError<TErrorOrT, T> { error = this.errorOrValue };
+		}
+	}
+
+	private struct WithValue<TError, T> : IEither<TError, T> {
+		public T value;
 
 		public TOut Switch<TOut>(
 			System.Func<TError, TOut> error,
@@ -91,18 +114,14 @@ public static class Either {
 		}
 	}
 
-	private class WithError<TError, T> : IEither<TError, T> {
-		private readonly TError value;
-
-		public WithError(TError value) {
-			this.value = value;
-		}
+	private struct WithError<TError, T> : IEither<TError, T> {
+		public TError error;
 
 		public TOut Switch<TOut>(
 			System.Func<TError, TOut> error,
 			System.Func<T, TOut> value
 		) {
-			return error(this.value);
+			return error(this.error);
 		}
 	}
 }
