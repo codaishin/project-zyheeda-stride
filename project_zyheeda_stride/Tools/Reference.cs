@@ -37,9 +37,9 @@ public class Reference<T> : IReference, IMaybe<T>
 			: this.GetFirstMatch(value);
 	}
 
-	public void Match(Action<T> some, Action? none = null) {
-		this.data
+	public TReturn Switch<TReturn>(Func<T, TReturn> some, Func<TReturn> none) {
+		return this.data
 			.Map(Reference<T>.TargetOnly)
-			.Match(some, none);
+			.Switch(some, none);
 	}
 }

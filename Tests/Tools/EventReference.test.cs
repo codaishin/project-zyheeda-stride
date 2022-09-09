@@ -7,7 +7,7 @@ using Stride.Engine;
 
 public class EventReferenceTests : GameTestCollection {
 	private class MockWrapped<T> : IReference, IMaybe<T> {
-		public Action<Action<T>, Action?> match = (_, __) => { };
+		public Func<Func<T, object>, Func<object>, object> apply = (_, none) => none();
 		public Action<Entity?> entitySet = _ => { };
 		public Func<Entity?> entityGet = () => null;
 
@@ -16,29 +16,30 @@ public class EventReferenceTests : GameTestCollection {
 			set => this.entitySet(value);
 		}
 
-		public void Match(Action<T> some, Action? none = null) {
-			this.match(some, none);
+		public TReturn Switch<TReturn>(Func<T, TReturn> some, Func<TReturn> none) {
+			return (TReturn)this.apply(
+				v => some(v)!,
+				() => none()!
+			);
 		}
 	}
 
 	[Test]
-	public void UseWrappedMatchSome() {
-		var (calledSome, calledNone) = (0, 0);
-		var wrapped = new MockWrapped<int> { match = (some, _) => some(42), };
+	public void UseWrappedApplySome() {
+		var wrapped = new MockWrapped<int> { apply = (some, _) => some(42), };
 		var reference = new EventReference<MockWrapped<int>, int>(wrapped);
 
-		reference.Match(v => calledSome += v, () => ++calledNone);
-		Assert.That((calledSome, calledNone), Is.EqualTo((42, 0)));
+		var value = reference.Switch(v => v, () => -1);
+		Assert.That(value, Is.EqualTo(42));
 	}
 
 	[Test]
-	public void UseWrappedMatchNone() {
-		var (calledSome, calledNone) = (0, 0);
-		var wrapped = new MockWrapped<int> { match = (_, none) => none?.Invoke(), };
+	public void UseWrappedApplyNone() {
+		var wrapped = new MockWrapped<int> { apply = (_, none) => none(), };
 		var reference = new EventReference<MockWrapped<int>, int>(wrapped);
 
-		reference.Match(v => calledSome += v, () => ++calledNone);
-		Assert.That((calledSome, calledNone), Is.EqualTo((0, 1)));
+		var value = reference.Switch(v => v, () => -1);
+		Assert.That(value, Is.EqualTo(-1));
 	}
 
 	[Test]

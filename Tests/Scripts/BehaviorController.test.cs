@@ -30,24 +30,8 @@ public class BehaviorControllerTest : GameTestCollection {
 		}
 	}
 
-	private static void AssignTo(
-		BehaviorController controller,
-		MockEquipment equipment,
-		Entity agent,
-		bool reversed
-	) {
-		var equipmentEntity = new Entity { equipment };
-		if (reversed) {
-			controller.Agent.Entity = agent;
-			controller.Equipment.Entity = equipmentEntity;
-		} else {
-			controller.Equipment.Entity = equipmentEntity;
-			controller.Agent.Entity = agent;
-		}
-	}
-
 	[Test]
-	public void PassAgentToGetBehaviorFor([Values(false, true)] bool reversed) {
+	public void PassAgentToGetBehaviorFor() {
 		var gotAgent = null as Entity;
 		var equipment = new MockEquipment {
 			getBehaviorFor = agentArg => {
@@ -58,13 +42,14 @@ public class BehaviorControllerTest : GameTestCollection {
 		var controller = new BehaviorController();
 		var expectedAgent = new Entity();
 
-		BehaviorControllerTest.AssignTo(controller, equipment, expectedAgent, reversed);
+		controller.Agent.Entity = expectedAgent;
+		controller.Equipment.Entity = new Entity { equipment };
 
 		Assert.That(gotAgent, Is.SameAs(expectedAgent));
 	}
 
 	[Test]
-	public void OnRunExecuteNext([Values(false, true)] bool reversed) {
+	public void OnRunExecuteNext() {
 		var called = 0;
 		var equipment = new MockEquipment {
 			getBehaviorFor = _ => Maybe.Some<IBehaviorStateMachine>(
@@ -73,7 +58,8 @@ public class BehaviorControllerTest : GameTestCollection {
 		};
 		var controller = new BehaviorController();
 
-		BehaviorControllerTest.AssignTo(controller, equipment, new(), reversed);
+		controller.Agent.Entity = new();
+		controller.Equipment.Entity = new Entity { equipment };
 
 		controller.Run();
 
@@ -81,7 +67,7 @@ public class BehaviorControllerTest : GameTestCollection {
 	}
 
 	[Test]
-	public void OnCancelResetAndIdle([Values(false, true)] bool reversed) {
+	public void OnCancelResetAndIdle() {
 		var called = 0;
 		var equipment = new MockEquipment {
 			getBehaviorFor = _ => Maybe.Some<IBehaviorStateMachine>(
@@ -90,7 +76,8 @@ public class BehaviorControllerTest : GameTestCollection {
 		};
 		var controller = new BehaviorController();
 
-		BehaviorControllerTest.AssignTo(controller, equipment, new(), reversed);
+		controller.Agent.Entity = new();
+		controller.Equipment.Entity = new Entity { equipment };
 
 		controller.Reset();
 

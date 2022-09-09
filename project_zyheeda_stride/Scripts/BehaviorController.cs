@@ -19,60 +19,57 @@ public class BehaviorController : StartupScript, IBehavior {
 	private IMaybe<IBehaviorStateMachine> behavior =
 		Maybe.None<IBehaviorStateMachine>();
 
-	private Action<(IEquipment equipment, Entity agent)> SetOrClearIncompatible(
-		Reference<IEquipment> equipment
+	private static void Idle() { }
+	private static void Idle<T>(T _) { }
+
+	private static Func<Entity, IMaybe<IBehaviorStateMachine>> GetBehavior(
+		IEquipment equipment
 	) {
-		return pair => pair
-			.equipment
-			.GetBehaviorFor(pair.agent)
-			.Match(
-				some: behavior => this.behavior = Maybe.Some(behavior),
-				none: () => {
-					equipment.Entity = null;
-					this.Clear();
-				}
-			);
+		return agent => equipment.GetBehaviorFor(agent);
 	}
 
-	private void Clear() {
-		this.behavior = Maybe.None<IBehaviorStateMachine>();
+	private static Action Empty(IReference reference) {
+		return () => reference.Entity = null;
 	}
 
-	private static IMaybe<(IEquipment, Entity)> BothOrNone(
+	private Action UpdateBehavior(
 		Reference<IEquipment> equipment,
 		Reference<Entity> agent
 	) {
-		return agent.Bind(a => equipment.Map(e => (e, a)));
-	}
-
-	private Action SetBehavior(
-		Reference<IEquipment> equipment,
-		Reference<Entity> agent
-	) {
-		return () => BehaviorController
-			.BothOrNone(equipment, agent)
-			.Match(
-				some: this.SetOrClearIncompatible(equipment),
-				none: this.Clear
+		return () => {
+			this.behavior = equipment
+				.Map(BehaviorController.GetBehavior)
+				.Apply(agent)
+				.FlatMap();
+			this.behavior.Switch(
+				some: BehaviorController.Idle,
+				none: BehaviorController.Empty(equipment)
 			);
+		};
 	}
 
 	public BehaviorController() {
 		var equipment = new Reference<IEquipment>();
 		var agent = new Reference<Entity>();
-		var setBehavior = this.SetBehavior(equipment, agent);
+		var onSet = this.UpdateBehavior(equipment, agent);
 
-		this.Equipment = new(equipment, onSet: setBehavior);
-		this.Agent = new(agent, onSet: setBehavior);
+		this.Equipment = new(equipment, onSet);
+		this.Agent = new(agent, onSet);
 	}
 
 	public override void Start() { }
 
 	public void Run() {
-		this.behavior.Match(b => b.ExecuteNext());
+		this.behavior.Switch(
+			some: b => b.ExecuteNext(),
+			none: BehaviorController.Idle
+		);
 	}
 
 	public void Reset() {
-		this.behavior.Match(b => b.ResetAndIdle());
+		this.behavior.Switch(
+			some: b => b.ResetAndIdle(),
+			none: BehaviorController.Idle
+		);
 	}
 }

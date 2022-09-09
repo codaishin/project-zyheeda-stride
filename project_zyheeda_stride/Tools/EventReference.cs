@@ -27,7 +27,7 @@ public class EventReference<TWrapped, T> :
 		this.onSet = onSet;
 	}
 
-	public void Match(Action<T> some, Action? none = null) {
-		this.wrapped.Match(some, none);
+	public TReturn Switch<TReturn>(Func<T, TReturn> some, Func<TReturn> none) {
+		return this.wrapped.Switch(some, none);
 	}
 }

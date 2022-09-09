@@ -15,23 +15,40 @@ public static class Maybe {
 		this IMaybe<TIn> maybe,
 		Func<TIn, TOut> mapper
 	) {
-		var result = Maybe.None<TOut>();
-		maybe.Match(v => result = Some(mapper(v)));
-		return result;
+		return maybe.Switch(v => Some(mapper(v)), () => Maybe.None<TOut>());
 	}
 
-	public static IMaybe<TOut> Bind<TIn, TOut>(
+	public static IMaybe<TOut> FlatMap<TIn, TOut>(
 		this IMaybe<TIn> maybe,
 		Func<TIn, IMaybe<TOut>> mapper
 	) {
-		var result = Maybe.None<TOut>();
-		maybe.Match(v => result = mapper(v));
-		return result;
+		return maybe.Switch(v => mapper(v), () => Maybe.None<TOut>());
+	}
+
+	public static IMaybe<TIn> FlatMap<TIn>(this IMaybe<IMaybe<TIn>> maybe) {
+		return maybe.FlatMap(v => v);
 	}
 
 	public static T UnpackOr<T>(this IMaybe<T> maybe, T fallback) {
-		maybe.Match(v => fallback = v);
-		return fallback;
+		return maybe.Switch(v => v, () => fallback);
+	}
+
+	public static void Switch<T>(this IMaybe<T> maybe, Action<T> some, Action none) {
+		var apply = maybe.Switch<Action>(
+			some: v => () => some(v),
+			none: () => () => none()
+		);
+		apply();
+	}
+
+	public static IMaybe<TOut> Apply<TIn, TOut>(
+		this IMaybe<Func<TIn, TOut>> apply,
+		IMaybe<TIn> maybe
+	) {
+		return apply.Switch(
+			some: func => maybe.Map(func),
+			none: () => Maybe.None<TOut>()
+		);
 	}
 
 	private class WithValue<T> : IMaybe<T> {
@@ -41,14 +58,14 @@ public static class Maybe {
 			this.value = value;
 		}
 
-		public void Match(Action<T> some, Action? none = null) {
-			some(this.value);
+		public TReturn Switch<TReturn>(Func<T, TReturn> some, Func<TReturn> none) {
+			return some(this.value);
 		}
 	}
 
 	private class WithNoValue<T> : IMaybe<T> {
-		public void Match(Action<T> some, Action? none = null) {
-			none?.Invoke();
+		TReturn IMaybe<T>.Switch<TReturn>(Func<T, TReturn> some, Func<TReturn> none) {
+			return none();
 		}
 	}
 }

@@ -13,46 +13,38 @@ public class ReferenceTest : GameTestCollection {
 	}
 
 	[Test]
-	public void MatchNoneWhenEntityNull() {
+	public void ApplyNoneWhenEntityNull() {
 		var reference = new Reference<IMock> { Entity = null };
-		var (callSome, callNone) = (0, 0);
-		reference.Match(
-			some: _ => ++callSome,
-			none: () => ++callNone
+		var nullComponent = new MockComponent();
+		var value = reference.Switch(
+			some: c => c,
+			none: () => nullComponent
 		);
-		Assert.That((callSome, callNone), Is.EqualTo((0, 1)));
+		Assert.That(value, Is.SameAs(nullComponent));
 	}
 
 	[Test]
-	public void MatchSomeWhenEntityWithIMock() {
+	public void ApplySomeWhenEntityWithIMock() {
 		var entity = new Entity();
 		var component = new MockComponent();
 		entity.Add(component);
 		var reference = new Reference<IMock> { Entity = entity };
-		var (callSome, callNone) = (0, 0);
-		reference.Match(
-			some: c => {
-				++callSome;
-				Assert.That(c, Is.SameAs(component));
-			},
-			none: () => ++callNone
+		var value = reference.Switch(
+			some: c => c,
+			none: () => new MockComponent()
 		);
-		Assert.That((callSome, callNone), Is.EqualTo((1, 0)));
+		Assert.That(value, Is.SameAs(component));
 	}
 
 	[Test]
-	public void MatchSomeWhenEntity() {
+	public void ApplySomeWhenEntity() {
 		var entity = new Entity();
 		var reference = new Reference<Entity> { Entity = entity };
-		var (callSome, callNone) = (0, 0);
-		reference.Match(
-			some: c => {
-				++callSome;
-				Assert.That(c, Is.SameAs(entity));
-			},
-			none: () => ++callNone
+		var value = reference.Switch(
+			some: e => e,
+			none: () => new Entity()
 		);
-		Assert.That((callSome, callNone), Is.EqualTo((1, 0)));
+		Assert.That(value, Is.SameAs(entity));
 	}
 
 	[Test]
@@ -76,15 +68,15 @@ public class ReferenceTest : GameTestCollection {
 	}
 
 	[Test]
-	public void MatchNoneWhenEntityWithoutIMock() {
+	public void ApplyNoneWhenEntityWithoutIMock() {
 		var reference = new Reference<IMock> { Entity = new Entity() };
-		var (callSome, callNone) = (0, 0);
-		reference.Match(
-			some: c => ++callSome,
-			none: () => ++callNone
+		var nullComponent = new MockComponent();
+		var value = reference.Switch(
+			some: c => c,
+			none: () => nullComponent
 		);
 		Assert.Multiple(() => {
-			Assert.That((callSome, callNone), Is.EqualTo((0, 1)));
+			Assert.That(value, Is.SameAs(nullComponent));
 			Assert.That(reference.Entity, Is.Null);
 		});
 	}
