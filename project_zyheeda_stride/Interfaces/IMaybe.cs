@@ -3,5 +3,5 @@ namespace ProjectZyheeda;
 using System;
 
 public interface IMaybe<T> {
-	void Match(Action<T> some, Action? none = null);
+	TReturn Switch<TReturn>(Func<T, TReturn> some, Func<TReturn> none);
 }
