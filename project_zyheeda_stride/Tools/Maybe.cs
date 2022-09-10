@@ -48,6 +48,16 @@ public static class Maybe {
 		return apply.FlatMap(func => maybe.Map(func));
 	}
 
+	public static IEither<TError, T> ToEither<TError, T>(
+		this IMaybe<T> maybe,
+		TError error
+	) {
+		return maybe.Switch(
+			some: v => Either.New(v).WithNoError<TError>(),
+			none: () => Either.New(error).WithNoValue<T>()
+		);
+	}
+
 	private class WithValue<T> : IMaybe<T> {
 		private readonly T value;
 

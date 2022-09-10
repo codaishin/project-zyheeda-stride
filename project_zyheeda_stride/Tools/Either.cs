@@ -87,6 +87,13 @@ public static class Either {
 		);
 	}
 
+	public static IMaybe<T> ToMaybe<TError, T>(this IEither<TError, T> either) {
+		return either.Switch(
+			_ => Maybe.None<T>(),
+			value => Maybe.Some(value)
+		);
+	}
+
 	private static IEnumerable<TError> FirstError<TError>(TError error) {
 		yield return error;
 	}

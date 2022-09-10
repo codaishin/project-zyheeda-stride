@@ -226,4 +226,20 @@ public class EitherTest : GameTestCollection {
 			result.UnpackErrorOr(Enumerable.Empty<string>())
 		);
 	}
+
+	[Test]
+	public void ValueToSome() {
+		var value = Either.New(42).WithNoError<string>();
+		var some = value.ToMaybe();
+
+		Assert.That(some.UnpackOr(-1), Is.EqualTo(42));
+	}
+
+	[Test]
+	public void ErrorToNone() {
+		var value = Either.New("Error").WithNoValue<int>();
+		var some = value.ToMaybe();
+
+		Assert.That(some.UnpackOr(-1), Is.EqualTo(-1));
+	}
 }
