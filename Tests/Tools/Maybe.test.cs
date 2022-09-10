@@ -149,4 +149,20 @@ public class MaybeTest : GameTestCollection {
 
 		Assert.That(result.UnpackOr(-1), Is.EqualTo(-1));
 	}
+
+	[Test]
+	public void SomeToValue() {
+		var some = Maybe.Some(42);
+		var value = some.ToEither("ERROR");
+
+		Assert.That(value.UnpackOr(-1), Is.EqualTo(42));
+	}
+
+	[Test]
+	public void NoneToError() {
+		var some = Maybe.None<int>();
+		var value = some.ToEither("ERROR");
+
+		Assert.That(value.UnpackErrorOr("OKAY"), Is.EqualTo("ERROR"));
+	}
 }
