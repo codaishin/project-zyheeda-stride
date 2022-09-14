@@ -5,6 +5,8 @@ using NUnit.Framework;
 using ProjectZyheeda;
 using Stride.Engine;
 
+using TMissing = ProjectZyheeda.IUnion<ProjectZyheeda.Requirement, System.Type[]>;
+
 public class BehaviorControllerTest : GameTestCollection {
 	private class MockBehavior : IBehaviorStateMachine {
 		public Action executeNext = () => { };
@@ -20,13 +22,22 @@ public class BehaviorControllerTest : GameTestCollection {
 	}
 
 	private class MockEquipment : EntityComponent, IEquipment {
-		public delegate IMaybe<IBehaviorStateMachine> GetBehaviorFn(Entity agent);
+		public delegate IEither<TMissing, MockBehavior> GetBehaviorFn(Entity agent);
 
 		public GetBehaviorFn getBehaviorFor =
-			_ => Maybe.Some<IBehaviorStateMachine>(new MockBehavior());
+			_ => Either
+				.New(new MockBehavior())
+				.WithNoError<TMissing>();
 
-		public IMaybe<IBehaviorStateMachine> GetBehaviorFor(Entity agent) {
-			return this.getBehaviorFor(agent);
+		public IEither<TMissing, IBehaviorStateMachine> GetBehaviorFor(Entity agent) {
+			return this.getBehaviorFor(agent).Switch(
+				error => Either
+					.New(error)
+					.WithNoValue<IBehaviorStateMachine>(),
+				value => Either
+					.New<IBehaviorStateMachine>(value)
+					.WithNoError<TMissing>()
+			);
 		}
 	}
 
@@ -36,7 +47,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		var equipment = new MockEquipment {
 			getBehaviorFor = agentArg => {
 				gotAgent = agentArg;
-				return Maybe.Some<IBehaviorStateMachine>(new MockBehavior());
+				return Either.New(new MockBehavior()).WithNoError<TMissing>();
 			}
 		};
 		var controller = new BehaviorController();
@@ -52,9 +63,9 @@ public class BehaviorControllerTest : GameTestCollection {
 	public void OnRunExecuteNext() {
 		var called = 0;
 		var equipment = new MockEquipment {
-			getBehaviorFor = _ => Maybe.Some<IBehaviorStateMachine>(
-				new MockBehavior { executeNext = () => ++called }
-			)
+			getBehaviorFor = _ => Either
+				.New(new MockBehavior { executeNext = () => ++called })
+				.WithNoError<TMissing>()
 		};
 		var controller = new BehaviorController();
 
@@ -70,9 +81,9 @@ public class BehaviorControllerTest : GameTestCollection {
 	public void OnCancelResetAndIdle() {
 		var called = 0;
 		var equipment = new MockEquipment {
-			getBehaviorFor = _ => Maybe.Some<IBehaviorStateMachine>(
-				new MockBehavior { resetAndIdle = () => ++called }
-			)
+			getBehaviorFor = _ => Either
+				.New(new MockBehavior { resetAndIdle = () => ++called })
+				.WithNoError<TMissing>()
 		};
 		var controller = new BehaviorController();
 
@@ -90,10 +101,12 @@ public class BehaviorControllerTest : GameTestCollection {
 		var validAgent = new Entity();
 		var equipment = new MockEquipment {
 			getBehaviorFor = (a) => a != validAgent
-				? Maybe.None<IBehaviorStateMachine>()
-				: Maybe.Some<IBehaviorStateMachine>(new MockBehavior {
-					executeNext = () => ++called
-				})
+				? Either
+					.New(Union.New<Requirement, Type[]>(new[] { typeof(int) }))
+					.WithNoValue<MockBehavior>()
+				: Either
+					.New(new MockBehavior { executeNext = () => ++called })
+					.WithNoError<TMissing>()
 		};
 		var controller = new BehaviorController();
 		controller.Equipment.Entity = new Entity { equipment };
@@ -112,12 +125,14 @@ public class BehaviorControllerTest : GameTestCollection {
 	public void NullEquipmentWhenAssigningInvalidEquipment() {
 		var called = 0;
 		var validEquipment = new MockEquipment {
-			getBehaviorFor = _ => Maybe.Some<IBehaviorStateMachine>(
-				new MockBehavior { executeNext = () => ++called }
-			)
+			getBehaviorFor = _ => Either
+				.New(new MockBehavior { executeNext = () => ++called })
+				.WithNoError<TMissing>()
 		};
 		var invalidEquipment = new MockEquipment {
-			getBehaviorFor = _ => Maybe.None<IBehaviorStateMachine>()
+			getBehaviorFor = _ => Either
+				.New(Union.New<Requirement, Type[]>(new[] { typeof(int) }))
+				.WithNoValue<MockBehavior>()
 		};
 		var controller = new BehaviorController();
 		controller.Agent.Entity = new Entity();

@@ -11,6 +11,7 @@ using TEquipmentReference = EventReference<
 	Reference<IEquipment>,
 	IEquipment
 >;
+using TMissing = IUnion<Requirement, System.Type[]>;
 
 public class BehaviorController : StartupScript, IBehavior {
 	public readonly TEquipmentReference Equipment;
@@ -22,7 +23,7 @@ public class BehaviorController : StartupScript, IBehavior {
 	private static void Idle() { }
 	private static void Idle<T>(T _) { }
 
-	private static Func<Entity, IMaybe<IBehaviorStateMachine>> GetBehavior(
+	private static Func<Entity, IEither<TMissing, IBehaviorStateMachine>> GetBehavior(
 		IEquipment equipment
 	) {
 		return agent => equipment.GetBehaviorFor(agent);
@@ -40,7 +41,7 @@ public class BehaviorController : StartupScript, IBehavior {
 			this.behavior = Maybe.Some(BehaviorController.GetBehavior)
 				.Apply(equipment)
 				.Apply(agent)
-				.FlatMap();
+				.FlatMap(v => v.ToMaybe());
 			this.behavior.Switch(
 				some: BehaviorController.Idle,
 				none: BehaviorController.Empty(equipment)
