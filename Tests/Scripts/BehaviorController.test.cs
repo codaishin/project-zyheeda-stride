@@ -41,6 +41,13 @@ public class BehaviorControllerTest : GameTestCollection {
 		}
 	}
 
+	private class MockEvent<T> : EntityComponent, IEvent<T> {
+		public Action<T> invoke = _ => { };
+		public void Invoke(T data) {
+			this.invoke(data);
+		}
+	}
+
 	[Test]
 	public void PassAgentToGetBehaviorFor() {
 		var gotAgent = null as Entity;
@@ -53,8 +60,8 @@ public class BehaviorControllerTest : GameTestCollection {
 		var controller = new BehaviorController();
 		var expectedAgent = new Entity();
 
-		controller.Agent.Entity = expectedAgent;
-		controller.Equipment.Entity = new Entity { equipment };
+		controller.agent.Entity = expectedAgent;
+		controller.equipment.Entity = new Entity { equipment };
 
 		Assert.That(gotAgent, Is.SameAs(expectedAgent));
 	}
@@ -69,8 +76,8 @@ public class BehaviorControllerTest : GameTestCollection {
 		};
 		var controller = new BehaviorController();
 
-		controller.Agent.Entity = new();
-		controller.Equipment.Entity = new Entity { equipment };
+		controller.agent.Entity = new();
+		controller.equipment.Entity = new Entity { equipment };
 
 		controller.Run();
 
@@ -87,8 +94,8 @@ public class BehaviorControllerTest : GameTestCollection {
 		};
 		var controller = new BehaviorController();
 
-		controller.Agent.Entity = new();
-		controller.Equipment.Entity = new Entity { equipment };
+		controller.agent.Entity = new();
+		controller.equipment.Entity = new Entity { equipment };
 
 		controller.Reset();
 
@@ -109,14 +116,14 @@ public class BehaviorControllerTest : GameTestCollection {
 					.WithNoError<TMissing>()
 		};
 		var controller = new BehaviorController();
-		controller.Equipment.Entity = new Entity { equipment };
-		controller.Agent.Entity = validAgent;
+		controller.equipment.Entity = new Entity { equipment };
+		controller.agent.Entity = validAgent;
 
-		controller.Agent.Entity = new Entity();
+		controller.agent.Entity = new Entity();
 
 		controller.Run();
 		Assert.Multiple(() => {
-			Assert.That(controller.Equipment.Entity, Is.Null);
+			Assert.That(controller.equipment.Entity, Is.Null);
 			Assert.That(called, Is.EqualTo(0));
 		});
 	}
@@ -135,15 +142,115 @@ public class BehaviorControllerTest : GameTestCollection {
 				.WithNoValue<MockBehavior>()
 		};
 		var controller = new BehaviorController();
-		controller.Agent.Entity = new Entity();
-		controller.Equipment.Entity = new Entity { validEquipment };
+		controller.agent.Entity = new Entity();
+		controller.equipment.Entity = new Entity { validEquipment };
 
-		controller.Equipment.Entity = new Entity { invalidEquipment };
+		controller.equipment.Entity = new Entity { invalidEquipment };
 
 		controller.Run();
 		Assert.Multiple(() => {
-			Assert.That(controller.Equipment.Entity, Is.Null);
+			Assert.That(controller.equipment.Entity, Is.Null);
 			Assert.That(called, Is.EqualTo(0));
 		});
+	}
+
+	[Test]
+	public void OnErrorEventEquipmentMissing() {
+		var called = Union.New<Requirement, Type[], Dependency>(Dependency.Agent);
+		var controller = new BehaviorController();
+		var onErrorEntity = new Entity {
+			new MockEvent<IUnion<Requirement, Type[], Dependency>> {
+				invoke = data => called = data
+			},
+		};
+		controller.onEquipError.Add(
+			new Reference<IEvent<IUnion<Requirement, Type[], Dependency>>> {
+				Entity = onErrorEntity
+			}
+		);
+
+		controller.agent.Entity = new();
+
+		var dependency = called.Switch(
+			(Requirement _) => Dependency.Agent,
+			(Type[] _) => Dependency.Agent,
+			(Dependency d) => d
+		);
+		Assert.That(dependency, Is.EqualTo(Dependency.Equipment));
+	}
+
+	[Test]
+	public void OnErrorEventAgentMissing() {
+		var called = Union.New<Requirement, Type[], Dependency>(Dependency.Equipment);
+		var equipment = new MockEquipment();
+		var controller = new BehaviorController();
+		var onErrorEntity = new Entity {
+			new MockEvent<IUnion<Requirement, Type[], Dependency>> {
+				invoke = data => called = data
+			},
+		};
+		controller.onEquipError.Add(
+			new Reference<IEvent<IUnion<Requirement, Type[], Dependency>>> {
+				Entity = onErrorEntity
+			}
+		);
+
+		controller.equipment.Entity = new Entity { new MockEquipment() };
+
+		var dependency = called.Switch(
+			(Requirement _) => Dependency.Equipment,
+			(Type[] _) => Dependency.Equipment,
+			(Dependency d) => d
+		);
+		Assert.That(dependency, Is.EqualTo(Dependency.Agent));
+	}
+
+	[Test]
+	public void OnErrorEventAgentAndEquipmentMissing() {
+		var called = Union.New<Requirement, Type[], Dependency>((Dependency)0);
+		var controller = new BehaviorController();
+		var onErrorEntity = new Entity {
+			new MockEvent<IUnion<Requirement, Type[], Dependency>> {
+				invoke = data => called = data
+			},
+		};
+		controller.onEquipError.Add(
+			new Reference<IEvent<IUnion<Requirement, Type[], Dependency>>> {
+				Entity = onErrorEntity
+			}
+		);
+
+		controller.equipment.Entity = new Entity { new MockEquipment() };
+
+		controller.equipment.Entity = null;
+
+		var dependency = called.Switch(
+			(Requirement _) => (Dependency)0,
+			(Type[] _) => (Dependency)0,
+			(Dependency d) => d
+		);
+
+		Assert.That(dependency, Is.EqualTo(Dependency.Agent | Dependency.Equipment));
+	}
+
+	[Test]
+	public void OnEquip() {
+		var called = null as IEquipment;
+		var equipment = new MockEquipment();
+		var controller = new BehaviorController();
+		var onEquipEntity = new Entity {
+			new MockEvent<IEquipment> {
+				invoke = data => called = data
+			},
+		};
+		controller.onEquip.Add(
+			new Reference<IEvent<IEquipment>> {
+				Entity = onEquipEntity
+			}
+		);
+		controller.agent.Entity = new();
+		controller.equipment.Entity = new Entity { equipment };
+
+		Assert.That(called, Is.SameAs(equipment));
 	}
 }
