@@ -1,35 +1,106 @@
 ﻿namespace ProjectZyheeda;
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Stride.Engine;
+using TBehaviorAndEquipmentFn = System.Func<
+	IEquipment,
+	System.Func<
+		Stride.Engine.Entity,
+		IEither<
+			IUnion<Requirement, System.Type[], Dependency>,
+			(IBehaviorStateMachine, IEquipment)
+		>
+	>
+>;
+using TEquipErrorEvents = System.Collections.Generic.List<
+	Reference<
+		IEvent<
+			IUnion<
+				Requirement,
+				System.Type[],
+				Dependency
+			>
+		>
+	>
+>;
+using TEquipEvents = System.Collections.Generic.List<
+	Reference<
+		IEvent<
+			IEquipment
+		>
+	>
+>;
+using TMissing = IUnion<
+	Requirement,
+	System.Type[],
+	Dependency
+>;
 
-using TAgentReference = EventReference<
-	Reference<Stride.Engine.Entity>,
-	Stride.Engine.Entity
->;
-using TEquipmentReference = EventReference<
-	Reference<IEquipment>,
-	IEquipment
->;
+[Flags]
+public enum Dependency {
+	Agent = 0b0001,
+	Equipment = 0b0010,
+}
 
 public class BehaviorController : StartupScript, IBehavior {
-	public readonly TEquipmentReference Equipment;
-	public readonly TAgentReference Agent;
+	public readonly EventReference<Reference<IEquipment>, IEquipment> equipment;
+	public readonly EventReference<Reference<Entity>, Entity> agent;
+
+	public readonly TEquipErrorEvents onEquipError = new();
+	public readonly TEquipEvents onEquip = new();
 
 	private IMaybe<IBehaviorStateMachine> behavior =
 		Maybe.None<IBehaviorStateMachine>();
 
 	private static void Idle() { }
-	private static void Idle<T>(T _) { }
 
-	private static Func<Entity, IMaybe<IBehaviorStateMachine>> GetBehavior(
-		IEquipment equipment
-	) {
-		return agent => equipment.GetBehaviorFor(agent);
+	private static IEither<IEnumerable<Dependency>, TBehaviorAndEquipmentFn> GetBehaviorAndEquipmentFn() {
+		var func = (IEquipment equipment) => (Entity agent) => equipment
+			.GetBehaviorFor(agent)
+			.MapError(Union.Expand<Requirement, Type[], Dependency>)
+			.Map(behavior => (behavior, equipment));
+
+		return Either
+			.New(func)
+			.WithNoError<IEnumerable<Dependency>>();
 	}
 
-	private static Action Empty(IReference reference) {
-		return () => reference.Entity = null;
+	private void OnError(TMissing error) {
+		foreach (var @event in this.onEquipError) {
+			@event.Switch(
+				some: value => value.Invoke(error),
+				none: BehaviorController.Idle
+			);
+		}
+	}
+
+	private void OnEquip(IEquipment equipment) {
+		foreach (var @event in this.onEquip) {
+			@event.Switch(
+				some: value => value.Invoke(equipment),
+				none: BehaviorController.Idle
+			);
+		}
+	}
+
+	private Action<TMissing> ResetBehaviorAndEquipment(
+		Reference<IEquipment> equipmentReference
+	) {
+		return error => {
+			equipmentReference.Entity = null;
+			this.behavior = Maybe.None<IBehaviorStateMachine>();
+			this.OnError(error);
+		};
+	}
+
+	private void SetNewBehavior(
+		(IBehaviorStateMachine, IEquipment) behaviorAndEquipment
+	) {
+		var (behavior, equipment) = behaviorAndEquipment;
+		this.behavior = Maybe.Some(behavior);
+		this.OnEquip(equipment);
 	}
 
 	private Action UpdateBehavior(
@@ -37,14 +108,17 @@ public class BehaviorController : StartupScript, IBehavior {
 		Reference<Entity> agent
 	) {
 		return () => {
-			this.behavior = Maybe.Some(BehaviorController.GetBehavior)
-				.Apply(equipment)
-				.Apply(agent)
-				.FlatMap();
-			this.behavior.Switch(
-				some: BehaviorController.Idle,
-				none: BehaviorController.Empty(equipment)
-			);
+			BehaviorController
+				.GetBehaviorAndEquipmentFn()
+				.Apply(equipment.ToEither(error: Dependency.Equipment))
+				.Apply(agent.ToEither(error: Dependency.Agent))
+				.MapError(dependencies => dependencies.Aggregate((fst, snd) => fst | snd))
+				.MapError(Union.New<Requirement, Type[], Dependency>)
+				.FlatMap()
+				.Switch(
+					error: this.ResetBehaviorAndEquipment(equipment),
+					value: this.SetNewBehavior
+				);
 		};
 	}
 
@@ -53,8 +127,8 @@ public class BehaviorController : StartupScript, IBehavior {
 		var agent = new Reference<Entity>();
 		var onSet = this.UpdateBehavior(equipment, agent);
 
-		this.Equipment = new(equipment, onSet);
-		this.Agent = new(agent, onSet);
+		this.equipment = new(equipment, onSet);
+		this.agent = new(agent, onSet);
 	}
 
 	public override void Start() { }

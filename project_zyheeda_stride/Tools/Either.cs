@@ -19,6 +19,16 @@ public static class Either {
 		);
 	}
 
+	public static IEither<TErrorOut, T> MapError<TError, T, TErrorOut>(
+		this IEither<TError, T> either,
+		Func<TError, TErrorOut> map
+	) {
+		return either.Switch(
+			error => Either.New(map(error)).WithNoValue<T>(),
+			value => Either.New<T>(value).WithNoError<TErrorOut>()
+		);
+	}
+
 	public static IEither<TError, TOut> FlatMap<TError, T, TOut>(
 		this IEither<TError, T> either,
 		Func<T, IEither<TError, TOut>> map
@@ -27,6 +37,12 @@ public static class Either {
 			error => Either.New(error).WithNoValue<TOut>(),
 			value => map(value)
 		);
+	}
+
+	public static IEither<TError, T> FlatMap<TError, T>(
+		this IEither<TError, IEither<TError, T>> either
+	) {
+		return either.FlatMap(v => v);
 	}
 
 	public static T UnpackOr<TError, T>(this IEither<TError, T> maybe, T fallback) {
@@ -56,12 +72,6 @@ public static class Either {
 			v => () => value(v)
 		);
 		action();
-	}
-
-	public static IEither<TError, T> FlatMap<TError, T>(
-		this IEither<TError, IEither<TError, T>> either
-	) {
-		return either.FlatMap(v => v);
 	}
 
 	public static IEither<TError, TOut> Apply<TError, TIn, TOut>(
