@@ -11,6 +11,10 @@ public static class Union {
 		return new Union.Second<T1, T2, object> { value = value };
 	}
 
+	public static IUnion<T1, T2, T3> Expand<T1, T2, T3>(this IUnion<T1, T2> union) {
+		return union.Switch(Union.New<T1, T2, T3>, Union.New<T1, T2, T3>);
+	}
+
 	public static IUnion<T1, T2, T3> New<T1, T2, T3>(T1 value) {
 		return new Union.First<T1, T2, T3> { value = value };
 	}
