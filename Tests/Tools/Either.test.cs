@@ -57,6 +57,32 @@ public class EitherTest : GameTestCollection {
 	}
 
 	[Test]
+	public void MapErrorErrorToError() {
+		var toLength = (string v) => v.Length;
+		var result = Either.New("ERROR").WithNoValue<float>().MapError(toLength);
+
+		var value = result.Switch(
+			error: e => e,
+			value: _ => -1
+		);
+
+		Assert.That(value, Is.EqualTo(5));
+	}
+
+	[Test]
+	public void MapErrorValueToValue() {
+		var toLength = (string v) => v.Length;
+		var result = Either.New(4.2f).WithNoError<string>().MapError(toLength);
+
+		var value = result.Switch(
+			error: _ => -1f,
+			value: v => v
+		);
+
+		Assert.That(value, Is.EqualTo(4.2f));
+	}
+
+	[Test]
 	public void FlatMapEitherWithValueAndMapOkayToValue() {
 		var inverse = (int v) => Either.New((float)1 / v).WithNoError<string>();
 		var result = Either.New(42).WithNoError<string>().FlatMap(inverse);
