@@ -74,6 +74,57 @@ public class BehaviorControllerTest : GameTestCollection {
 	}
 
 	[Test]
+	public void NullBehaviorWhenAssigningInvalidAgent() {
+		var mBehavior = new Mock<IBehaviorStateMachine>();
+		var agent = new Entity();
+		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
+
+		_ = mEquipment
+			.Setup(e => e.GetBehaviorFor(agent))
+			.Returns(new Either<TMissing, IBehaviorStateMachine>(mBehavior.Object));
+		_ = mEquipment
+			.Setup(e => e.GetBehaviorFor(It.IsNotIn(agent)))
+			.Returns(new Either<TMissing, IBehaviorStateMachine>(new[] { typeof(int) }));
+
+		var controller = new BehaviorController();
+		controller.equipment.Entity = new Entity { (EntityComponent)mEquipment.Object };
+		controller.agent.Entity = agent;
+		controller.agent.Entity = new Entity();
+
+		controller.Run();
+
+		mBehavior.Verify(b => b.ExecuteNext(), Times.Never());
+	}
+
+	[Test]
+	public void NullBehaviorInvalidEquipment() {
+		var mBehavior = new Mock<IBehaviorStateMachine>();
+		var agent = new Entity();
+		var mValidEquipment = new Mock<EntityComponent>().As<IEquipment>();
+		var mInvalidEquipment = new Mock<EntityComponent>().As<IEquipment>();
+
+		_ = mValidEquipment
+			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
+			.Returns(new Either<TMissing, IBehaviorStateMachine>(mBehavior.Object));
+		_ = mInvalidEquipment
+			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
+			.Returns(new Either<TMissing, IBehaviorStateMachine>(new[] { typeof(int) }));
+
+		var controller = new BehaviorController();
+		controller.agent.Entity = new Entity();
+		controller.equipment.Entity = new Entity {
+			(EntityComponent)mValidEquipment.Object,
+		};
+		controller.equipment.Entity = new Entity {
+			(EntityComponent)mInvalidEquipment.Object,
+		};
+
+		controller.Run();
+
+		mBehavior.Verify(b => b.ExecuteNext(), Times.Never());
+	}
+
+	[Test]
 	public void OnErrorEventEquipmentMissing() {
 		var controller = new BehaviorController();
 		var mEvent = new Mock<EntityComponent>().As<IEvent<TBehaviorError>>();

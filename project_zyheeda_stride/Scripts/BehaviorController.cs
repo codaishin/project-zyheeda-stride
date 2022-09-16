@@ -129,7 +129,7 @@ public class BehaviorController : StartupScript, IBehavior {
 
 	public override void Start() { }
 
-	public void Run(U<Vector3, Entity>[] targets) {
+	public void Run(params U<Vector3, Entity>[] targets) {
 		this.behavior.Switch(
 			some: b => b.ExecuteNext(targets),
 			none: BehaviorController.Idle
