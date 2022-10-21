@@ -39,7 +39,7 @@ public static class Either {
 		);
 	}
 
-	public static IEither<TError, T> FlatMap<TError, T>(
+	public static IEither<TError, T> Flatten<TError, T>(
 		this IEither<TError, IEither<TError, T>> either
 	) {
 		return either.FlatMap(v => v);

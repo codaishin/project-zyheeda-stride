@@ -114,7 +114,7 @@ public class BehaviorController : StartupScript, IBehavior {
 				.Apply(agent.ToEither(error: Dependency.Agent))
 				.MapError(dependencies => dependencies.Aggregate((fst, snd) => fst | snd))
 				.MapError(Union.New<Requirement, Type[], Dependency>)
-				.FlatMap()
+				.Flatten()
 				.Switch(
 					error: this.ResetBehaviorAndEquipment(equipment),
 					value: this.SetNewBehavior

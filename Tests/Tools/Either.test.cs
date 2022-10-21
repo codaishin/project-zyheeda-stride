@@ -127,7 +127,7 @@ public class EitherTest : GameTestCollection {
 		var value = Either.New(42).WithNoError<string>();
 		var nested = Either.New(value).WithNoError<string>();
 
-		Assert.That(nested.FlatMap(), Is.SameAs(value));
+		Assert.That(nested.Flatten(), Is.SameAs(value));
 	}
 
 	[Test]
