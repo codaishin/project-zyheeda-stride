@@ -103,58 +103,6 @@ public class BehaviorControllerTest : GameTestCollection {
 	}
 
 	[Test]
-	public void NullEquipmentWhenAssigningInvalidAgent() {
-		var called = 0;
-		var validAgent = new Entity();
-		var equipment = new MockEquipment {
-			getBehaviorFor = (a) => a != validAgent
-				? Either
-					.New(Union.New<Requirement, Type[]>(new[] { typeof(int) }))
-					.WithNoValue<MockBehavior>()
-				: Either
-					.New(new MockBehavior { executeNext = () => ++called })
-					.WithNoError<TMissing>()
-		};
-		var controller = new BehaviorController();
-		controller.equipment.Entity = new Entity { equipment };
-		controller.agent.Entity = validAgent;
-
-		controller.agent.Entity = new Entity();
-
-		controller.Run();
-		Assert.Multiple(() => {
-			Assert.That(controller.equipment.Entity, Is.Null);
-			Assert.That(called, Is.EqualTo(0));
-		});
-	}
-
-	[Test]
-	public void NullEquipmentWhenAssigningInvalidEquipment() {
-		var called = 0;
-		var validEquipment = new MockEquipment {
-			getBehaviorFor = _ => Either
-				.New(new MockBehavior { executeNext = () => ++called })
-				.WithNoError<TMissing>()
-		};
-		var invalidEquipment = new MockEquipment {
-			getBehaviorFor = _ => Either
-				.New(Union.New<Requirement, Type[]>(new[] { typeof(int) }))
-				.WithNoValue<MockBehavior>()
-		};
-		var controller = new BehaviorController();
-		controller.agent.Entity = new Entity();
-		controller.equipment.Entity = new Entity { validEquipment };
-
-		controller.equipment.Entity = new Entity { invalidEquipment };
-
-		controller.Run();
-		Assert.Multiple(() => {
-			Assert.That(controller.equipment.Entity, Is.Null);
-			Assert.That(called, Is.EqualTo(0));
-		});
-	}
-
-	[Test]
 	public void OnErrorEventEquipmentMissing() {
 		var called = Union.New<Requirement, Type[], Dependency>(Dependency.Agent);
 		var controller = new BehaviorController();

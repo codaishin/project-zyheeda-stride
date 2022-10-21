@@ -32,11 +32,6 @@ using TEquipEvents = System.Collections.Generic.List<
 		>
 	>
 >;
-using TMissing = IUnion<
-	Requirement,
-	System.Type[],
-	Dependency
->;
 
 [Flags]
 public enum Dependency {
@@ -67,7 +62,7 @@ public class BehaviorController : StartupScript, IBehavior {
 			.WithNoError<IEnumerable<Dependency>>();
 	}
 
-	private void OnError(TMissing error) {
+	private void OnError(IUnion<Requirement, System.Type[], Dependency> error) {
 		foreach (var @event in this.onEquipError) {
 			@event.Switch(
 				some: value => value.Invoke(error),
@@ -85,14 +80,9 @@ public class BehaviorController : StartupScript, IBehavior {
 		}
 	}
 
-	private Action<TMissing> ResetBehaviorAndEquipment(
-		Reference<IEquipment> equipmentReference
-	) {
-		return error => {
-			equipmentReference.Entity = null;
-			this.behavior = Maybe.None<IBehaviorStateMachine>();
-			this.OnError(error);
-		};
+	private void ResetBehavior(IUnion<Requirement, System.Type[], Dependency> error) {
+		this.behavior = Maybe.None<IBehaviorStateMachine>();
+		this.OnError(error);
 	}
 
 	private void SetNewBehavior(
@@ -103,23 +93,27 @@ public class BehaviorController : StartupScript, IBehavior {
 		this.OnEquip(equipment);
 	}
 
+	private static Dependency DependencyEnumerableToFlag(
+		IEnumerable<Dependency> dependencies
+	) {
+		return dependencies.Aggregate((fst, snd) => fst | snd);
+	}
+
 	private Action UpdateBehavior(
 		Reference<IEquipment> equipment,
 		Reference<Entity> agent
 	) {
-		return () => {
-			BehaviorController
-				.GetBehaviorAndEquipmentFn()
-				.Apply(equipment.ToEither(error: Dependency.Equipment))
-				.Apply(agent.ToEither(error: Dependency.Agent))
-				.MapError(dependencies => dependencies.Aggregate((fst, snd) => fst | snd))
-				.MapError(Union.New<Requirement, Type[], Dependency>)
-				.Flatten()
-				.Switch(
-					error: this.ResetBehaviorAndEquipment(equipment),
-					value: this.SetNewBehavior
-				);
-		};
+		return () => BehaviorController
+			.GetBehaviorAndEquipmentFn()
+			.Apply(equipment.ToEither(error: Dependency.Equipment))
+			.Apply(agent.ToEither(error: Dependency.Agent))
+			.MapError(BehaviorController.DependencyEnumerableToFlag)
+			.MapError(Union.New<Requirement, Type[], Dependency>)
+			.Flatten()
+			.Switch(
+				error: this.ResetBehavior,
+				value: this.SetNewBehavior
+			);
 	}
 
 	public BehaviorController() {
