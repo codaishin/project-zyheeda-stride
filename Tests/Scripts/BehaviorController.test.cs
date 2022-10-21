@@ -3,17 +3,17 @@ namespace Tests;
 using System;
 using NUnit.Framework;
 using ProjectZyheeda;
+using Stride.Core.Mathematics;
 using Stride.Engine;
-
 using TMissing = ProjectZyheeda.IUnion<ProjectZyheeda.Requirement, System.Type[]>;
 
 public class BehaviorControllerTest : GameTestCollection {
 	private class MockBehavior : IBehaviorStateMachine {
-		public Action executeNext = () => { };
+		public Action<IMaybe<IUnion<Vector3, Entity>>> executeNext = _ => { };
 		public Action resetAndIdle = () => { };
 
-		public void ExecuteNext() {
-			this.executeNext();
+		public void ExecuteNext(IMaybe<IUnion<Vector3, Entity>> target) {
+			this.executeNext(target);
 		}
 
 		public void ResetAndIdle() {
@@ -68,10 +68,13 @@ public class BehaviorControllerTest : GameTestCollection {
 
 	[Test]
 	public void OnRunExecuteNext() {
-		var called = 0;
+		var called = Maybe.None<IUnion<Vector3, Entity>>();
+		var mockTarget = new Vector3(1, 2, 3)
+			.Apply(Union.New<Vector3, Entity>)
+			.Apply(Maybe.Some);
 		var equipment = new MockEquipment {
 			getBehaviorFor = _ => Either
-				.New(new MockBehavior { executeNext = () => ++called })
+				.New(new MockBehavior { executeNext = (target) => called = target })
 				.WithNoError<TMissing>()
 		};
 		var controller = new BehaviorController();
@@ -79,9 +82,9 @@ public class BehaviorControllerTest : GameTestCollection {
 		controller.agent.Entity = new();
 		controller.equipment.Entity = new Entity { equipment };
 
-		controller.Run();
+		controller.Run(mockTarget);
 
-		Assert.That(called, Is.EqualTo(1));
+		Assert.That(called, Is.SameAs(mockTarget));
 	}
 
 	[Test]
