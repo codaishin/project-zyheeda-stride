@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Stride.Core.Mathematics;
 using Stride.Engine;
 using TBehaviorAndEquipmentFn = System.Func<
 	IEquipment,
@@ -127,9 +128,9 @@ public class BehaviorController : StartupScript, IBehavior {
 
 	public override void Start() { }
 
-	public void Run() {
+	public void Run(IMaybe<IUnion<Vector3, Entity>> target) {
 		this.behavior.Switch(
-			some: b => b.ExecuteNext(),
+			some: b => b.ExecuteNext(target),
 			none: BehaviorController.Idle
 		);
 	}
