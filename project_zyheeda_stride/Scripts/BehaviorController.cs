@@ -105,8 +105,8 @@ public class BehaviorController : StartupScript, IBehavior {
 	) {
 		return () => BehaviorController
 			.GetBehaviorAndEquipmentFn()
-			.Apply(equipment.ToEither(error: Dependency.Equipment))
-			.Apply(agent.ToEither(error: Dependency.Agent))
+			.ApplyWeak(equipment.ToEither(error: Dependency.Equipment))
+			.ApplyWeak(agent.ToEither(error: Dependency.Agent))
 			.MapError(BehaviorController.DependencyEnumerableToFlag)
 			.MapError(Union.New<Requirement, Type[], Dependency>)
 			.Flatten()

@@ -81,7 +81,7 @@ public static class Either {
 		return apply.FlatMap(func => either.Map(v => func(v)));
 	}
 
-	public static IEither<IEnumerable<TError>, TOut> Apply<TError, TIn, TOut>(
+	public static IEither<IEnumerable<TError>, TOut> ApplyWeak<TError, TIn, TOut>(
 		this IEither<IEnumerable<TError>, Func<TIn, TOut>> apply,
 		IEither<TError, TIn> either
 	) {
