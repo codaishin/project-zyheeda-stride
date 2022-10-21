@@ -127,7 +127,7 @@ public class EitherTest : GameTestCollection {
 		var value = Either.New(42).WithNoError<string>();
 		var nested = Either.New(value).WithNoError<string>();
 
-		Assert.That(nested.FlatMap(), Is.SameAs(value));
+		Assert.That(nested.Flatten(), Is.SameAs(value));
 	}
 
 	[Test]
@@ -225,9 +225,9 @@ public class EitherTest : GameTestCollection {
 			.WithNoError<IEnumerable<string>>();
 
 		var result = sum
-			.Apply(fst)
-			.Apply(snd)
-			.Apply(trd);
+			.ApplyWeak(fst)
+			.ApplyWeak(snd)
+			.ApplyWeak(trd);
 
 		Assert.That(result.UnpackOr(-1), Is.EqualTo(42));
 	}
@@ -243,9 +243,9 @@ public class EitherTest : GameTestCollection {
 			.WithNoError<IEnumerable<string>>();
 
 		var result = sum
-			.Apply(fst)
-			.Apply(snd)
-			.Apply(trd);
+			.ApplyWeak(fst)
+			.ApplyWeak(snd)
+			.ApplyWeak(trd);
 
 		CollectionAssert.AreEqual(
 			new[] { "ERROR 2", "ERROR 3" },

@@ -81,7 +81,7 @@ public class MaybeTest : GameTestCollection {
 		var some = Maybe.Some(42);
 		var nested = Maybe.Some(some);
 
-		Assert.That(nested.FlatMap(), Is.SameAs(some));
+		Assert.That(nested.Flatten(), Is.SameAs(some));
 	}
 
 	[Test]

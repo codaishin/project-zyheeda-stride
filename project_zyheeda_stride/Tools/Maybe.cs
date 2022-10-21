@@ -25,7 +25,7 @@ public static class Maybe {
 		return maybe.Switch(v => mapper(v), () => Maybe.None<TOut>());
 	}
 
-	public static IMaybe<TIn> FlatMap<TIn>(this IMaybe<IMaybe<TIn>> maybe) {
+	public static IMaybe<TIn> Flatten<TIn>(this IMaybe<IMaybe<TIn>> maybe) {
 		return maybe.FlatMap(v => v);
 	}
 
