@@ -5,12 +5,13 @@ using System.Collections.Generic;
 using System.Linq;
 using Stride.Core.Mathematics;
 using Stride.Engine;
+using BehaviorError = U<Requirement, System.Type[], DependencyError>;
 using TBehaviorAndEquipmentFn = System.Func<
 	IEquipment,
 	System.Func<
 		Stride.Engine.Entity,
 		IEither<
-			IUnion<Requirement, System.Type[], Dependency>,
+			U<Requirement, System.Type[], DependencyError>,
 			(IBehaviorStateMachine, IEquipment)
 		>
 	>
@@ -18,10 +19,10 @@ using TBehaviorAndEquipmentFn = System.Func<
 using TEquipErrorEvents = System.Collections.Generic.List<
 	Reference<
 		IEvent<
-			IUnion<
+			U<
 				Requirement,
 				System.Type[],
-				Dependency
+				DependencyError
 			>
 		>
 	>
@@ -35,7 +36,7 @@ using TEquipEvents = System.Collections.Generic.List<
 >;
 
 [Flags]
-public enum Dependency {
+public enum DependencyError {
 	Agent = 0b0001,
 	Equipment = 0b0010,
 }
@@ -52,20 +53,23 @@ public class BehaviorController : StartupScript, IBehavior {
 
 	private static void Idle() { }
 
-	private static IEither<IEnumerable<Dependency>, TBehaviorAndEquipmentFn> GetBehaviorAndEquipmentFn() {
-		var func = (IEquipment equipment) => (Entity agent) => equipment
-			.GetBehaviorFor(agent)
-			.MapError(Union.Expand<Requirement, Type[], Dependency>)
-			.Map(behavior => (behavior, equipment));
+	private static IEither<IEnumerable<DependencyError>, TBehaviorAndEquipmentFn> GetBehaviorAndEquipmentFn() {
+		var getBehaviorAndEquipment =
+			(IEquipment equipment) =>
+			(Entity agent) =>
+				equipment
+					.GetBehaviorFor(agent)
+					.MapError(e => (BehaviorError)e)
+					.Map(behavior => (behavior, equipment));
 
 		return Either
-			.New(func)
-			.WithNoError<IEnumerable<Dependency>>();
+			.New(getBehaviorAndEquipment)
+			.WithNoError<IEnumerable<DependencyError>>();
 	}
 
-	private void OnError(IUnion<Requirement, System.Type[], Dependency> error) {
-		foreach (var @event in this.onEquipError) {
-			@event.Switch(
+	private void OnError(BehaviorError error) {
+		foreach (var onEquipErrorEvent in this.onEquipError) {
+			onEquipErrorEvent.Switch(
 				some: value => value.Invoke(error),
 				none: BehaviorController.Idle
 			);
@@ -73,15 +77,15 @@ public class BehaviorController : StartupScript, IBehavior {
 	}
 
 	private void OnEquip(IEquipment equipment) {
-		foreach (var @event in this.onEquip) {
-			@event.Switch(
+		foreach (var onEquipEvent in this.onEquip) {
+			onEquipEvent.Switch(
 				some: value => value.Invoke(equipment),
 				none: BehaviorController.Idle
 			);
 		}
 	}
 
-	private void ResetBehavior(IUnion<Requirement, System.Type[], Dependency> error) {
+	private void ResetBehavior(BehaviorError error) {
 		this.behavior = Maybe.None<IBehaviorStateMachine>();
 		this.OnError(error);
 	}
@@ -94,8 +98,8 @@ public class BehaviorController : StartupScript, IBehavior {
 		this.OnEquip(equipment);
 	}
 
-	private static Dependency DependencyEnumerableToFlag(
-		IEnumerable<Dependency> dependencies
+	private static BehaviorError CombineDependencyErrors(
+		IEnumerable<DependencyError> dependencies
 	) {
 		return dependencies.Aggregate((fst, snd) => fst | snd);
 	}
@@ -106,10 +110,9 @@ public class BehaviorController : StartupScript, IBehavior {
 	) {
 		return () => BehaviorController
 			.GetBehaviorAndEquipmentFn()
-			.ApplyWeak(equipment.ToEither(error: Dependency.Equipment))
-			.ApplyWeak(agent.ToEither(error: Dependency.Agent))
-			.MapError(BehaviorController.DependencyEnumerableToFlag)
-			.MapError(Union.New<Requirement, Type[], Dependency>)
+			.ApplyWeak(equipment.ToEither(error: DependencyError.Equipment))
+			.ApplyWeak(agent.ToEither(error: DependencyError.Agent))
+			.MapError(BehaviorController.CombineDependencyErrors)
 			.Flatten()
 			.Switch(
 				error: this.ResetBehavior,
@@ -128,7 +131,7 @@ public class BehaviorController : StartupScript, IBehavior {
 
 	public override void Start() { }
 
-	public void Run(IMaybe<IUnion<Vector3, Entity>> target) {
+	public void Run(IMaybe<U<Vector3, Entity>> target) {
 		this.behavior.Switch(
 			some: b => b.ExecuteNext(target),
 			none: BehaviorController.Idle

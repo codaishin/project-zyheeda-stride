@@ -3,7 +3,7 @@ namespace ProjectZyheeda;
 using System;
 using Stride.Engine;
 
-using TMissing = IUnion<Requirement, System.Type[]>;
+using TMissing = U<Requirement, System.Type[]>;
 
 [Flags]
 public enum Requirement {
