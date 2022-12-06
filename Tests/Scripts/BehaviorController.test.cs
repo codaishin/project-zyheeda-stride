@@ -5,14 +5,14 @@ using NUnit.Framework;
 using ProjectZyheeda;
 using Stride.Core.Mathematics;
 using Stride.Engine;
-using TMissing = ProjectZyheeda.IUnion<ProjectZyheeda.Requirement, System.Type[]>;
+using TMissing = ProjectZyheeda.U<ProjectZyheeda.Requirement, System.Type[]>;
 
 public class BehaviorControllerTest : GameTestCollection {
 	private class MockBehavior : IBehaviorStateMachine {
-		public Action<IMaybe<IUnion<Vector3, Entity>>> executeNext = _ => { };
+		public Action<IMaybe<U<Vector3, Entity>>> executeNext = _ => { };
 		public Action resetAndIdle = () => { };
 
-		public void ExecuteNext(IMaybe<IUnion<Vector3, Entity>> target) {
+		public void ExecuteNext(IMaybe<U<Vector3, Entity>> target) {
 			this.executeNext(target);
 		}
 
@@ -68,10 +68,9 @@ public class BehaviorControllerTest : GameTestCollection {
 
 	[Test]
 	public void OnRunExecuteNext() {
-		var called = Maybe.None<IUnion<Vector3, Entity>>();
-		var mockTarget = new Vector3(1, 2, 3)
-			.Apply(Union.New<Vector3, Entity>)
-			.Apply(Maybe.Some);
+		var called = Maybe.None<U<Vector3, Entity>>();
+		var vector = new Vector3(1, 2, 3);
+		var mockTarget = new U<Vector3, Entity>(vector).Apply(Maybe.Some);
 		var equipment = new MockEquipment {
 			getBehaviorFor = _ => Either
 				.New(new MockBehavior { executeNext = (target) => called = target })
@@ -107,15 +106,15 @@ public class BehaviorControllerTest : GameTestCollection {
 
 	[Test]
 	public void OnErrorEventEquipmentMissing() {
-		var called = Union.New<Requirement, Type[], Dependency>(Dependency.Agent);
+		var called = (U<Requirement, Type[], DependencyError>)DependencyError.Agent;
 		var controller = new BehaviorController();
 		var onErrorEntity = new Entity {
-			new MockEvent<IUnion<Requirement, Type[], Dependency>> {
+			new MockEvent<U<Requirement, Type[], DependencyError>> {
 				invoke = data => called = data
 			},
 		};
 		controller.onEquipError.Add(
-			new Reference<IEvent<IUnion<Requirement, Type[], Dependency>>> {
+			new Reference<IEvent<U<Requirement, Type[], DependencyError>>> {
 				Entity = onErrorEntity
 			}
 		);
@@ -123,25 +122,25 @@ public class BehaviorControllerTest : GameTestCollection {
 		controller.agent.Entity = new();
 
 		var dependency = called.Switch(
-			(Requirement _) => Dependency.Agent,
-			(Type[] _) => Dependency.Agent,
-			(Dependency d) => d
+			(Requirement _) => DependencyError.Agent,
+			(Type[] _) => DependencyError.Agent,
+			(DependencyError d) => d
 		);
-		Assert.That(dependency, Is.EqualTo(Dependency.Equipment));
+		Assert.That(dependency, Is.EqualTo(DependencyError.Equipment));
 	}
 
 	[Test]
 	public void OnErrorEventAgentMissing() {
-		var called = Union.New<Requirement, Type[], Dependency>(Dependency.Equipment);
+		var called = (U<Requirement, Type[], DependencyError>)DependencyError.Equipment;
 		var equipment = new MockEquipment();
 		var controller = new BehaviorController();
 		var onErrorEntity = new Entity {
-			new MockEvent<IUnion<Requirement, Type[], Dependency>> {
+			new MockEvent<U<Requirement, Type[], DependencyError>> {
 				invoke = data => called = data
 			},
 		};
 		controller.onEquipError.Add(
-			new Reference<IEvent<IUnion<Requirement, Type[], Dependency>>> {
+			new Reference<IEvent<U<Requirement, Type[], DependencyError>>> {
 				Entity = onErrorEntity
 			}
 		);
@@ -149,24 +148,24 @@ public class BehaviorControllerTest : GameTestCollection {
 		controller.equipment.Entity = new Entity { new MockEquipment() };
 
 		var dependency = called.Switch(
-			(Requirement _) => Dependency.Equipment,
-			(Type[] _) => Dependency.Equipment,
-			(Dependency d) => d
+			(Requirement _) => DependencyError.Equipment,
+			(Type[] _) => DependencyError.Equipment,
+			(DependencyError d) => d
 		);
-		Assert.That(dependency, Is.EqualTo(Dependency.Agent));
+		Assert.That(dependency, Is.EqualTo(DependencyError.Agent));
 	}
 
 	[Test]
 	public void OnErrorEventAgentAndEquipmentMissing() {
-		var called = Union.New<Requirement, Type[], Dependency>((Dependency)0);
+		var called = (U<Requirement, Type[], DependencyError>)(DependencyError)0;
 		var controller = new BehaviorController();
 		var onErrorEntity = new Entity {
-			new MockEvent<IUnion<Requirement, Type[], Dependency>> {
+			new MockEvent<U<Requirement, Type[], DependencyError>> {
 				invoke = data => called = data
 			},
 		};
 		controller.onEquipError.Add(
-			new Reference<IEvent<IUnion<Requirement, Type[], Dependency>>> {
+			new Reference<IEvent<U<Requirement, Type[], DependencyError>>> {
 				Entity = onErrorEntity
 			}
 		);
@@ -176,12 +175,12 @@ public class BehaviorControllerTest : GameTestCollection {
 		controller.equipment.Entity = null;
 
 		var dependency = called.Switch(
-			(Requirement _) => (Dependency)0,
-			(Type[] _) => (Dependency)0,
-			(Dependency d) => d
+			(Requirement _) => (DependencyError)0,
+			(Type[] _) => (DependencyError)0,
+			(DependencyError d) => d
 		);
 
-		Assert.That(dependency, Is.EqualTo(Dependency.Agent | Dependency.Equipment));
+		Assert.That(dependency, Is.EqualTo(DependencyError.Agent | DependencyError.Equipment));
 	}
 
 	[Test]
