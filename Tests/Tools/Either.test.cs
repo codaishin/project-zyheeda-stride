@@ -1,5 +1,6 @@
 namespace Tests;
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
@@ -8,32 +9,50 @@ using ProjectZyheeda;
 public class EitherTest : GameTestCollection {
 	[Test]
 	public void SwitchValue() {
-		var either = Either.New(42).WithNoError<string>();
-
-		var value = either.Switch(
-			error: _ => -1,
-			value: v => v
+		var either = new Either<int, string>("42");
+		var result = either.Switch(
+			error: _ => "-1",
+			value: v => v + "!"
 		);
-
-		Assert.That(value, Is.EqualTo(42));
+		Assert.That(result, Is.EqualTo("42!"));
 	}
 
 	[Test]
 	public void SwitchError() {
-		var either = Either.New("ERROR").WithNoValue<int>();
-
-		var value = either.Switch(
-			error: v => v,
-			value: _ => "OKAY"
+		var either = new Either<int, string>(42);
+		var result = either.Switch(
+			error: v => v + 1,
+			value: _ => -1
 		);
-
-		Assert.That(value, Is.EqualTo("ERROR"));
+		Assert.That(result, Is.EqualTo(43));
 	}
 
 	[Test]
+	public void ValueToEither() {
+		Either<int, string> either = "42";
+		var result = either.Switch(
+			error: _ => "-1",
+			value: v => v + "!"
+		);
+		Assert.That(result, Is.EqualTo("42!"));
+	}
+
+	[Test]
+	public void ErrorToEither() {
+		Either<int, string> either = 42;
+		var result = either.Switch(
+			error: v => v + 1,
+			value: _ => -1
+		);
+		Assert.That(result, Is.EqualTo(43));
+	}
+}
+
+public class EitherToolTest : GameTestCollection {
+	[Test]
 	public void MapErrorToError() {
 		var fifth = (int v) => (float)v / 5;
-		var result = Either.New("ERROR").WithNoValue<int>().Map(fifth);
+		var result = new Either<string, int>("ERROR");
 
 		var value = result.Switch(
 			error: e => e,
@@ -46,7 +65,7 @@ public class EitherTest : GameTestCollection {
 	[Test]
 	public void MapValueToValue() {
 		var fifth = (int v) => (float)v / 5;
-		var result = Either.New(42).WithNoError<string>().Map(fifth);
+		var result = new Either<string, int>(42).Map(fifth);
 
 		var value = result.Switch(
 			error: _ => 0f,
@@ -59,7 +78,7 @@ public class EitherTest : GameTestCollection {
 	[Test]
 	public void MapErrorErrorToError() {
 		var toLength = (string v) => v.Length;
-		var result = Either.New("ERROR").WithNoValue<float>().MapError(toLength);
+		var result = new Either<string, int>("ERROR").MapError(toLength);
 
 		var value = result.Switch(
 			error: e => e,
@@ -72,7 +91,7 @@ public class EitherTest : GameTestCollection {
 	[Test]
 	public void MapErrorValueToValue() {
 		var toLength = (string v) => v.Length;
-		var result = Either.New(4.2f).WithNoError<string>().MapError(toLength);
+		var result = new Either<string, float>(4.2f).MapError(toLength);
 
 		var value = result.Switch(
 			error: _ => -1f,
@@ -84,8 +103,8 @@ public class EitherTest : GameTestCollection {
 
 	[Test]
 	public void FlatMapEitherWithValueAndMapOkayToValue() {
-		var inverse = (int v) => Either.New((float)1 / v).WithNoError<string>();
-		var result = Either.New(42).WithNoError<string>().FlatMap(inverse);
+		var inverse = (int v) => new Either<string, float>((float)1 / v);
+		var result = new Either<string, int>(42).FlatMap(inverse);
 
 		var value = result.Switch(
 			error: _ => 0f,
@@ -98,8 +117,8 @@ public class EitherTest : GameTestCollection {
 	[Test]
 	public void FlatMapEitherWithValueAndMapErrorToError() {
 		var errorMsg = "non divisible by the answer to the universe and everything";
-		var inverse = (int v) => Either.New(errorMsg).WithNoValue<float>();
-		var result = Either.New(42).WithNoError<string>().FlatMap(inverse);
+		var inverse = (int v) => new Either<string, float>(errorMsg);
+		var result = new Either<string, int>(42).FlatMap(inverse);
 
 		var value = result.Switch(
 			error: e => e,
@@ -111,8 +130,8 @@ public class EitherTest : GameTestCollection {
 
 	[Test]
 	public void FlatMapEitherWithErrorToError() {
-		var inverse = (int v) => Either.New((float)1 / v).WithNoError<string>();
-		var result = Either.New("ERROR").WithNoValue<int>().FlatMap(inverse);
+		var inverse = (int v) => new Either<string, float>((float)1 / v);
+		var result = new Either<string, int>("ERROR").FlatMap(inverse);
 
 		var value = result.Switch(
 			error: e => e,
@@ -124,39 +143,39 @@ public class EitherTest : GameTestCollection {
 
 	[Test]
 	public void FlatMapSelf() {
-		var value = Either.New(42).WithNoError<string>();
-		var nested = Either.New(value).WithNoError<string>();
+		var value = new Either<string, int>(42);
+		var nested = new Either<string, Either<string, int>>(value);
 
-		Assert.That(nested.Flatten(), Is.SameAs(value));
+		Assert.That(nested.Flatten().UnpackOr(-1), Is.EqualTo(42));
 	}
 
 	[Test]
 	public void UnpackFallbackWhenError() {
-		var error = Either.New("ERROR").WithNoValue<float>();
+		var error = new Either<string, float>("ERROR");
 		Assert.That(error.UnpackOr(-4.2f), Is.EqualTo(-4.2f));
 	}
 
 	[Test]
 	public void UnpackValue() {
-		var value = Either.New(4.2f).WithNoError<string>();
+		var value = new Either<string, float>(4.2f);
 		Assert.That(value.UnpackOr(42f), Is.EqualTo(4.2f));
 	}
 
 	[Test]
 	public void UnpackErrorWhenError() {
-		var error = Either.New("ERROR").WithNoValue<float>();
+		var error = new Either<string, float>("ERROR");
 		Assert.That(error.UnpackErrorOr(""), Is.EqualTo("ERROR"));
 	}
 
 	[Test]
 	public void UnpackErrorWhenNoError() {
-		var value = Either.New(4.2f).WithNoError<string>();
+		var value = new Either<string, float>(4.2f);
 		Assert.That(value.UnpackErrorOr("NO ERROR"), Is.EqualTo("NO ERROR"));
 	}
 
 	[Test]
 	public void SwitchValueAction() {
-		var value = Either.New(42).WithNoError<string>();
+		var value = new Either<string, int>(42);
 		var result = 0;
 
 		value.Switch(
@@ -168,7 +187,7 @@ public class EitherTest : GameTestCollection {
 
 	[Test]
 	public void SwitchErrorAction() {
-		var value = Either.New("ERROR").WithNoValue<int>();
+		var value = new Either<string, int>("ERROR");
 		var result = "";
 
 		value.Switch(
@@ -180,13 +199,13 @@ public class EitherTest : GameTestCollection {
 
 	[Test]
 	public void ApplyMultipleElements() {
-		var fst = Either.New(4).WithNoError<string>();
-		var snd = Either.New(15).WithNoError<string>();
-		var trd = Either.New(23).WithNoError<string>();
+		var fst = new Either<string, int>(4);
+		var snd = new Either<string, int>(15);
+		var trd = new Either<string, int>(23);
 
-		var sum = Either
-			.New((int a) => (int b) => (int c) => a + b + c)
-			.WithNoError<string>();
+		var sum = new Either<string, Func<int, Func<int, Func<int, int>>>>(
+			(int a) => (int b) => (int c) => a + b + c
+		);
 
 		var result = sum
 			.Apply(fst)
@@ -198,13 +217,13 @@ public class EitherTest : GameTestCollection {
 
 	[Test]
 	public void ApplyMultipleElementsError() {
-		var fst = Either.New(4).WithNoError<string>();
-		var snd = Either.New("ERROR").WithNoValue<int>();
-		var trd = Either.New(23).WithNoError<string>();
+		var fst = new Either<string, int>(4);
+		var snd = new Either<string, int>("ERROR");
+		var trd = new Either<string, int>(23);
 
-		var sum = Either
-			.New((int a) => (int b) => (int c) => a + b + c)
-			.WithNoError<string>();
+		var sum = new Either<string, Func<int, Func<int, Func<int, int>>>>(
+			(int a) => (int b) => (int c) => a + b + c
+		);
 
 		var result = sum
 			.Apply(fst)
@@ -216,13 +235,13 @@ public class EitherTest : GameTestCollection {
 
 	[Test]
 	public void ApplyMultipleElementsAndConcatError() {
-		var fst = Either.New(4).WithNoError<string>();
-		var snd = Either.New(15).WithNoError<string>();
-		var trd = Either.New(23).WithNoError<string>();
+		var fst = new Either<string, int>(4);
+		var snd = new Either<string, int>(15);
+		var trd = new Either<string, int>(23);
 
-		var sum = Either
-			.New((int a) => (int b) => (int c) => a + b + c)
-			.WithNoError<IEnumerable<string>>();
+		var sum = new Either<IEnumerable<string>, Func<int, Func<int, Func<int, int>>>>(
+			(int a) => (int b) => (int c) => a + b + c
+		);
 
 		var result = sum
 			.ApplyWeak(fst)
@@ -234,13 +253,13 @@ public class EitherTest : GameTestCollection {
 
 	[Test]
 	public void ApplyMultipleElementsErrorConcatElementErrors() {
-		var fst = Either.New(4).WithNoError<string>();
-		var snd = Either.New("ERROR 2").WithNoValue<int>();
-		var trd = Either.New("ERROR 3").WithNoValue<int>();
+		var fst = new Either<string, int>(4);
+		var snd = new Either<string, int>("ERROR 2");
+		var trd = new Either<string, int>("ERROR 3");
 
-		var sum = Either
-			.New((int a) => (int b) => (int c) => a + b + c)
-			.WithNoError<IEnumerable<string>>();
+		var sum = new Either<IEnumerable<string>, Func<int, Func<int, Func<int, int>>>>(
+			(int a) => (int b) => (int c) => a + b + c
+		);
 
 		var result = sum
 			.ApplyWeak(fst)
@@ -255,7 +274,7 @@ public class EitherTest : GameTestCollection {
 
 	[Test]
 	public void ValueToSome() {
-		var value = Either.New(42).WithNoError<string>();
+		var value = new Either<string, int>(42);
 		var some = value.ToMaybe();
 
 		Assert.That(some.UnpackOr(-1), Is.EqualTo(42));
@@ -263,7 +282,7 @@ public class EitherTest : GameTestCollection {
 
 	[Test]
 	public void ErrorToNone() {
-		var value = Either.New("Error").WithNoValue<int>();
+		var value = new Either<string, int>("Error");
 		var some = value.ToMaybe();
 
 		Assert.That(some.UnpackOr(-1), Is.EqualTo(-1));

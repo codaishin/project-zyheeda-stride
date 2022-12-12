@@ -10,7 +10,7 @@ using TBehaviorAndEquipmentFn = System.Func<
 	IEquipment,
 	System.Func<
 		Stride.Engine.Entity,
-		IEither<
+		Either<
 			U<Requirement, System.Type[], DependencyError>,
 			(IBehaviorStateMachine, IEquipment)
 		>
@@ -53,7 +53,7 @@ public class BehaviorController : StartupScript, IBehavior {
 
 	private static void Idle() { }
 
-	private static IEither<IEnumerable<DependencyError>, TBehaviorAndEquipmentFn> GetBehaviorAndEquipmentFn() {
+	private static Either<IEnumerable<DependencyError>, TBehaviorAndEquipmentFn> GetBehaviorAndEquipmentFn() {
 		var getBehaviorAndEquipment =
 			(IEquipment equipment) =>
 			(Entity agent) =>
@@ -62,9 +62,7 @@ public class BehaviorController : StartupScript, IBehavior {
 					.MapError(e => (BehaviorError)e)
 					.Map(behavior => (behavior, equipment));
 
-		return Either
-			.New(getBehaviorAndEquipment)
-			.WithNoError<IEnumerable<DependencyError>>();
+		return getBehaviorAndEquipment;
 	}
 
 	private void OnError(BehaviorError error) {

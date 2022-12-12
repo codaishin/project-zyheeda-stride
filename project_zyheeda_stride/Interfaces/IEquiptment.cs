@@ -13,5 +13,5 @@ public enum Requirement {
 }
 
 public interface IEquipment {
-	IEither<TMissing, IBehaviorStateMachine> GetBehaviorFor(Entity agent);
+	Either<TMissing, IBehaviorStateMachine> GetBehaviorFor(Entity agent);
 }
