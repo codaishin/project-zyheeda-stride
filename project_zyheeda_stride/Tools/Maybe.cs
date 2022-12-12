@@ -52,9 +52,9 @@ public static class Maybe {
 		this IMaybe<T> maybe,
 		TError error
 	) {
-		return maybe.Switch(
-			some: v => EitherTools.New(v).WithNoError<TError>(),
-			none: () => EitherTools.New(error).WithNoValue<T>()
+		return maybe.Switch<Either<TError, T>>(
+			some: v => v,
+			none: () => error
 		);
 	}
 

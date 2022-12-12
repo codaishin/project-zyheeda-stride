@@ -22,7 +22,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(agent))
-			.Returns(EitherTools.New(behavior).WithNoError<TMissing>());
+			.Returns(new Either<TMissing, IBehaviorStateMachine>(behavior));
 
 		controller.agent.Entity = agent;
 		controller.equipment.Entity = new Entity {
@@ -41,7 +41,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
-			.Returns(EitherTools.New(behavior).WithNoError<TMissing>());
+			.Returns(new Either<TMissing, IBehaviorStateMachine>(behavior));
 
 		controller.agent.Entity = new();
 		controller.equipment.Entity = new Entity {
@@ -61,7 +61,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
-			.Returns(EitherTools.New(behavior).WithNoError<TMissing>());
+			.Returns(new Either<TMissing, IBehaviorStateMachine>(behavior));
 
 		controller.agent.Entity = new();
 		controller.equipment.Entity = new Entity {
@@ -137,7 +137,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
-			.Returns(EitherTools.New(behavior).WithNoError<TMissing>());
+			.Returns(new Either<TMissing, IBehaviorStateMachine>(behavior));
 
 		controller.onEquip.Add(eventRef);
 		controller.agent.Entity = new();

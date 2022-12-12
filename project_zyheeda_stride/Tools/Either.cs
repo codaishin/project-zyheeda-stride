@@ -29,17 +29,13 @@ public struct Either<TError, T> : IEither<TError, T> {
 }
 
 public static class EitherTools {
-	public static IEitherPartial<TErrorOrT> New<TErrorOrT>(TErrorOrT errorOrValue) {
-		return new EitherTools.Partial<TErrorOrT> { errorOrValue = errorOrValue };
-	}
-
 	public static IEither<TError, TOut> Map<TError, T, TOut>(
 		this IEither<TError, T> either,
 		Func<T, TOut> map
 	) {
-		return either.Switch(
-			error => EitherTools.New(error).WithNoValue<TOut>(),
-			value => EitherTools.New(map(value)).WithNoError<TError>()
+		return either.Switch<Either<TError, TOut>>(
+			error => error,
+			value => map(value)
 		);
 	}
 
@@ -47,9 +43,9 @@ public static class EitherTools {
 		this IEither<TError, T> either,
 		Func<TError, TErrorOut> map
 	) {
-		return either.Switch(
-			error => EitherTools.New(map(error)).WithNoValue<T>(),
-			value => EitherTools.New<T>(value).WithNoError<TErrorOut>()
+		return either.Switch<Either<TErrorOut, T>>(
+			error => map(error),
+			value => value
 		);
 	}
 
@@ -58,7 +54,7 @@ public static class EitherTools {
 		Func<T, IEither<TError, TOut>> map
 	) {
 		return either.Switch(
-			error => EitherTools.New(error).WithNoValue<TOut>(),
+			error => (Either<TError, TOut>)error,
 			value => map(value)
 		);
 	}
@@ -110,13 +106,13 @@ public static class EitherTools {
 		IEither<TError, TIn> either
 	) {
 		return apply.Switch(
-			errors => either.Switch(
-				error => EitherTools.New(errors.Append(error)).WithNoValue<TOut>(),
-				value => EitherTools.New(errors).WithNoValue<TOut>()
+			errors => either.Switch<Either<IEnumerable<TError>, TOut>>(
+				error => new Either<IEnumerable<TError>, TOut>(errors.Append(error)),
+				value => new Either<IEnumerable<TError>, TOut>(errors)
 			),
-			func => either.Switch(
-				error => EitherTools.New(EitherTools.FirstError(error)).WithNoValue<TOut>(),
-				value => EitherTools.New(func(value)).WithNoError<IEnumerable<TError>>()
+			func => either.Switch<Either<IEnumerable<TError>, TOut>>(
+				error => new Either<IEnumerable<TError>, TOut>(EitherTools.FirstError(error)),
+				value => func(value)
 			)
 		);
 	}
@@ -130,39 +126,5 @@ public static class EitherTools {
 
 	private static IEnumerable<TError> FirstError<TError>(TError error) {
 		yield return error;
-	}
-
-	private struct Partial<TErrorOrT> : IEitherPartial<TErrorOrT> {
-		public TErrorOrT errorOrValue;
-
-		public IEither<TError, TErrorOrT> WithNoError<TError>() {
-			return new EitherTools.WithValue<TError, TErrorOrT> { value = this.errorOrValue };
-		}
-
-		public IEither<TErrorOrT, T> WithNoValue<T>() {
-			return new EitherTools.WithError<TErrorOrT, T> { error = this.errorOrValue };
-		}
-	}
-
-	private struct WithValue<TError, T> : IEither<TError, T> {
-		public T value;
-
-		public TOut Switch<TOut>(
-			System.Func<TError, TOut> error,
-			System.Func<T, TOut> value
-		) {
-			return value(this.value);
-		}
-	}
-
-	private struct WithError<TError, T> : IEither<TError, T> {
-		public TError error;
-
-		public TOut Switch<TOut>(
-			System.Func<TError, TOut> error,
-			System.Func<T, TOut> value
-		) {
-			return error(this.error);
-		}
 	}
 }
