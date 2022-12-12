@@ -103,7 +103,7 @@ public class EitherToolTest : GameTestCollection {
 
 	[Test]
 	public void FlatMapEitherWithValueAndMapOkayToValue() {
-		var inverse = (int v) => (IEither<string, float>)new Either<string, float>((float)1 / v);
+		var inverse = (int v) => new Either<string, float>((float)1 / v);
 		var result = new Either<string, int>(42).FlatMap(inverse);
 
 		var value = result.Switch(
@@ -117,7 +117,7 @@ public class EitherToolTest : GameTestCollection {
 	[Test]
 	public void FlatMapEitherWithValueAndMapErrorToError() {
 		var errorMsg = "non divisible by the answer to the universe and everything";
-		var inverse = (int v) => (IEither<string, float>)new Either<string, float>(errorMsg);
+		var inverse = (int v) => new Either<string, float>(errorMsg);
 		var result = new Either<string, int>(42).FlatMap(inverse);
 
 		var value = result.Switch(
@@ -130,7 +130,7 @@ public class EitherToolTest : GameTestCollection {
 
 	[Test]
 	public void FlatMapEitherWithErrorToError() {
-		var inverse = (int v) => (IEither<string, float>)new Either<string, float>((float)1 / v);
+		var inverse = (int v) => new Either<string, float>((float)1 / v);
 		var result = new Either<string, int>("ERROR").FlatMap(inverse);
 
 		var value = result.Switch(
@@ -143,10 +143,10 @@ public class EitherToolTest : GameTestCollection {
 
 	[Test]
 	public void FlatMapSelf() {
-		IEither<string, int> value = new Either<string, int>(42);
-		Either<string, IEither<string, int>> nested = new(value);
+		var value = new Either<string, int>(42);
+		var nested = new Either<string, Either<string, int>>(value);
 
-		Assert.That(nested.Flatten(), Is.SameAs(value));
+		Assert.That(nested.Flatten().UnpackOr(-1), Is.EqualTo(42));
 	}
 
 	[Test]

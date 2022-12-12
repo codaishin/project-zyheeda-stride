@@ -48,7 +48,7 @@ public static class Maybe {
 		return apply.FlatMap(func => maybe.Map(func));
 	}
 
-	public static IEither<TError, T> ToEither<TError, T>(
+	public static Either<TError, T> ToEither<TError, T>(
 		this IMaybe<T> maybe,
 		TError error
 	) {

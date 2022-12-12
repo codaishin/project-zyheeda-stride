@@ -10,7 +10,7 @@ using TBehaviorAndEquipmentFn = System.Func<
 	IEquipment,
 	System.Func<
 		Stride.Engine.Entity,
-		IEither<
+		Either<
 			U<Requirement, System.Type[], DependencyError>,
 			(IBehaviorStateMachine, IEquipment)
 		>
