@@ -1,206 +1,153 @@
 namespace Tests;
 
-using System;
+using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
 using Stride.Core.Mathematics;
 using Stride.Engine;
+using TBehaviorError = ProjectZyheeda.U<
+	ProjectZyheeda.Requirement,
+	System.Type[],
+	ProjectZyheeda.DependencyError
+>;
 using TMissing = ProjectZyheeda.U<ProjectZyheeda.Requirement, System.Type[]>;
 
 public class BehaviorControllerTest : GameTestCollection {
-	private class MockBehavior : IBehaviorStateMachine {
-		public Action<U<Vector3, Entity>[]> executeNext = _ => { };
-		public Action resetAndIdle = () => { };
-
-		public void ExecuteNext(U<Vector3, Entity>[] targets) {
-			this.executeNext(targets);
-		}
-
-		public void ResetAndIdle() {
-			this.resetAndIdle();
-		}
-	}
-
-	private class MockEquipment : EntityComponent, IEquipment {
-		public delegate IEither<TMissing, MockBehavior> GetBehaviorFn(Entity agent);
-
-		public GetBehaviorFn getBehaviorFor =
-			_ => Either
-				.New(new MockBehavior())
-				.WithNoError<TMissing>();
-
-		public IEither<TMissing, IBehaviorStateMachine> GetBehaviorFor(Entity agent) {
-			return this.getBehaviorFor(agent).Switch(
-				error => Either
-					.New(error)
-					.WithNoValue<IBehaviorStateMachine>(),
-				value => Either
-					.New<IBehaviorStateMachine>(value)
-					.WithNoError<TMissing>()
-			);
-		}
-	}
-
-	private class MockEvent<T> : EntityComponent, IEvent<T> {
-		public Action<T> invoke = _ => { };
-		public void Invoke(T data) {
-			this.invoke(data);
-		}
-	}
-
 	[Test]
 	public void PassAgentToGetBehaviorFor() {
-		var gotAgent = null as Entity;
-		var equipment = new MockEquipment {
-			getBehaviorFor = agentArg => {
-				gotAgent = agentArg;
-				return Either.New(new MockBehavior()).WithNoError<TMissing>();
-			}
-		};
+		var behavior = Mock.Of<IBehaviorStateMachine>();
+		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
 		var controller = new BehaviorController();
-		var expectedAgent = new Entity();
+		var agent = new Entity();
 
-		controller.agent.Entity = expectedAgent;
-		controller.equipment.Entity = new Entity { equipment };
+		_ = mEquipment
+			.Setup(e => e.GetBehaviorFor(agent))
+			.Returns(Either.New(behavior).WithNoError<TMissing>());
 
-		Assert.That(gotAgent, Is.SameAs(expectedAgent));
+		controller.agent.Entity = agent;
+		controller.equipment.Entity = new Entity {
+			(EntityComponent)mEquipment.Object,
+		};
+
+		mEquipment.Verify(e => e.GetBehaviorFor(agent), Times.Once());
 	}
 
 	[Test]
 	public void OnRunExecuteNext() {
-		var called = Array.Empty<U<Vector3, Entity>>();
-		var vector = new Vector3(1, 2, 3);
-		var mockTargets = new U<Vector3, Entity>[] { vector };
-		var equipment = new MockEquipment {
-			getBehaviorFor = _ => Either
-				.New(new MockBehavior { executeNext = (targets) => called = targets })
-				.WithNoError<TMissing>()
-		};
+		var behavior = Mock.Of<IBehaviorStateMachine>();
+		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
 		var controller = new BehaviorController();
+		var targets = new U<Vector3, Entity>[] { new Vector3(1, 2, 3) };
+
+		_ = mEquipment
+			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
+			.Returns(Either.New(behavior).WithNoError<TMissing>());
 
 		controller.agent.Entity = new();
-		controller.equipment.Entity = new Entity { equipment };
+		controller.equipment.Entity = new Entity {
+			(EntityComponent)mEquipment.Object,
+		};
 
-		controller.Run(mockTargets);
+		controller.Run(targets);
 
-		Assert.That(called, Is.SameAs(mockTargets));
+		Mock.Get(behavior).Verify(b => b.ExecuteNext(targets), Times.Once());
 	}
 
 	[Test]
 	public void OnCancelResetAndIdle() {
-		var called = 0;
-		var equipment = new MockEquipment {
-			getBehaviorFor = _ => Either
-				.New(new MockBehavior { resetAndIdle = () => ++called })
-				.WithNoError<TMissing>()
-		};
+		var behavior = Mock.Of<IBehaviorStateMachine>();
+		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
 		var controller = new BehaviorController();
 
+		_ = mEquipment
+			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
+			.Returns(Either.New(behavior).WithNoError<TMissing>());
+
 		controller.agent.Entity = new();
-		controller.equipment.Entity = new Entity { equipment };
+		controller.equipment.Entity = new Entity {
+			(EntityComponent)mEquipment.Object,
+		};
 
 		controller.Reset();
 
-		Assert.That(called, Is.EqualTo(1));
+		Mock.Get(behavior).Verify(b => b.ResetAndIdle(), Times.Once());
 	}
 
 	[Test]
 	public void OnErrorEventEquipmentMissing() {
-		var called = (U<Requirement, Type[], DependencyError>)DependencyError.Agent;
 		var controller = new BehaviorController();
-		var onErrorEntity = new Entity {
-			new MockEvent<U<Requirement, Type[], DependencyError>> {
-				invoke = data => called = data
-			},
+		var mEvent = new Mock<EntityComponent>().As<IEvent<TBehaviorError>>();
+		var eventRef = new Reference<IEvent<TBehaviorError>> {
+			Entity = new Entity { (EntityComponent)mEvent.Object }
 		};
-		controller.onEquipError.Add(
-			new Reference<IEvent<U<Requirement, Type[], DependencyError>>> {
-				Entity = onErrorEntity
-			}
-		);
 
+		controller.onEquipError.Add(eventRef);
 		controller.agent.Entity = new();
 
-		var dependency = called.Switch(
-			(Requirement _) => DependencyError.Agent,
-			(Type[] _) => DependencyError.Agent,
-			(DependencyError d) => d
-		);
-		Assert.That(dependency, Is.EqualTo(DependencyError.Equipment));
+		mEvent.Verify(e => e.Invoke(DependencyError.Equipment), Times.Once());
 	}
 
 	[Test]
 	public void OnErrorEventAgentMissing() {
-		var called = (U<Requirement, Type[], DependencyError>)DependencyError.Equipment;
-		var equipment = new MockEquipment();
 		var controller = new BehaviorController();
-		var onErrorEntity = new Entity {
-			new MockEvent<U<Requirement, Type[], DependencyError>> {
-				invoke = data => called = data
-			},
+		var mEvent = new Mock<EntityComponent>().As<IEvent<TBehaviorError>>();
+		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
+		var eventRef = new Reference<IEvent<TBehaviorError>> {
+			Entity = new Entity { (EntityComponent)mEvent.Object }
 		};
-		controller.onEquipError.Add(
-			new Reference<IEvent<U<Requirement, Type[], DependencyError>>> {
-				Entity = onErrorEntity
-			}
-		);
 
-		controller.equipment.Entity = new Entity { new MockEquipment() };
+		controller.onEquipError.Add(eventRef);
+		controller.equipment.Entity = new Entity {
+			(EntityComponent)mEquipment.Object,
+		};
 
-		var dependency = called.Switch(
-			(Requirement _) => DependencyError.Equipment,
-			(Type[] _) => DependencyError.Equipment,
-			(DependencyError d) => d
-		);
-		Assert.That(dependency, Is.EqualTo(DependencyError.Agent));
+		mEvent.Verify(e => e.Invoke(DependencyError.Agent), Times.Once());
 	}
 
 	[Test]
 	public void OnErrorEventAgentAndEquipmentMissing() {
-		var called = (U<Requirement, Type[], DependencyError>)(DependencyError)0;
 		var controller = new BehaviorController();
-		var onErrorEntity = new Entity {
-			new MockEvent<U<Requirement, Type[], DependencyError>> {
-				invoke = data => called = data
-			},
+		var mEvent = new Mock<EntityComponent>().As<IEvent<TBehaviorError>>();
+		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
+		var eventRef = new Reference<IEvent<TBehaviorError>> {
+			Entity = new Entity { (EntityComponent)mEvent.Object }
 		};
-		controller.onEquipError.Add(
-			new Reference<IEvent<U<Requirement, Type[], DependencyError>>> {
-				Entity = onErrorEntity
-			}
-		);
 
-		controller.equipment.Entity = new Entity { new MockEquipment() };
-
+		controller.onEquipError.Add(eventRef);
+		controller.equipment.Entity = new Entity {
+			(EntityComponent)mEquipment.Object,
+		};
 		controller.equipment.Entity = null;
 
-		var dependency = called.Switch(
-			(Requirement _) => (DependencyError)0,
-			(Type[] _) => (DependencyError)0,
-			(DependencyError d) => d
+		mEvent.Verify(
+			e => e.Invoke(DependencyError.Equipment | DependencyError.Agent),
+			Times.Once()
 		);
-
-		Assert.That(dependency, Is.EqualTo(DependencyError.Agent | DependencyError.Equipment));
 	}
 
 	[Test]
 	public void OnEquip() {
-		var called = null as IEquipment;
-		var equipment = new MockEquipment();
+		var behavior = Mock.Of<IBehaviorStateMachine>();
 		var controller = new BehaviorController();
-		var onEquipEntity = new Entity {
-			new MockEvent<IEquipment> {
-				invoke = data => called = data
-			},
+		var mEvent = new Mock<EntityComponent>().As<IEvent<IEquipment>>();
+		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
+		var eventRef = new Reference<IEvent<IEquipment>> {
+			Entity = new Entity { (EntityComponent)mEvent.Object }
 		};
-		controller.onEquip.Add(
-			new Reference<IEvent<IEquipment>> {
-				Entity = onEquipEntity
-			}
-		);
-		controller.agent.Entity = new();
-		controller.equipment.Entity = new Entity { equipment };
 
-		Assert.That(called, Is.SameAs(equipment));
+		_ = mEquipment
+			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
+			.Returns(Either.New(behavior).WithNoError<TMissing>());
+
+		controller.onEquip.Add(eventRef);
+		controller.agent.Entity = new();
+		controller.equipment.Entity = new Entity {
+			(EntityComponent)mEquipment.Object,
+		};
+
+		mEvent.Verify(
+			e => e.Invoke(mEquipment.Object),
+			Times.Once()
+		);
 	}
 }
