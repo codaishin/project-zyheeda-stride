@@ -1,79 +1,67 @@
 namespace Tests;
 
 using System;
+using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
 using Stride.Engine;
 
 public class EventReferenceTests : GameTestCollection {
-	private class MockWrapped<T> : IReference, IMaybe<T> {
-		public Func<Func<T, object>, Func<object>, object> apply = (_, none) => none();
-		public Action<Entity?> entitySet = _ => { };
-		public Func<Entity?> entityGet = () => null;
-
-		public Entity? Entity {
-			get => this.entityGet();
-			set => this.entitySet(value);
-		}
-
-		public TReturn Switch<TReturn>(Func<T, TReturn> some, Func<TReturn> none) {
-			return (TReturn)this.apply(
-				v => some(v)!,
-				() => none()!
-			);
-		}
-	}
+	public interface IMockReference<T> : IReference, IMaybe<T> { }
 
 	[Test]
 	public void UseWrappedApplySome() {
-		var wrapped = new MockWrapped<int> { apply = (some, _) => some(42), };
-		var reference = new EventReference<MockWrapped<int>, int>(wrapped);
+		var getSome = (int v) => v;
+		var wrapped = Mock.Of<IMockReference<int>>(
+			r => r.Switch(getSome, It.IsAny<Func<int>>()) == 42
+		);
+		var reference = new EventReference<IMockReference<int>, int>(wrapped);
 
-		var value = reference.Switch(v => v, () => -1);
+		var value = reference.Switch(getSome, () => -1);
 		Assert.That(value, Is.EqualTo(42));
 	}
 
 	[Test]
 	public void UseWrappedApplyNone() {
-		var wrapped = new MockWrapped<int> { apply = (_, none) => none(), };
-		var reference = new EventReference<MockWrapped<int>, int>(wrapped);
+		var getNone = () => 42;
+		var wrapped = Mock.Of<IMockReference<int>>(
+			r => r.Switch(It.IsAny<Func<int, int>>(), getNone) == 42
+		);
+		var reference = new EventReference<IMockReference<int>, int>(wrapped);
 
-		var value = reference.Switch(v => v, () => -1);
-		Assert.That(value, Is.EqualTo(-1));
+		var value = reference.Switch(v => -1, getNone);
+		Assert.That(value, Is.EqualTo(42));
 	}
 
 	[Test]
 	public void UseWrappedEntitySet() {
-		var gotEntity = null as Entity;
-		var expectedEntity = new Entity();
-		var wrapped = new MockWrapped<int> { entitySet = v => gotEntity = v };
-		var reference = new EventReference<MockWrapped<int>, int>(wrapped) {
-			Entity = expectedEntity
+		var entity = new Entity();
+		var wrapped = Mock.Of<IMockReference<int>>();
+		var reference = new EventReference<IMockReference<int>, int>(wrapped) {
+			Entity = entity
 		};
 
-		Assert.That(gotEntity, Is.SameAs(expectedEntity));
+		Mock.Get(wrapped).VerifySet(r => r.Entity = entity);
 	}
 
 	[Test]
 	public void UseWrappedEntityGet() {
-		var expectedEntity = new Entity();
-		var wrapped = new MockWrapped<int> { entityGet = () => expectedEntity };
-		var reference = new EventReference<MockWrapped<int>, int>(wrapped);
+		var entity = new Entity();
+		var wrapped = Mock.Of<IMockReference<int>>();
+		var reference = new EventReference<IMockReference<int>, int>(wrapped);
 
-		Assert.That(reference.Entity, Is.SameAs(expectedEntity));
+		_ = reference.Entity;
+		Mock.Get(wrapped).VerifyGet(r => r.Entity);
 	}
 
 	[Test]
 	public void SendWrappedToEvents() {
-		var called = 0;
-		var wrapped = new MockWrapped<int>();
-		var reference = new EventReference<MockWrapped<int>, int>(
-			wrapped,
-			() => ++called
-		) {
+		var wrapped = Mock.Of<IMockReference<int>>();
+		var action = Mock.Of<Action>();
+		var reference = new EventReference<IMockReference<int>, int>(wrapped, action) {
 			Entity = new Entity()
 		};
 
-		Assert.That(called, Is.EqualTo(1));
+		Mock.Get(action).Verify(a => a(), Times.Once());
 	}
 }
