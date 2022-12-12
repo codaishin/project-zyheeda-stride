@@ -1,39 +1,33 @@
 namespace Tests;
 
+using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
 using Stride.Engine;
 
 public class ReferenceTest : GameTestCollection {
-
-	private interface IMock { }
-
-	private class MockComponent : SyncScript, IMock {
-		public override void Update() { }
-	}
+	public interface IMock { }
 
 	[Test]
 	public void ApplyNoneWhenEntityNull() {
-		var reference = new Reference<IMock> { Entity = null };
-		var nullComponent = new MockComponent();
-		var value = reference.Switch(
+		var reference = new Reference<Entity> { Entity = null };
+		var value = reference.Switch<Entity?>(
 			some: c => c,
-			none: () => nullComponent
+			none: () => null
 		);
-		Assert.That(value, Is.SameAs(nullComponent));
+		Assert.That(value, Is.Null);
 	}
 
 	[Test]
 	public void ApplySomeWhenEntityWithIMock() {
-		var entity = new Entity();
-		var component = new MockComponent();
-		entity.Add(component);
+		var mComponent = new Mock<EntityComponent>().As<IMock>();
+		var entity = new Entity { (EntityComponent)mComponent.Object };
 		var reference = new Reference<IMock> { Entity = entity };
-		var value = reference.Switch(
+		var value = reference.Switch<IMock?>(
 			some: c => c,
-			none: () => new MockComponent()
+			none: () => null
 		);
-		Assert.That(value, Is.SameAs(component));
+		Assert.That(value, Is.SameAs(mComponent.Object));
 	}
 
 	[Test]
@@ -49,34 +43,31 @@ public class ReferenceTest : GameTestCollection {
 
 	[Test]
 	public void EntityResetWhenAssigningNull() {
-		var entity = new Entity();
-		var component = new MockComponent();
-		entity.Add(component);
+		var mComponent = new Mock<EntityComponent>().As<IMock>();
+		var entity = new Entity { (EntityComponent)mComponent.Object };
 		var reference = new Reference<IMock> { Entity = entity };
 		reference.Entity = null;
 		Assert.That(reference.Entity, Is.Null);
 	}
 
 	[Test]
-	public void DonNotResetEntityWhenEntityWithoutIMock() {
-		var entity = new Entity();
-		var component = new MockComponent();
-		entity.Add(component);
+	public void DonNotResetEntityWhenAssigningEntityWithoutIMock() {
+		var mComponent = new Mock<EntityComponent>().As<IMock>();
+		var entity = new Entity { (EntityComponent)mComponent.Object };
 		var reference = new Reference<IMock> { Entity = entity };
 		reference.Entity = new Entity();
 		Assert.That(reference.Entity, Is.SameAs(entity));
 	}
 
 	[Test]
-	public void ApplyNoneWhenEntityWithoutIMock() {
+	public void ApplyNoneWhenAssigningEntityWithoutIMock() {
 		var reference = new Reference<IMock> { Entity = new Entity() };
-		var nullComponent = new MockComponent();
-		var value = reference.Switch(
+		var value = reference.Switch<IMock?>(
 			some: c => c,
-			none: () => nullComponent
+			none: () => null
 		);
 		Assert.Multiple(() => {
-			Assert.That(value, Is.SameAs(nullComponent));
+			Assert.That(value, Is.Null);
 			Assert.That(reference.Entity, Is.Null);
 		});
 	}
