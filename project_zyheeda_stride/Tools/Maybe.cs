@@ -53,8 +53,8 @@ public static class Maybe {
 		TError error
 	) {
 		return maybe.Switch(
-			some: v => Either.New(v).WithNoError<TError>(),
-			none: () => Either.New(error).WithNoValue<T>()
+			some: v => EitherTools.New(v).WithNoError<TError>(),
+			none: () => EitherTools.New(error).WithNoValue<T>()
 		);
 	}
 

@@ -4,9 +4,33 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public static class Either {
+public struct Either<TError, T> : IEither<TError, T> {
+	private readonly U<TError, T> errorOrValue;
+
+	public Either(T value) {
+		this.errorOrValue = value;
+	}
+
+	public Either(TError error) {
+		this.errorOrValue = error;
+	}
+
+	public TOut Switch<TOut>(Func<TError, TOut> error, Func<T, TOut> value) {
+		return this.errorOrValue.Switch(error, value);
+	}
+
+	public static implicit operator Either<TError, T>(T value) {
+		return new Either<TError, T>(value);
+	}
+
+	public static implicit operator Either<TError, T>(TError error) {
+		return new Either<TError, T>(error);
+	}
+}
+
+public static class EitherTools {
 	public static IEitherPartial<TErrorOrT> New<TErrorOrT>(TErrorOrT errorOrValue) {
-		return new Either.Partial<TErrorOrT> { errorOrValue = errorOrValue };
+		return new EitherTools.Partial<TErrorOrT> { errorOrValue = errorOrValue };
 	}
 
 	public static IEither<TError, TOut> Map<TError, T, TOut>(
@@ -14,8 +38,8 @@ public static class Either {
 		Func<T, TOut> map
 	) {
 		return either.Switch(
-			error => Either.New(error).WithNoValue<TOut>(),
-			value => Either.New(map(value)).WithNoError<TError>()
+			error => EitherTools.New(error).WithNoValue<TOut>(),
+			value => EitherTools.New(map(value)).WithNoError<TError>()
 		);
 	}
 
@@ -24,8 +48,8 @@ public static class Either {
 		Func<TError, TErrorOut> map
 	) {
 		return either.Switch(
-			error => Either.New(map(error)).WithNoValue<T>(),
-			value => Either.New<T>(value).WithNoError<TErrorOut>()
+			error => EitherTools.New(map(error)).WithNoValue<T>(),
+			value => EitherTools.New<T>(value).WithNoError<TErrorOut>()
 		);
 	}
 
@@ -34,7 +58,7 @@ public static class Either {
 		Func<T, IEither<TError, TOut>> map
 	) {
 		return either.Switch(
-			error => Either.New(error).WithNoValue<TOut>(),
+			error => EitherTools.New(error).WithNoValue<TOut>(),
 			value => map(value)
 		);
 	}
@@ -87,12 +111,12 @@ public static class Either {
 	) {
 		return apply.Switch(
 			errors => either.Switch(
-				error => Either.New(errors.Append(error)).WithNoValue<TOut>(),
-				value => Either.New(errors).WithNoValue<TOut>()
+				error => EitherTools.New(errors.Append(error)).WithNoValue<TOut>(),
+				value => EitherTools.New(errors).WithNoValue<TOut>()
 			),
 			func => either.Switch(
-				error => Either.New(Either.FirstError(error)).WithNoValue<TOut>(),
-				value => Either.New(func(value)).WithNoError<IEnumerable<TError>>()
+				error => EitherTools.New(EitherTools.FirstError(error)).WithNoValue<TOut>(),
+				value => EitherTools.New(func(value)).WithNoError<IEnumerable<TError>>()
 			)
 		);
 	}
@@ -112,11 +136,11 @@ public static class Either {
 		public TErrorOrT errorOrValue;
 
 		public IEither<TError, TErrorOrT> WithNoError<TError>() {
-			return new Either.WithValue<TError, TErrorOrT> { value = this.errorOrValue };
+			return new EitherTools.WithValue<TError, TErrorOrT> { value = this.errorOrValue };
 		}
 
 		public IEither<TErrorOrT, T> WithNoValue<T>() {
-			return new Either.WithError<TErrorOrT, T> { error = this.errorOrValue };
+			return new EitherTools.WithError<TErrorOrT, T> { error = this.errorOrValue };
 		}
 	}
 

@@ -62,7 +62,7 @@ public class BehaviorController : StartupScript, IBehavior {
 					.MapError(e => (BehaviorError)e)
 					.Map(behavior => (behavior, equipment));
 
-		return Either
+		return EitherTools
 			.New(getBehaviorAndEquipment)
 			.WithNoError<IEnumerable<DependencyError>>();
 	}
