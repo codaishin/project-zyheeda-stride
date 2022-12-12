@@ -131,9 +131,9 @@ public class BehaviorController : StartupScript, IBehavior {
 
 	public override void Start() { }
 
-	public void Run(IMaybe<U<Vector3, Entity>> target) {
+	public void Run(U<Vector3, Entity>[] targets) {
 		this.behavior.Switch(
-			some: b => b.ExecuteNext(target),
+			some: b => b.ExecuteNext(targets),
 			none: BehaviorController.Idle
 		);
 	}

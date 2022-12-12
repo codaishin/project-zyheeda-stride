@@ -9,11 +9,11 @@ using TMissing = ProjectZyheeda.U<ProjectZyheeda.Requirement, System.Type[]>;
 
 public class BehaviorControllerTest : GameTestCollection {
 	private class MockBehavior : IBehaviorStateMachine {
-		public Action<IMaybe<U<Vector3, Entity>>> executeNext = _ => { };
+		public Action<U<Vector3, Entity>[]> executeNext = _ => { };
 		public Action resetAndIdle = () => { };
 
-		public void ExecuteNext(IMaybe<U<Vector3, Entity>> target) {
-			this.executeNext(target);
+		public void ExecuteNext(U<Vector3, Entity>[] targets) {
+			this.executeNext(targets);
 		}
 
 		public void ResetAndIdle() {
@@ -68,12 +68,12 @@ public class BehaviorControllerTest : GameTestCollection {
 
 	[Test]
 	public void OnRunExecuteNext() {
-		var called = Maybe.None<U<Vector3, Entity>>();
+		var called = Array.Empty<U<Vector3, Entity>>();
 		var vector = new Vector3(1, 2, 3);
-		var mockTarget = new U<Vector3, Entity>(vector).Apply(Maybe.Some);
+		var mockTargets = new U<Vector3, Entity>[] { vector };
 		var equipment = new MockEquipment {
 			getBehaviorFor = _ => Either
-				.New(new MockBehavior { executeNext = (target) => called = target })
+				.New(new MockBehavior { executeNext = (targets) => called = targets })
 				.WithNoError<TMissing>()
 		};
 		var controller = new BehaviorController();
@@ -81,9 +81,9 @@ public class BehaviorControllerTest : GameTestCollection {
 		controller.agent.Entity = new();
 		controller.equipment.Entity = new Entity { equipment };
 
-		controller.Run(mockTarget);
+		controller.Run(mockTargets);
 
-		Assert.That(called, Is.SameAs(mockTarget));
+		Assert.That(called, Is.SameAs(mockTargets));
 	}
 
 	[Test]
