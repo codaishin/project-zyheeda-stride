@@ -153,7 +153,7 @@ public class MaybeTest : GameTestCollection {
 	[Test]
 	public void SomeToValue() {
 		var some = Maybe.Some(42);
-		var value = some.ToEither("ERROR");
+		var value = some.MaybeToEither("ERROR");
 
 		Assert.That(value.UnpackOr(-1), Is.EqualTo(42));
 	}
@@ -161,8 +161,44 @@ public class MaybeTest : GameTestCollection {
 	[Test]
 	public void NoneToError() {
 		var some = Maybe.None<int>();
-		var value = some.ToEither("ERROR");
+		var value = some.MaybeToEither("ERROR");
 
 		Assert.That(value.UnpackErrorOr("OKAY"), Is.EqualTo("ERROR"));
+	}
+
+	[Test]
+	public void ToMaybeSome() {
+		var value = "Hello";
+		value.ToMaybe().Switch(
+			some: some => Assert.That(some, Is.SameAs(value)),
+			none: () => Assert.Fail("Was None, but should have been some")
+		);
+	}
+
+	[Test]
+	public void ToMaybeSomeValueType() {
+		int? value = 42;
+		value.ToMaybe().Switch(
+			some: some => Assert.That(some, Is.EqualTo(value)),
+			none: () => Assert.Fail("Was None, but should have been some")
+		);
+	}
+
+	[Test]
+	public void ToMaybeNone() {
+		var value = null as string;
+		value.ToMaybe().Switch(
+			some: some => Assert.Fail($"Was {some ?? "null"}, but should have been none"),
+			none: () => Assert.Pass()
+		);
+	}
+
+	[Test]
+	public void ToMaybeNoneValueType() {
+		int? value = null;
+		value.ToMaybe().Switch(
+			some: some => Assert.Fail($"Was {some}, but should have been none"),
+			none: () => Assert.Pass()
+		);
 	}
 }
