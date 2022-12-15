@@ -124,6 +124,20 @@ public static class Either {
 		);
 	}
 
+	public static Either<TError, T> ToEither<TError, T>(this T? value, TError error)
+		where T : class {
+		return value != null
+			? new Either<TError, T>(value)
+			: new Either<TError, T>(error);
+	}
+
+	public static Either<TError, T> ToEither<TError, T>(this T? value, TError error)
+		where T : struct {
+		return value.HasValue
+			? new Either<TError, T>(value.Value)
+			: new Either<TError, T>(error);
+	}
+
 	private static IEnumerable<TError> FirstError<TError>(TError error) {
 		yield return error;
 	}

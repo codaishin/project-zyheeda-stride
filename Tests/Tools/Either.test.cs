@@ -287,4 +287,41 @@ public class EitherToolTest : GameTestCollection {
 
 		Assert.That(some.UnpackOr(-1), Is.EqualTo(-1));
 	}
+
+
+	[Test]
+	public void ToEitherSome() {
+		var value = "Hello";
+		value.ToEither(42).Switch(
+			e => Assert.Fail($"Was {e}, but should have been {value}"),
+			v => Assert.That(v, Is.SameAs(value))
+		);
+	}
+
+	[Test]
+	public void ToEitherSomeValueType() {
+		int? value = 42;
+		value.ToEither("no number").Switch(
+			e => Assert.Fail($"Was {e}, but should have been {value}"),
+			v => Assert.That(v, Is.EqualTo(value))
+		);
+	}
+
+	[Test]
+	public void ToMaybeNone() {
+		var value = null as string;
+		value.ToEither(42).Switch(
+			e => Assert.That(e, Is.EqualTo(42)),
+			v => Assert.Fail($"Was {v ?? "null"}, but should have been 42")
+		);
+	}
+
+	[Test]
+	public void ToMaybeNoneValueType() {
+		int? value = null;
+		value.ToEither("no number").Switch(
+			e => Assert.That(e, Is.EqualTo("no number")),
+			v => Assert.Fail($"Was {v}, but should have been no number")
+		);
+	}
 }

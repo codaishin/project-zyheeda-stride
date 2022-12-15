@@ -48,7 +48,7 @@ public static class Maybe {
 		return apply.FlatMap(func => maybe.Map(func));
 	}
 
-	public static Either<TError, T> ToEither<TError, T>(
+	public static Either<TError, T> MaybeToEither<TError, T>(
 		this IMaybe<T> maybe,
 		TError error
 	) {
@@ -56,6 +56,14 @@ public static class Maybe {
 			some: v => v,
 			none: () => error
 		);
+	}
+
+	public static IMaybe<T> ToMaybe<T>(this T? value) where T : class {
+		return value != null ? Maybe.Some(value) : Maybe.None<T>();
+	}
+
+	public static IMaybe<T> ToMaybe<T>(this T? value) where T : struct {
+		return value.HasValue ? Maybe.Some(value.Value) : Maybe.None<T>();
 	}
 
 	private class WithValue<T> : IMaybe<T> {
