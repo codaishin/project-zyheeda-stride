@@ -273,6 +273,69 @@ public class EitherToolTest : GameTestCollection {
 	}
 
 	[Test]
+	public void ApplyOnFunc() {
+		var fst = new Either<string, int>(4);
+		var snd = new Either<string, int>(10);
+		var trd = new Either<string, int>(11);
+
+		var sum = (int a) => (int b) => (int c) => a + b + c;
+		var result = sum
+			.Apply(fst)
+			.Apply(snd)
+			.Apply(trd);
+
+		Assert.That(result.UnpackOr(-1), Is.EqualTo(25));
+	}
+
+	[Test]
+	public void ApplyOnFuncError() {
+		var fst = new Either<string, int>("error");
+		var snd = new Either<string, int>(10);
+		var trd = new Either<string, int>(11);
+
+		var sum = (int a) => (int b) => (int c) => a + b + c;
+		var result = sum
+			.Apply(fst)
+			.Apply(snd)
+			.Apply(trd);
+
+		Assert.That(result.UnpackErrorOr("no error"), Is.EqualTo("error"));
+	}
+
+	[Test]
+	public void ApplyWeakOnFunc() {
+		var fst = new Either<string, int>(4);
+		var snd = new Either<string, int>(10);
+		var trd = new Either<string, int>(11);
+
+		var sum = (int a) => (int b) => (int c) => a + b + c;
+		var result = sum
+			.ApplyWeak(fst)
+			.ApplyWeak(snd)
+			.ApplyWeak(trd);
+
+		Assert.That(result.UnpackOr(-1), Is.EqualTo(25));
+	}
+
+	[Test]
+	public void ApplyWeakOnFuncErrors() {
+		var fst = new Either<string, int>("error fst");
+		var snd = new Either<string, int>(10);
+		var trd = new Either<string, int>("error trd");
+
+		var sum = (int a) => (int b) => (int c) => a + b + c;
+		var result = sum
+			.ApplyWeak(fst)
+			.ApplyWeak(snd)
+			.ApplyWeak(trd);
+
+		Assert.That(
+			result.UnpackErrorOr(new[] { "no error" }),
+			Is.EqualTo(new[] { "error fst", "error trd" })
+		);
+	}
+
+	[Test]
 	public void ValueToSome() {
 		var value = new Either<string, int>(42);
 		var some = value.ToMaybe();

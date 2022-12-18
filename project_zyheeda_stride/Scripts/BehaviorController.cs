@@ -6,7 +6,7 @@ using System.Linq;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 using BehaviorError = U<Requirement, System.Type[], DependencyError>;
-using TBehaviorAndEquipmentFn = System.Func<
+using TBehaviorFn = System.Func<
 	IEquipment,
 	System.Func<
 		Stride.Engine.Entity,
@@ -53,7 +53,7 @@ public class BehaviorController : StartupScript, IBehavior {
 
 	private static void Idle() { }
 
-	private static Either<IEnumerable<DependencyError>, TBehaviorAndEquipmentFn> GetBehaviorAndEquipmentFn() {
+	private static Either<IEnumerable<DependencyError>, TBehaviorFn> GetBehaviorFn() {
 		var getBehaviorAndEquipment =
 			(IEquipment equipment) =>
 			(Entity agent) =>
@@ -107,7 +107,7 @@ public class BehaviorController : StartupScript, IBehavior {
 		Reference<Entity> agent
 	) {
 		return () => BehaviorController
-			.GetBehaviorAndEquipmentFn()
+			.GetBehaviorFn()
 			.ApplyWeak(equipment.MaybeToEither(DependencyError.Equipment))
 			.ApplyWeak(agent.MaybeToEither(DependencyError.Agent))
 			.MapError(BehaviorController.CombineDependencyErrors)
@@ -126,8 +126,6 @@ public class BehaviorController : StartupScript, IBehavior {
 		this.equipment = new(equipment, onSet);
 		this.agent = new(agent, onSet);
 	}
-
-	public override void Start() { }
 
 	public void Run(params U<Vector3, Entity>[] targets) {
 		this.behavior.Switch(

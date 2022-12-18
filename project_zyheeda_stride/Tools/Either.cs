@@ -101,6 +101,16 @@ public static class Either {
 		return apply.FlatMap(func => either.Map(v => func(v)));
 	}
 
+	public static Either<TError, TOut> Apply<TError, TIn, TOut>(
+		this Func<TIn, TOut> apply,
+		Either<TError, TIn> either
+	) {
+		return either.Switch<Either<TError, TOut>>(
+			error => error,
+			value => apply(value)
+		);
+	}
+
 	public static Either<IEnumerable<TError>, TOut> ApplyWeak<TError, TIn, TOut>(
 		this Either<IEnumerable<TError>, Func<TIn, TOut>> apply,
 		Either<TError, TIn> either
@@ -114,6 +124,16 @@ public static class Either {
 				error => new Either<IEnumerable<TError>, TOut>(Either.FirstError(error)),
 				value => func(value)
 			)
+		);
+	}
+
+	public static Either<IEnumerable<TError>, TOut> ApplyWeak<TError, TIn, TOut>(
+		this Func<TIn, TOut> apply,
+		Either<TError, TIn> either
+	) {
+		return either.Switch<Either<IEnumerable<TError>, TOut>>(
+			error => new Either<IEnumerable<TError>, TOut>(Either.FirstError(error)),
+			value => apply(value)
 		);
 	}
 
