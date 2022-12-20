@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 using BehaviorError = U<Requirement, System.Type[], DependencyError>;
@@ -127,7 +128,7 @@ public class BehaviorController : StartupScript, IBehavior {
 		this.agent = new(agent, onSet);
 	}
 
-	public void Run(params U<Vector3, Entity>[] targets) {
+	public void Run(IEnumerable<Task<U<Vector3, Entity>>> targets) {
 		this.behavior.Switch(
 			some: b => b.ExecuteNext(targets),
 			none: BehaviorController.Idle

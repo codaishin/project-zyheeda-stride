@@ -12,8 +12,8 @@ public abstract class InputController<T> : SyncScript
 	private readonly Func<IGetTargets, Func<IBehavior, Action>> runBehavior =
 		(IGetTargets getTargets) =>
 		(IBehavior behavior) =>
-		async () => {
-			var targets = await getTargets.GetTargets();
+		() => {
+			var targets = getTargets.GetTargets();
 			behavior.Run(targets);
 		};
 
