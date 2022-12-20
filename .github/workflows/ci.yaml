@@ -35,6 +35,6 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore Tests/Tests.csproj
     - name: Build
-      run: dotnet build Tests/Tests.csproj --no-restore
+      run: dotnet build Tests/Tests.csproj --configuration Release --no-restore
     - name: Test
-      run: dotnet test Tests/Tests.csproj --no-build --verbosity normal
+      run: dotnet test Tests/Tests.csproj --no-restore --verbosity normal
