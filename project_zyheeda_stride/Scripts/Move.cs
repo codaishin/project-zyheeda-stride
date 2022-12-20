@@ -1,6 +1,8 @@
 ﻿namespace ProjectZyheeda;
 
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 
@@ -10,10 +12,10 @@ public class Move : StartupScript, IEquipment {
 	public override void Start() { }
 
 	private struct Behavior : IBehaviorStateMachine {
-		public Action<U<Vector3, Entity>[]> executeNext;
+		public Action<IEnumerable<Task<U<Vector3, Entity>>>> executeNext;
 		public Action resetAndIdle;
 
-		public void ExecuteNext(U<Vector3, Entity>[] targets) {
+		public void ExecuteNext(IEnumerable<Task<U<Vector3, Entity>>> targets) {
 			this.executeNext(targets);
 		}
 
@@ -36,31 +38,32 @@ public class Move : StartupScript, IEquipment {
 		return target.Switch(v => v, e => e.Transform.Position);
 	}
 
-	public Either<U<Requirement, Type[]>, IBehaviorStateMachine> GetBehaviorFor(Entity agent) {
-		var currentTargets = Array.Empty<U<Vector3, Entity>>();
-		var currentI = 0;
+	private async Task MoveTowardsTarget(Entity agent, U<Vector3, Entity> target) {
+		while (agent.Transform.Position != Move.GetVector3(target)) {
+			_ = await this.Script.NextFrame();
+			agent.Transform.Position = this.MoveTowards(
+				agent.Transform.Position,
+				Move.GetVector3(target),
+				this.speed
+			);
+		}
+	}
 
-		var executeNext = (U<Vector3, Entity>[] targets) => {
-			_ = this.Script.AddTask(async () => {
-				currentTargets = targets;
-				currentI = 0;
-				while (this.Game.IsRunning && currentI < currentTargets.Length) {
-					var target = Move.GetVector3(currentTargets[currentI]);
-					agent.Transform.Position = this.MoveTowards(
-						agent.Transform.Position,
-						target,
-						this.speed
-					);
-					if (agent.Transform.Position == target) {
-						++currentI;
-					}
-					_ = await this.Script.NextFrame();
+	public Either<U<Requirement, Type[]>, IBehaviorStateMachine> GetBehaviorFor(Entity agent) {
+		Stride.Core.MicroThreading.MicroThread? moveThread = null;
+
+		var executeNext = (IEnumerable<Task<U<Vector3, Entity>>> targets) => {
+			var move = async () => {
+				foreach (var target in targets) {
+					await this.MoveTowardsTarget(agent, await target);
 				}
-			});
+			};
+			moveThread?.Cancel();
+			moveThread = this.Script.AddTask(move);
 		};
 
 		var resetAndIdle = () => {
-			currentTargets = Array.Empty<U<Vector3, Entity>>();
+			moveThread?.Cancel();
 		};
 
 		return new Move.Behavior {

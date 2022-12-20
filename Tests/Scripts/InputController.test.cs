@@ -1,7 +1,6 @@
 namespace Tests;
 
 using System;
-using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
@@ -18,8 +17,11 @@ public abstract class TestInputController<T> : GameTestCollection, IDisposable
 	protected Entity getTargetEntity = new();
 	protected T inputController = new();
 
-	protected Func<bool> TrueInFrame(int frame) {
-		return () => this.game.DrawTime.FrameCount == frame;
+	protected Func<bool> OneTimeTrue {
+		get {
+			var count = 0;
+			return () => count++ == 0;
+		}
 	}
 
 	[SetUp]
@@ -47,8 +49,6 @@ public abstract class TestInputController<T> : GameTestCollection, IDisposable
 	}
 
 	public void Dispose() {
-		this.getTargetEntity.Dispose();
-		this.behaviorEntity.Dispose();
 		GC.SuppressFinalize(this);
 	}
 }
@@ -58,8 +58,7 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 	public void RequireIInputWrapperService() {
 		this.game.Services.RemoveService<IInputWrapper>();
 
-		_ = Assert
-			.Throws<MissingService<IInputWrapper>>(() => this.inputController.Start());
+		_ = Assert.Throws<MissingService<IInputWrapper>>(this.inputController.Start);
 	}
 
 	[Test]
@@ -69,18 +68,21 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 		this.inputController.behavior.Entity = this.behaviorEntity;
 		this.inputController.getTarget.Entity = this.getTargetEntity;
 
-		_ = this.mGetTargets
-			.Setup(g => g.GetTargets())
-			.Returns(Task.FromResult(System.Array.Empty<U<Vector3, Entity>>()));
-
-		_ = this.mInputWrapper
-			.Setup(i => i.IsKeyPressed(Keys.Space))
-			.Returns(this.TrueInFrame(this.game.DrawTime.FrameCount));
+		var targets = Array.Empty<U<Vector3, Entity>>().ToTasks();
 
 		this.game.WaitFrames(1);
 
-		this.mBehavior
-			.Verify(b => b.Run(System.Array.Empty<U<Vector3, Entity>>()), Times.Once);
+		_ = this.mGetTargets
+			.Setup(g => g.GetTargets())
+			.Returns(targets);
+
+		_ = this.mInputWrapper
+			.Setup(i => i.IsKeyPressed(Keys.Space))
+			.Returns(this.OneTimeTrue);
+
+		this.game.WaitFrames(2);
+
+		this.mBehavior.Verify(b => b.Run(targets), Times.Once);
 	}
 
 	[Test]
@@ -90,18 +92,21 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 		this.inputController.behavior.Entity = this.behaviorEntity;
 		this.inputController.getTarget.Entity = this.getTargetEntity;
 
-		_ = this.mGetTargets
-			.Setup(g => g.GetTargets())
-			.Returns(Task.FromResult(System.Array.Empty<U<Vector3, Entity>>()));
-
-		_ = this.mInputWrapper
-			.Setup(i => i.IsKeyReleased(Keys.D7))
-			.Returns(this.TrueInFrame(this.game.DrawTime.FrameCount));
+		var targets = Array.Empty<U<Vector3, Entity>>().ToTasks();
 
 		this.game.WaitFrames(1);
 
-		this.mBehavior
-			.Verify(b => b.Run(System.Array.Empty<U<Vector3, Entity>>()), Times.Once);
+		_ = this.mGetTargets
+			.Setup(g => g.GetTargets())
+			.Returns(targets);
+
+		_ = this.mInputWrapper
+			.Setup(i => i.IsKeyReleased(Keys.D7))
+			.Returns(this.OneTimeTrue);
+
+		this.game.WaitFrames(2);
+
+		this.mBehavior.Verify(b => b.Run(targets), Times.Once);
 	}
 
 	[Test]
@@ -111,18 +116,21 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 		this.inputController.behavior.Entity = this.behaviorEntity;
 		this.inputController.getTarget.Entity = this.getTargetEntity;
 
-		_ = this.mGetTargets
-			.Setup(g => g.GetTargets())
-			.Returns(Task.FromResult(System.Array.Empty<U<Vector3, Entity>>()));
-
-		_ = this.mInputWrapper
-			.Setup(i => i.IsKeyPressed(Keys.Space))
-			.Returns(this.TrueInFrame(this.game.DrawTime.FrameCount));
+		var targets = Array.Empty<U<Vector3, Entity>>().ToTasks();
 
 		this.game.WaitFrames(1);
 
-		this.mBehavior
-			.Verify(b => b.Run(System.Array.Empty<U<Vector3, Entity>>()), Times.Never);
+		_ = this.mGetTargets
+			.Setup(g => g.GetTargets())
+			.Returns(targets);
+
+		_ = this.mInputWrapper
+			.Setup(i => i.IsKeyPressed(Keys.Space))
+			.Returns(this.OneTimeTrue);
+
+		this.game.WaitFrames(2);
+
+		this.mBehavior.Verify(b => b.Run(targets), Times.Never);
 	}
 
 	[Test]
@@ -132,18 +140,21 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 		this.inputController.behavior.Entity = this.behaviorEntity;
 		this.inputController.getTarget.Entity = this.getTargetEntity;
 
-		_ = this.mGetTargets
-			.Setup(g => g.GetTargets())
-			.Returns(Task.FromResult(System.Array.Empty<U<Vector3, Entity>>()));
-
-		_ = this.mInputWrapper
-			.Setup(i => i.IsKeyReleased(Keys.Space))
-			.Returns(this.TrueInFrame(this.game.DrawTime.FrameCount));
+		var targets = Array.Empty<U<Vector3, Entity>>().ToTasks();
 
 		this.game.WaitFrames(1);
 
-		this.mBehavior
-			.Verify(b => b.Run(System.Array.Empty<U<Vector3, Entity>>()), Times.Never);
+		_ = this.mGetTargets
+			.Setup(g => g.GetTargets())
+			.Returns(targets);
+
+		_ = this.mInputWrapper
+			.Setup(i => i.IsKeyReleased(Keys.Space))
+			.Returns(this.OneTimeTrue);
+
+		this.game.WaitFrames(2);
+
+		this.mBehavior.Verify(b => b.Run(targets), Times.Never);
 	}
 
 	[Test]
@@ -153,16 +164,22 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 		this.inputController.behavior.Entity = this.behaviorEntity;
 		this.inputController.getTarget.Entity = this.getTargetEntity;
 
-		var targets = new U<Vector3, Entity>[] { new Vector3(1, 2, 3), new Entity() };
+		var targets = new U<Vector3, Entity>[] {
+			new Vector3(1, 2, 3),
+			new Entity(),
+		}.ToTasks();
+
+		this.game.WaitFrames(1);
+
 		_ = this.mGetTargets
 			.Setup(g => g.GetTargets())
-			.Returns(Task.FromResult(targets));
+			.Returns(targets);
 
 		_ = this.mInputWrapper
 			.Setup(i => i.IsKeyPressed(Keys.Space))
-			.Returns(this.TrueInFrame(this.game.DrawTime.FrameCount));
+			.Returns(this.OneTimeTrue);
 
-		this.game.WaitFrames(1);
+		this.game.WaitFrames(2);
 
 		this.mBehavior.Verify(b => b.Run(targets), Times.Once);
 	}
@@ -174,16 +191,22 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 		this.inputController.behavior.Entity = this.behaviorEntity;
 		this.inputController.getTarget.Entity = this.getTargetEntity;
 
-		var targets = new U<Vector3, Entity>[] { new Vector3(1, 2, 3), new Entity() };
+		var targets = new U<Vector3, Entity>[] {
+			new Vector3(1, 2, 3),
+			new Entity(),
+		}.ToTasks();
+
+		this.game.WaitFrames(1);
+
 		_ = this.mGetTargets
 			.Setup(g => g.GetTargets())
-			.Returns(Task.FromResult(targets));
+			.Returns(targets);
 
 		_ = this.mInputWrapper
 			.Setup(i => i.IsKeyReleased(Keys.Space))
-			.Returns(this.TrueInFrame(this.game.DrawTime.FrameCount));
+			.Returns(this.OneTimeTrue);
 
-		this.game.WaitFrames(1);
+		this.game.WaitFrames(2);
 
 		this.mBehavior.Verify(b => b.Run(targets), Times.Once);
 	}
@@ -194,11 +217,11 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 		this.inputController.mode = InputMode.OnPress;
 		this.inputController.behavior.Entity = this.behaviorEntity;
 
-		this.inputController.Start();
+		this.game.WaitFrames(1);
 
 		_ = this.mInputWrapper
 			.Setup(i => i.IsKeyPressed(Keys.Space))
-			.Returns(true);
+			.Returns(this.OneTimeTrue);
 
 		var fieldName = nameof(this.inputController.getTarget);
 		var exception = Assert.Throws<MissingField>(this.inputController.Update);
@@ -210,7 +233,7 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 		this.inputController.mode = InputMode.OnRelease;
 		_ = this.mInputWrapper
 			.Setup(i => i.IsKeyReleased(Keys.Space))
-			.Returns(true);
+			.Returns(this.OneTimeTrue);
 
 		exception = Assert.Throws<MissingField>(this.inputController.Update);
 		Assert.That(
@@ -225,15 +248,17 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 		this.inputController.mode = InputMode.OnPress;
 		this.inputController.getTarget.Entity = this.getTargetEntity;
 
-		this.inputController.Start();
+		var targets = Array.Empty<U<Vector3, Entity>>().ToTasks();
+
+		this.game.WaitFrames(1);
 
 		_ = this.mGetTargets
 			.Setup(g => g.GetTargets())
-			.Returns(Task.FromResult(System.Array.Empty<U<Vector3, Entity>>()));
+			.Returns(targets);
 
 		_ = this.mInputWrapper
 			.Setup(i => i.IsKeyPressed(Keys.Space))
-			.Returns(true);
+			.Returns(this.OneTimeTrue);
 
 		var fieldName = nameof(this.inputController.behavior);
 		var exception = Assert.Throws<MissingField>(this.inputController.Update);
@@ -245,7 +270,7 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 		this.inputController.mode = InputMode.OnRelease;
 		_ = this.mInputWrapper
 			.Setup(i => i.IsKeyReleased(Keys.Space))
-			.Returns(true);
+			.Returns(this.OneTimeTrue);
 
 		exception = Assert.Throws<MissingField>(this.inputController.Update);
 		Assert.That(
@@ -259,11 +284,11 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 		this.inputController.button = Keys.Space;
 		this.inputController.mode = InputMode.OnPress;
 
-		this.inputController.Start();
+		this.game.WaitFrames(1);
 
 		_ = this.mInputWrapper
 			.Setup(i => i.IsKeyPressed(Keys.Space))
-			.Returns(true);
+			.Returns(this.OneTimeTrue);
 
 		var fieldNames = new[] {
 			nameof(this.inputController.getTarget),
@@ -278,7 +303,7 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 		this.inputController.mode = InputMode.OnRelease;
 		_ = this.mInputWrapper
 			.Setup(i => i.IsKeyReleased(Keys.Space))
-			.Returns(true);
+			.Returns(this.OneTimeTrue);
 
 		exception = Assert.Throws<MissingField>(this.inputController.Update);
 		Assert.That(
@@ -296,18 +321,21 @@ public class TestMouseInputController : TestInputController<MouseInputController
 		this.inputController.behavior.Entity = this.behaviorEntity;
 		this.inputController.getTarget.Entity = this.getTargetEntity;
 
+		this.game.WaitFrames(1);
+
+		var targets = Array.Empty<U<Vector3, Entity>>().ToTasks();
+
 		_ = this.mGetTargets
 			.Setup(g => g.GetTargets())
-			.Returns(Task.FromResult(System.Array.Empty<U<Vector3, Entity>>()));
+			.Returns(targets);
 
 		_ = this.mInputWrapper
 			.Setup(i => i.IsMouseButtonPressed(MouseButton.Right))
-			.Returns(this.TrueInFrame(this.game.DrawTime.FrameCount));
+			.Returns(this.OneTimeTrue);
 
-		this.game.WaitFrames(1);
+		this.game.WaitFrames(2);
 
-		this.mBehavior
-			.Verify(b => b.Run(System.Array.Empty<U<Vector3, Entity>>()), Times.Once);
+		this.mBehavior.Verify(b => b.Run(targets), Times.Once);
 	}
 
 	[Test]
@@ -317,17 +345,20 @@ public class TestMouseInputController : TestInputController<MouseInputController
 		this.inputController.behavior.Entity = this.behaviorEntity;
 		this.inputController.getTarget.Entity = this.getTargetEntity;
 
-		_ = this.mGetTargets
-			.Setup(g => g.GetTargets())
-			.Returns(Task.FromResult(System.Array.Empty<U<Vector3, Entity>>()));
-
-		_ = this.mInputWrapper
-			.Setup(i => i.IsMouseButtonReleased(MouseButton.Middle))
-			.Returns(this.TrueInFrame(this.game.DrawTime.FrameCount));
+		var targets = Array.Empty<U<Vector3, Entity>>().ToTasks();
 
 		this.game.WaitFrames(1);
 
-		this.mBehavior
-			.Verify(b => b.Run(System.Array.Empty<U<Vector3, Entity>>()), Times.Once);
+		_ = this.mGetTargets
+			.Setup(g => g.GetTargets())
+			.Returns(targets);
+
+		_ = this.mInputWrapper
+			.Setup(i => i.IsMouseButtonReleased(MouseButton.Middle))
+			.Returns(this.OneTimeTrue);
+
+		this.game.WaitFrames(2);
+
+		this.mBehavior.Verify(b => b.Run(targets), Times.Once);
 	}
 }
