@@ -331,7 +331,7 @@ public class TestMove : GameTestCollection {
 		behavior.ExecuteNext(targets);
 		this.game.WaitFrames(1);
 
-		this.game.WaitFrames(1);
+		this.game.WaitFrames(2);
 
 		Assert.That(agent.Transform.Position, Is.EqualTo(new Vector3(1, 0, 0)));
 	}
