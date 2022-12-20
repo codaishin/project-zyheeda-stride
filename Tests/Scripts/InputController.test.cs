@@ -1,6 +1,7 @@
 namespace Tests;
 
 using System;
+using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
@@ -70,7 +71,7 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 
 		_ = this.mGetTargets
 			.Setup(g => g.GetTargets())
-			.Returns(System.Array.Empty<U<Vector3, Entity>>());
+			.Returns(Task.FromResult(System.Array.Empty<U<Vector3, Entity>>()));
 
 		_ = this.mInputWrapper
 			.Setup(i => i.IsKeyPressed(Keys.Space))
@@ -91,7 +92,7 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 
 		_ = this.mGetTargets
 			.Setup(g => g.GetTargets())
-			.Returns(System.Array.Empty<U<Vector3, Entity>>());
+			.Returns(Task.FromResult(System.Array.Empty<U<Vector3, Entity>>()));
 
 		_ = this.mInputWrapper
 			.Setup(i => i.IsKeyReleased(Keys.D7))
@@ -112,7 +113,7 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 
 		_ = this.mGetTargets
 			.Setup(g => g.GetTargets())
-			.Returns(System.Array.Empty<U<Vector3, Entity>>());
+			.Returns(Task.FromResult(System.Array.Empty<U<Vector3, Entity>>()));
 
 		_ = this.mInputWrapper
 			.Setup(i => i.IsKeyPressed(Keys.Space))
@@ -133,7 +134,7 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 
 		_ = this.mGetTargets
 			.Setup(g => g.GetTargets())
-			.Returns(System.Array.Empty<U<Vector3, Entity>>());
+			.Returns(Task.FromResult(System.Array.Empty<U<Vector3, Entity>>()));
 
 		_ = this.mInputWrapper
 			.Setup(i => i.IsKeyReleased(Keys.Space))
@@ -155,7 +156,7 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 		var targets = new U<Vector3, Entity>[] { new Vector3(1, 2, 3), new Entity() };
 		_ = this.mGetTargets
 			.Setup(g => g.GetTargets())
-			.Returns(targets);
+			.Returns(Task.FromResult(targets));
 
 		_ = this.mInputWrapper
 			.Setup(i => i.IsKeyPressed(Keys.Space))
@@ -176,7 +177,7 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 		var targets = new U<Vector3, Entity>[] { new Vector3(1, 2, 3), new Entity() };
 		_ = this.mGetTargets
 			.Setup(g => g.GetTargets())
-			.Returns(targets);
+			.Returns(Task.FromResult(targets));
 
 		_ = this.mInputWrapper
 			.Setup(i => i.IsKeyReleased(Keys.Space))
@@ -228,7 +229,7 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 
 		_ = this.mGetTargets
 			.Setup(g => g.GetTargets())
-			.Returns(System.Array.Empty<U<Vector3, Entity>>());
+			.Returns(Task.FromResult(System.Array.Empty<U<Vector3, Entity>>()));
 
 		_ = this.mInputWrapper
 			.Setup(i => i.IsKeyPressed(Keys.Space))
@@ -297,7 +298,7 @@ public class TestMouseInputController : TestInputController<MouseInputController
 
 		_ = this.mGetTargets
 			.Setup(g => g.GetTargets())
-			.Returns(System.Array.Empty<U<Vector3, Entity>>());
+			.Returns(Task.FromResult(System.Array.Empty<U<Vector3, Entity>>()));
 
 		_ = this.mInputWrapper
 			.Setup(i => i.IsMouseButtonPressed(MouseButton.Right))
@@ -318,7 +319,7 @@ public class TestMouseInputController : TestInputController<MouseInputController
 
 		_ = this.mGetTargets
 			.Setup(g => g.GetTargets())
-			.Returns(System.Array.Empty<U<Vector3, Entity>>());
+			.Returns(Task.FromResult(System.Array.Empty<U<Vector3, Entity>>()));
 
 		_ = this.mInputWrapper
 			.Setup(i => i.IsMouseButtonReleased(MouseButton.Middle))
