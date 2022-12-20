@@ -203,7 +203,7 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 		var exception = Assert.Throws<MissingField>(this.inputController.Update);
 		Assert.That(
 			exception!.Message,
-			Is.EqualTo(MissingField.GetMessageFor(fieldName))
+			Is.EqualTo(MissingField.GetMessageFor(this.inputController, fieldName))
 		);
 
 		this.inputController.mode = InputMode.OnRelease;
@@ -214,7 +214,7 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 		exception = Assert.Throws<MissingField>(this.inputController.Update);
 		Assert.That(
 			exception!.Message,
-			Is.EqualTo(MissingField.GetMessageFor(fieldName))
+			Is.EqualTo(MissingField.GetMessageFor(this.inputController, fieldName))
 		);
 	}
 
@@ -238,7 +238,7 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 		var exception = Assert.Throws<MissingField>(this.inputController.Update);
 		Assert.That(
 			exception!.Message,
-			Is.EqualTo(MissingField.GetMessageFor(fieldName))
+			Is.EqualTo(MissingField.GetMessageFor(this.inputController, fieldName))
 		);
 
 		this.inputController.mode = InputMode.OnRelease;
@@ -249,7 +249,7 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 		exception = Assert.Throws<MissingField>(this.inputController.Update);
 		Assert.That(
 			exception!.Message,
-			Is.EqualTo(MissingField.GetMessageFor(fieldName))
+			Is.EqualTo(MissingField.GetMessageFor(this.inputController, fieldName))
 		);
 	}
 
@@ -271,7 +271,7 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 		var exception = Assert.Throws<MissingField>(this.inputController.Update);
 		Assert.That(
 			exception!.Message,
-			Is.EqualTo(MissingField.GetMessageFor(fieldNames))
+			Is.EqualTo(MissingField.GetMessageFor(this.inputController, fieldNames))
 		);
 
 		this.inputController.mode = InputMode.OnRelease;
@@ -282,7 +282,7 @@ public class TestKeyInputController : TestInputController<KeyInputController> {
 		exception = Assert.Throws<MissingField>(this.inputController.Update);
 		Assert.That(
 			exception!.Message,
-			Is.EqualTo(MissingField.GetMessageFor(fieldNames))
+			Is.EqualTo(MissingField.GetMessageFor(this.inputController, fieldNames))
 		);
 	}
 }

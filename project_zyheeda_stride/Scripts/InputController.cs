@@ -49,7 +49,7 @@ public abstract class InputController<T> : SyncScript
 				.ApplyWeak(this.getTarget.MaybeToEither(nameof(this.getTarget)))
 				.ApplyWeak(this.behavior.MaybeToEither(nameof(this.behavior)))
 				.Switch(
-					missingFields => throw new MissingField(missingFields.ToArray()),
+					missingFields => throw new MissingField(this, missingFields.ToArray()),
 					action => action()
 				);
 		}
