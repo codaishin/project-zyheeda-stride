@@ -2,17 +2,17 @@ namespace ProjectZyheeda;
 
 using Stride.Input;
 
-public interface IInputWrapper {
+public interface IInputManagerWrapper {
 	bool IsKeyPressed(Keys key);
 	bool IsKeyReleased(Keys key);
 	bool IsMouseButtonPressed(MouseButton button);
 	bool IsMouseButtonReleased(MouseButton button);
 }
 
-public class InputWrapper : IInputWrapper {
+public class InputManagerWrapper : IInputManagerWrapper {
 	private readonly InputManager inputManager;
 
-	public InputWrapper(InputManager inputManager) {
+	public InputManagerWrapper(InputManager inputManager) {
 		this.inputManager = inputManager;
 	}
 

@@ -2,7 +2,7 @@ namespace ProjectZyheeda;
 
 using System;
 
-public struct U<T1, T2> {
+public readonly struct U<T1, T2> {
 	private interface IU {
 		TOut Switch<TOut>(Func<T1, TOut> fst, Func<T2, TOut> snd);
 	}
@@ -50,7 +50,7 @@ public struct U<T1, T2> {
 	}
 }
 
-public struct U<T1, T2, T3> {
+public readonly struct U<T1, T2, T3> {
 	private readonly U<T1, U<T2, T3>> fstSndOrTrd;
 
 	public U(T1 value) {

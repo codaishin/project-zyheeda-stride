@@ -37,7 +37,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		var behavior = Mock.Of<IBehaviorStateMachine>();
 		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
 		var controller = new BehaviorController();
-		var targets = new U<Vector3, Entity>[] { new Vector3(1, 2, 3) }.ToTasks();
+		var targets = new U<Vector3, Entity>[] { new Vector3(1, 2, 3) }.ToAsyncEnumerable();
 
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
@@ -78,7 +78,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		var mBehavior = new Mock<IBehaviorStateMachine>();
 		var agent = new Entity();
 		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
-		var targets = System.Array.Empty<U<Vector3, Entity>>().ToTasks();
+		var targets = System.Array.Empty<U<Vector3, Entity>>().ToAsyncEnumerable();
 
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(agent))
@@ -103,7 +103,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		var agent = new Entity();
 		var mValidEquipment = new Mock<EntityComponent>().As<IEquipment>();
 		var mInvalidEquipment = new Mock<EntityComponent>().As<IEquipment>();
-		var targets = System.Array.Empty<U<Vector3, Entity>>().ToTasks();
+		var targets = System.Array.Empty<U<Vector3, Entity>>().ToAsyncEnumerable();
 
 		_ = mValidEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
