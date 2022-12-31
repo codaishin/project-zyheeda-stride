@@ -6,12 +6,46 @@ ChildrenIds: []
 Offset: {X: 0.0, Y: 0.0, Z: 0.0}
 Hierarchy:
     RootParts:
+        - ref!! 96a3fb43-e76c-456f-a87b-cb71a2b3bd33
+        - ref!! 01a2d2a4-6e9b-4028-81a6-59542f289931
         - ref!! 47529c61-f3f5-4e6a-996e-35d7833bb089
         - ref!! 82a62d82-93ee-4b76-abd5-e8ca57e3b7fb
         - ref!! c3ebcead-ded4-4b73-a88f-2fbe1eda413c
+        - ref!! a70e6895-7fd3-4135-9869-1e5eb430a3c8
         - ref!! 80d8012c-51e0-4aed-b36a-ed018b98fb37
-        - ref!! fd6f5264-573a-4ee5-95c6-bb54066c75d1
     Parts:
+        -   Entity:
+                Id: 01a2d2a4-6e9b-4028-81a6-59542f289931
+                Name: Input
+                Components:
+                    c837726700418f2ec12ebfae06a9f168: !TransformComponent
+                        Id: c0f53607-4c64-4bc9-9acf-b1a59a154971
+                        Position: {X: 0.0, Y: 0.0, Z: 0.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    b6df9fc91233ae6370242d8acf39caeb: !ProjectZyheeda.MouseInputController,project_zyheeda_stride
+                        Id: 34850124-ea3d-4a89-b3e5-b1ce2a963a8f
+                        input:
+                            key: Left
+                            mode: OnPress
+                        getTarget:
+                            Entity: ref!! 96a3fb43-e76c-456f-a87b-cb71a2b3bd33
+                        behavior:
+                            Entity: ref!! a70e6895-7fd3-4135-9869-1e5eb430a3c8
+        -   Entity:
+                Id: 2b3d03a5-6086-452d-af65-8a103c8713eb
+                Name: Move
+                Components:
+                    f248825c9d6a7d6d23ed119c123752bb: !TransformComponent
+                        Id: 5e3d5ab5-cfd6-4ca2-a0d1-2c6759e8d5f1
+                        Position: {X: 0.0, Y: 0.0, Z: 0.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    8b37a82e5cae7e5f5b5425042496cce9: !ProjectZyheeda.Move,project_zyheeda_stride
+                        Id: 4a870bbe-c8f2-4a51-815c-981d3359ba54
+                        speed: 5.0
         -   Entity:
                 Id: 47529c61-f3f5-4e6a-996e-35d7833bb089
                 Name: Camera
@@ -50,6 +84,20 @@ Hierarchy:
                         Id: 1a289e28-5b76-43bd-88e1-9bf9a853a607
                         Model: d419514b-33fb-4f51-a295-e2299280ec23:Ground
                         Materials: {}
+                    fda03e76a9de8f8d30a6dab067709993: !StaticColliderComponent
+                        Id: 9a72e989-e802-4a7b-b8ca-9785a309cce1
+                        CanSleep: false
+                        Restitution: 0.0
+                        Friction: 0.5
+                        RollingFriction: 0.0
+                        CcdMotionThreshold: 0.0
+                        CcdSweptSphereRadius: 0.0
+                        IsTrigger: false
+                        AlwaysUpdateNaviMeshCache: false
+                        ColliderShapes:
+                            ee51451e5065565a83d60feb44eacbf5: !StaticPlaneColliderShapeDesc
+                                Normal: {X: 0.0, Y: 1.0, Z: 0.0}
+                                Offset: 0.0
         -   Entity:
                 Id: 82a62d82-93ee-4b76-abd5-e8ca57e3b7fb
                 Name: Directional light
@@ -75,6 +123,39 @@ Hierarchy:
                                 ComputeTransmittance: false
                                 BiasParameters: {}
                         Intensity: 20.0
+        -   Entity:
+                Id: 96a3fb43-e76c-456f-a87b-cb71a2b3bd33
+                Name: GetMousePosition
+                Components:
+                    2488513b735f9ce83715c85405394465: !TransformComponent
+                        Id: 9ca23f46-15c0-4f98-9586-73d7eac0b58e
+                        Position: {X: 0.0, Y: 0.0, Z: 0.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    0a7508d2f6629a366b59c673da9d4e80: !ProjectZyheeda.GetMousePosition,project_zyheeda_stride
+                        Id: 7d51016a-d614-4104-a392-31d63207bd35
+                        camera: ref!! 3383a41f-1f72-4e4b-9693-3be1e9d658d5
+        -   Entity:
+                Id: a70e6895-7fd3-4135-9869-1e5eb430a3c8
+                Name: Player
+                Components:
+                    115c7e28a5e99dcbfe24034e8156ba3b: !TransformComponent
+                        Id: 7e86cbfc-e6e0-48c5-ac5e-4b81d1ee4ef1
+                        Position: {X: 0.0, Y: 0.0, Z: 0.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children:
+                            446ef51b31574579a773d98f06fbf76c: ref!! 7ad7c403-5ce2-4e8f-8d5b-8804f4532705
+                            7a37a32e0ab6a26dd536f337271b5b54: ref!! 5e3d5ab5-cfd6-4ca2-a0d1-2c6759e8d5f1
+                    d6f3d01080df8ef6ea6a7938efa1c659: !ProjectZyheeda.BehaviorController,project_zyheeda_stride
+                        Id: 488da3fb-1d08-4945-8edb-2ba566a1f74d
+                        equipment:
+                            Entity: ref!! 2b3d03a5-6086-452d-af65-8a103c8713eb
+                        agent:
+                            Entity: ref!! a70e6895-7fd3-4135-9869-1e5eb430a3c8
+                        onEquipError: {}
+                        onEquip: {}
         -   Entity:
                 Id: c3ebcead-ded4-4b73-a88f-2fbe1eda413c
                 Name: Skybox
