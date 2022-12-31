@@ -1,8 +1,10 @@
 namespace ProjectZyheeda;
 
+using Stride.Core.Mathematics;
 using Stride.Input;
 
 public interface IInputManagerWrapper {
+	Vector2 MousePosition { get; }
 	bool IsKeyPressed(Keys key);
 	bool IsKeyReleased(Keys key);
 	bool IsMouseButtonPressed(MouseButton button);
@@ -11,6 +13,8 @@ public interface IInputManagerWrapper {
 
 public class InputManagerWrapper : IInputManagerWrapper {
 	private readonly InputManager inputManager;
+
+	public Vector2 MousePosition => this.inputManager.Mouse.Position;
 
 	public InputManagerWrapper(InputManager inputManager) {
 		this.inputManager = inputManager;
