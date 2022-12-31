@@ -37,6 +37,14 @@ public readonly struct U<T1, T2> {
 		return this.fstOrSnd.Switch(fst, snd);
 	}
 
+	public override string? ToString() {
+		var value = this.Switch(
+			a => $"{typeof(T1).Name}: {a?.ToString()}",
+			b => $"{typeof(T2).Name}: {b?.ToString()}"
+		);
+		return $"U<{typeof(T1).Name}, {typeof(T2).Name}>({value})";
+	}
+
 	public static implicit operator U<T1, T2>(T1 value) {
 		return new(value);
 	}
@@ -67,6 +75,15 @@ public readonly struct U<T1, T2, T3> {
 
 	public TOut Switch<TOut>(Func<T1, TOut> fst, Func<T2, TOut> snd, Func<T3, TOut> trd) {
 		return this.fstSndOrTrd.Switch(fst, sndOrTrd => sndOrTrd.Switch(snd, trd));
+	}
+
+	public override string? ToString() {
+		var value = this.Switch(
+			a => $"{typeof(T1).Name}: {a?.ToString()}",
+			b => $"{typeof(T2).Name}: {b?.ToString()}",
+			c => $"{typeof(T3).Name}: {c?.ToString()}"
+		);
+		return $"U<{typeof(T1).Name}, {typeof(T2).Name}, {typeof(T3).Name}>({value})";
 	}
 
 	public static implicit operator U<T1, T2, T3>(T1 value) {
