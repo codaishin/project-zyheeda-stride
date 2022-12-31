@@ -16,6 +16,7 @@
 		"Cmdline",
 		"Gamepad",
 		"notnull",
+		"Raycast",
 		"Zyheeda"
 	],
 }
