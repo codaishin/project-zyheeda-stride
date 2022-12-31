@@ -45,11 +45,10 @@ public class GameTestCollection {
 	public readonly Game game = TestGame.Game;
 	public readonly Scene scene = TestGame.RootScene;
 
-	[SetUp]
+	[TearDown]
 	public void RemoveEntities() {
 		foreach (var entity in this.scene.Entities) {
 			_ = this.scene.Entities.Remove(entity);
-			entity.Dispose();
 		}
 	}
 }

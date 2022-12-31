@@ -12,10 +12,10 @@ public class Move : StartupScript, IEquipment {
 	public override void Start() { }
 
 	private struct Behavior : IBehaviorStateMachine {
-		public Action<IEnumerable<Task<U<Vector3, Entity>>>> executeNext;
+		public Action<IAsyncEnumerable<U<Vector3, Entity>>> executeNext;
 		public Action resetAndIdle;
 
-		public void ExecuteNext(IEnumerable<Task<U<Vector3, Entity>>> targets) {
+		public void ExecuteNext(IAsyncEnumerable<U<Vector3, Entity>> targets) {
 			this.executeNext(targets);
 		}
 
@@ -52,10 +52,10 @@ public class Move : StartupScript, IEquipment {
 	public Either<U<Requirement, Type[]>, IBehaviorStateMachine> GetBehaviorFor(Entity agent) {
 		Stride.Core.MicroThreading.MicroThread? moveThread = null;
 
-		var executeNext = (IEnumerable<Task<U<Vector3, Entity>>> targets) => {
+		var executeNext = (IAsyncEnumerable<U<Vector3, Entity>> targets) => {
 			var move = async () => {
-				foreach (var target in targets) {
-					await this.MoveTowardsTarget(agent, await target);
+				await foreach (var target in targets) {
+					await this.MoveTowardsTarget(agent, target);
 				}
 			};
 			moveThread?.Cancel();

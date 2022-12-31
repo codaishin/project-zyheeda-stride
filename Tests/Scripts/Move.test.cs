@@ -21,7 +21,7 @@ public class TestMove : GameTestCollection {
 		var moveComponent = new Move { speed = 1 };
 		var move = new Entity { moveComponent };
 		var agent = new Entity();
-		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToTasks();
+		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
 
 		this.scene.Entities.Add(agent);
 		this.scene.Entities.Add(move);
@@ -46,7 +46,7 @@ public class TestMove : GameTestCollection {
 	[Test]
 	public void MoveTowardsTargetEntity() {
 		var target = new Entity();
-		var targets = new U<Vector3, Entity>[] { target }.ToTasks();
+		var targets = new U<Vector3, Entity>[] { target }.ToAsyncEnumerable();
 		var moveComponent = new Move { speed = 1 };
 		var move = new Entity { moveComponent };
 		var agent = new Entity();
@@ -75,7 +75,7 @@ public class TestMove : GameTestCollection {
 	[Test]
 	public void MoveTowardsTargetEntityAfterChangingTargetPosition() {
 		var target = new Entity();
-		var targets = new U<Vector3, Entity>[] { target }.ToTasks();
+		var targets = new U<Vector3, Entity>[] { target }.ToAsyncEnumerable();
 		var moveComponent = new Move { speed = 1 };
 		var move = new Entity { moveComponent };
 		var agent = new Entity();
@@ -113,7 +113,7 @@ public class TestMove : GameTestCollection {
 		var moveComponent = new Move { speed = 1 };
 		var move = new Entity { moveComponent };
 		var agent = new Entity();
-		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToTasks();
+		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
 
 		this.scene.Entities.Add(agent);
 		this.scene.Entities.Add(move);
@@ -140,7 +140,7 @@ public class TestMove : GameTestCollection {
 		var moveComponent = new Move { speed = 42 };
 		var move = new Entity { moveComponent };
 		var agent = new Entity();
-		var targets = new U<Vector3, Entity>[] { new Vector3(100, 0, 0) }.ToTasks();
+		var targets = new U<Vector3, Entity>[] { new Vector3(100, 0, 0) }.ToAsyncEnumerable();
 
 		this.scene.Entities.Add(agent);
 		this.scene.Entities.Add(move);
@@ -168,7 +168,7 @@ public class TestMove : GameTestCollection {
 		var moveComponent = new Move { speed = 1 };
 		var move = new Entity { moveComponent };
 		var agent = new Entity();
-		var targets = new U<Vector3, Entity>[] { new Vector3(100, 0, 0) }.ToTasks();
+		var targets = new U<Vector3, Entity>[] { new Vector3(100, 0, 0) }.ToAsyncEnumerable();
 
 		this.scene.Entities.Add(agent);
 		this.scene.Entities.Add(move);
@@ -200,7 +200,7 @@ public class TestMove : GameTestCollection {
 		var moveComponent = new Move { speed = 1 };
 		var move = new Entity { moveComponent };
 		var agent = new Entity();
-		var targets = new U<Vector3, Entity>[] { new Vector3(0, -1, 0) }.ToTasks();
+		var targets = new U<Vector3, Entity>[] { new Vector3(0, -1, 0) }.ToAsyncEnumerable();
 
 		this.scene.Entities.Add(agent);
 		this.scene.Entities.Add(move);
@@ -231,7 +231,7 @@ public class TestMove : GameTestCollection {
 		var targets = new U<Vector3, Entity>[]{
 			new Vector3(1, 0, 0),
 			new Vector3(1, 1, 0),
-		}.ToTasks();
+		}.ToAsyncEnumerable();
 
 		this.scene.Entities.Add(agent);
 		this.scene.Entities.Add(move);
@@ -260,7 +260,7 @@ public class TestMove : GameTestCollection {
 		var moveComponent = new Move { speed = 1 };
 		var move = new Entity { moveComponent };
 		var agent = new Entity();
-		var targets = new U<Vector3, Entity>[] { new Vector3(1, 1, 0) }.ToTasks();
+		var targets = new U<Vector3, Entity>[] { new Vector3(1, 1, 0) }.ToAsyncEnumerable();
 
 		this.scene.Entities.Add(agent);
 		this.scene.Entities.Add(move);
@@ -289,7 +289,7 @@ public class TestMove : GameTestCollection {
 		var moveComponent = new Move { speed = 1 };
 		var move = new Entity { moveComponent };
 		var agent = new Entity();
-		var targets = new U<Vector3, Entity>[] { new Vector3(1, 1, 0) }.ToTasks();
+		var targets = new U<Vector3, Entity>[] { new Vector3(1, 1, 0) }.ToAsyncEnumerable();
 
 		this.scene.Entities.Add(agent);
 		this.scene.Entities.Add(move);
@@ -319,7 +319,7 @@ public class TestMove : GameTestCollection {
 		var moveComponent = new Move { speed = 100_000 };
 		var move = new Entity { moveComponent };
 		var agent = new Entity();
-		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToTasks();
+		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
 
 		this.scene.Entities.Add(agent);
 		this.scene.Entities.Add(move);
@@ -341,7 +341,7 @@ public class TestMove : GameTestCollection {
 		var moveComponent = new Move { speed = 1 };
 		var move = new Entity { moveComponent };
 		var agent = new Entity();
-		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToTasks();
+		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
 
 		this.scene.Entities.Add(agent);
 		this.scene.Entities.Add(move);
@@ -372,7 +372,7 @@ public class TestMove : GameTestCollection {
 		var moveComponent = new Move { speed = 1 };
 		var move = new Entity { moveComponent };
 		var agent = new Entity();
-		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToTasks();
+		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
 
 		this.scene.Entities.Add(agent);
 		this.scene.Entities.Add(move);
@@ -401,8 +401,8 @@ public class TestMove : GameTestCollection {
 		var moveComponent = new Move { speed = 1 };
 		var move = new Entity { moveComponent };
 		var agent = new Entity();
-		var targetsA = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToTasks();
-		var targetsB = new U<Vector3, Entity>[] { new Vector3(-1, 0, 0) }.ToTasks();
+		var targetsA = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
+		var targetsB = new U<Vector3, Entity>[] { new Vector3(-1, 0, 0) }.ToAsyncEnumerable();
 
 		this.scene.Entities.Add(agent);
 		this.scene.Entities.Add(move);
