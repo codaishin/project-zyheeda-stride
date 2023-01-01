@@ -2,6 +2,7 @@ namespace Tests;
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
@@ -241,7 +242,7 @@ public class TestMove : GameTestCollection {
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		behavior.ExecuteNext(targets);
-		this.game.WaitFrames(1);
+		this.game.WaitFrames(2);
 
 		this.game.WaitFrames(1);
 		waypoints.Add(agent.Transform.Position);
@@ -422,6 +423,43 @@ public class TestMove : GameTestCollection {
 		Assert.That(
 			agent.Transform.Position,
 			Is.EqualTo(new Vector3(-distance, 0, 0)).Using(this.tolerance)
+		);
+	}
+
+	[Test]
+	public async Task DoNotBlockNewWaypoints() {
+		var moveComponent = new Move { speed = 100 };
+		var move = new Entity { moveComponent };
+		var agent = new Entity();
+		var startFrame = this.game.UpdateTime.FrameCount;
+
+		var token = new TaskCompletionSource<List<int>>();
+		async IAsyncEnumerable<U<Vector3, Entity>> getTargets() {
+			var frames = new List<int>();
+			_ = await this.game.Script.NextFrame();
+			yield return new Vector3(1, 0, 0);
+			frames.Add(this.game.UpdateTime.FrameCount);
+			_ = await this.game.Script.NextFrame();
+			yield return new Vector3(1, 1, 0);
+			frames.Add(this.game.UpdateTime.FrameCount);
+			token.SetResult(frames);
+		}
+
+		this.scene.Entities.Add(agent);
+		this.scene.Entities.Add(move);
+
+		var behavior = moveComponent
+			.GetBehaviorFor(agent)
+			.Switch(TestMove.GetBehaviorFail, b => b);
+
+		behavior.ExecuteNext(getTargets());
+
+		var frames = await token.Task;
+		var offset = 2;
+
+		Assert.That(
+			frames,
+			Is.EqualTo(new[] { startFrame + offset, startFrame + 1 + offset })
 		);
 	}
 }
