@@ -20,7 +20,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 		}
 	}
 
-	private class MockController : InputController<MockInput> { }
+	private class MockController : BaseInputController<MockInput> { }
 
 	private Entity controllerEntity = new();
 	private Entity behaviorEntity = new();

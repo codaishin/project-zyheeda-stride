@@ -1,18 +1,39 @@
 namespace ProjectZyheeda;
 
+using System;
+using System.Collections.Generic;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 using Stride.Input;
 
+public enum InputKeys {
+	None = default,
+	ShiftLeft,
+	MouseLeft,
+	MouseRight,
+}
+
 public interface IInputManagerWrapper {
 	Vector2 MousePosition { get; }
-	bool IsKeyPressed(Keys key);
-	bool IsKeyReleased(Keys key);
-	bool IsMouseButtonPressed(MouseButton button);
-	bool IsMouseButtonReleased(MouseButton button);
+	bool IsPressed(InputKeys key);
+	bool IsDown(InputKeys key);
+	bool IsReleased(InputKeys key);
 }
 
 public class InputManagerWrapper : IInputManagerWrapper {
+	private static readonly Dictionary<InputKeys, U<Keys, MouseButton>> map = new() {
+		{InputKeys.None, Keys.None},
+		{InputKeys.MouseLeft, MouseButton.Left},
+		{InputKeys.MouseRight, MouseButton.Right},
+		{InputKeys.ShiftLeft, Keys.LeftShift},
+	};
+
+	private static U<Keys, MouseButton> Map(InputKeys key) {
+		return InputManagerWrapper.map.TryGetValue(key, out var result)
+			? result
+			: throw new ArgumentException($"mapping for {key} not configured");
+	}
+
 	private readonly Game game;
 	private InputManager? inputManager;
 
@@ -26,19 +47,24 @@ public class InputManagerWrapper : IInputManagerWrapper {
 		this.game = game;
 	}
 
-	public bool IsKeyPressed(Keys key) {
-		return this.InputManager.IsKeyPressed(key);
+	public bool IsPressed(InputKeys key) {
+		return InputManagerWrapper.Map(key).Switch(
+			k => this.InputManager.IsKeyPressed(k),
+			m => this.InputManager.IsMouseButtonPressed(m)
+		);
 	}
 
-	public bool IsKeyReleased(Keys key) {
-		return this.InputManager.IsKeyReleased(key);
+	public bool IsDown(InputKeys key) {
+		return InputManagerWrapper.Map(key).Switch(
+			k => this.InputManager.IsKeyDown(k),
+			m => this.InputManager.IsMouseButtonDown(m)
+		);
 	}
 
-	public bool IsMouseButtonPressed(MouseButton button) {
-		return this.InputManager.IsMouseButtonPressed(button);
-	}
-
-	public bool IsMouseButtonReleased(MouseButton button) {
-		return this.InputManager.IsMouseButtonReleased(button);
+	public bool IsReleased(InputKeys key) {
+		return InputManagerWrapper.Map(key).Switch(
+			k => this.InputManager.IsKeyReleased(k),
+			m => this.InputManager.IsMouseButtonReleased(m)
+		);
 	}
 }
