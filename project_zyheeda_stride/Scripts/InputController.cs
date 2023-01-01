@@ -7,7 +7,7 @@ using Stride.Core.Mathematics;
 using Stride.Engine;
 using Stride.Engine.Processors;
 
-public abstract class InputController<IInput> : SyncScript
+public abstract class BaseInputController<IInput> : SyncScript
 	where IInput :
 		ProjectZyheeda.IInput,
 		new() {
@@ -55,5 +55,4 @@ public abstract class InputController<IInput> : SyncScript
 	}
 }
 
-public class MouseInputController : InputController<MouseInput> { }
-public class KeyInputController : InputController<KeyInput> { }
+public class InputController : BaseInputController<Input> { }

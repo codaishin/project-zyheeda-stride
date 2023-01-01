@@ -2,70 +2,72 @@ namespace ProjectZyheeda;
 
 using System;
 using System.Collections.Generic;
+using Stride.Core;
+using Stride.Core.Diagnostics;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 using Stride.Engine.Processors;
-using Stride.Input;
 
 public enum InputMode { OnPress, OnRelease }
 
-public abstract class Input<TKey> : IInput
-	where TKey : struct, Enum {
+[DataContract]
+public class Input : IInput {
 
-	public TKey key;
+	public InputKeys key;
 	public InputMode mode;
+	public InputKeys hold;
+
+	public Logger? Log { get; set; }
+
+	private bool holding;
+
+	private static bool FoundTarget(IGetTarget getTarget, out U<Vector3, Entity> target) {
+		var found = getTarget.GetTarget()
+			.Map(t => (U<Vector3, Entity>?)t)
+			.UnpackOr(null);
+		if (found.HasValue) {
+			target = found.Value;
+			return true;
+		}
+		target = Vector3.Zero;
+		return false;
+	}
 
 	public IMaybe<Func<IGetTarget, ScriptSystem, IAsyncEnumerable<U<Vector3, Entity>>>> GetTargets(
 		IInputManagerWrapper input
 	) {
-		static async IAsyncEnumerable<U<Vector3, Entity>> GetInputTargets(
+
+		async IAsyncEnumerable<U<Vector3, Entity>> GetInputTargets(
 			IGetTarget getTarget,
 			ScriptSystem script
 		) {
-			_ = await script.NextFrame();
-			var target = getTarget
-				.GetTarget()
-				.Map(t => (U<Vector3, Entity>?)t)
-				.UnpackOr(null);
-			if (target is not null) {
-				yield return target.Value;
+			this.holding = input.IsDown(this.hold);
+			if (Input.FoundTarget(getTarget, out var target)) {
+				yield return target;
 			}
-			yield break;
+			_ = await script.NextFrame();
+
+			while (input.IsDown(this.hold)) {
+				if (Input.IsTriggered(input, this.mode, this.key) && Input.FoundTarget(getTarget, out target)) {
+					yield return target;
+				}
+				_ = await script.NextFrame();
+			}
+			this.holding = false;
 		}
 
-		return this.IsTriggered(input) ?
-			Maybe.Some(GetInputTargets) :
-			Maybe.None<Func<IGetTarget, ScriptSystem, IAsyncEnumerable<U<Vector3, Entity>>>>();
+		var triggered = Input.IsTriggered(input, this.mode, this.key);
+
+		return triggered && !this.holding
+			? Maybe.Some(GetInputTargets)
+			: Maybe.None<Func<IGetTarget, ScriptSystem, IAsyncEnumerable<U<Vector3, Entity>>>>();
 	}
 
-	protected abstract bool IsPressed(IInputManagerWrapper input);
-	protected abstract bool IsReleased(IInputManagerWrapper input);
-
-	private bool IsTriggered(IInputManagerWrapper inputManager) {
-		return this.mode switch {
-			InputMode.OnPress => this.IsPressed(inputManager),
-			InputMode.OnRelease => this.IsReleased(inputManager),
+	private static bool IsTriggered(IInputManagerWrapper inputManager, InputMode mode, InputKeys key) {
+		return mode switch {
+			InputMode.OnPress => inputManager.IsPressed(key),
+			InputMode.OnRelease => inputManager.IsReleased(key),
 			_ => false,
 		};
-	}
-}
-
-public class MouseInput : Input<MouseButton> {
-	protected override bool IsPressed(IInputManagerWrapper input) {
-		return input.IsMouseButtonPressed(this.key);
-	}
-
-	protected override bool IsReleased(IInputManagerWrapper input) {
-		return input.IsMouseButtonReleased(this.key);
-	}
-}
-
-public class KeyInput : Input<Keys> {
-	protected override bool IsPressed(IInputManagerWrapper input) {
-		return input.IsKeyPressed(this.key);
-	}
-
-	protected override bool IsReleased(IInputManagerWrapper input) {
-		return input.IsKeyReleased(this.key);
 	}
 }

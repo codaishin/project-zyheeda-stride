@@ -7,12 +7,13 @@ using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
 using Stride.Core.Mathematics;
+using Stride.Core.MicroThreading;
 using Stride.Engine;
-using Stride.Input;
 
-public abstract class TestInput : GameTestCollection {
+public class TestInput : GameTestCollection {
 	protected IGetTarget getTarget = Mock.Of<IGetTarget>();
 	protected IInputManagerWrapper inputManager = Mock.Of<IInputManagerWrapper>();
+	private readonly List<MicroThread> threads = new();
 
 	protected Func<bool> TrueInFrames(params int[] frames) {
 		var index = 0;
@@ -25,13 +26,42 @@ public abstract class TestInput : GameTestCollection {
 		};
 	}
 
-	protected U<Vector3, Entity>[] Unpack(IAsyncEnumerable<U<Vector3, Entity>> asyncTargets) {
-		var targets = new List<U<Vector3, Entity>>();
+	protected Func<bool> TrueUntilFrame(int frame) {
+		return () => this.game.UpdateTime.FrameCount < frame;
+	}
+
+	protected Func<IAsyncEnumerable<U<Vector3, Entity>>, U<Vector3, Entity>[]> Unpack(
+		int maxCount = int.MaxValue
+	) {
+		return asyncTargets => {
+			var targets = new List<U<Vector3, Entity>>();
+			var token = new TaskCompletionSource<bool>();
+			_ = this.game.Script.AddTask(
+				async () => {
+					await foreach (var target in asyncTargets) {
+						targets.Add(target);
+						if (targets.Count >= maxCount) {
+							break;
+						}
+					}
+					token.SetResult(true);
+				}
+			);
+
+			token.Task.Wait();
+			return targets.ToArray();
+		};
+	}
+
+	protected (U<Vector3, Entity>, int)[] UnpackWithFrame(
+		IAsyncEnumerable<U<Vector3, Entity>> asyncTargets
+	) {
+		var targets = new List<(U<Vector3, Entity>, int)>();
 		var token = new TaskCompletionSource<bool>();
 		_ = this.game.Script.AddTask(
 			async () => {
 				await foreach (var target in asyncTargets) {
-					targets.Add(target);
+					targets.Add((target, this.game.UpdateTime.FrameCount));
 				}
 				token.SetResult(true);
 			}
@@ -40,9 +70,7 @@ public abstract class TestInput : GameTestCollection {
 		token.Task.Wait();
 		return targets.ToArray();
 	}
-}
 
-public class TestMouseInput : TestInput {
 	[Test]
 	public void OnPressOneTarget() {
 		_ = Mock.Get(this.getTarget)
@@ -50,17 +78,17 @@ public class TestMouseInput : TestInput {
 			.Returns(Maybe.Some((U<Vector3, Entity>)new Vector3(1, 2, 3)));
 
 		_ = Mock.Get(this.inputManager)
-			.Setup(i => i.IsMouseButtonPressed(MouseButton.Left))
+			.Setup(i => i.IsPressed(InputKeys.MouseLeft))
 			.Returns(this.TrueInFrames(this.game.UpdateTime.FrameCount));
 
-		var input = new MouseInput {
-			key = MouseButton.Left,
+		var input = new Input {
+			key = InputKeys.MouseLeft,
 			mode = InputMode.OnPress,
 		};
 		var targets = input
 			.GetTargets(this.inputManager)
 			.Map(getTargets => getTargets(this.getTarget, this.game.Script))
-			.Map(this.Unpack)
+			.Map(this.Unpack())
 			.UnpackOr(Array.Empty<U<Vector3, Entity>>());
 
 		Assert.That(targets, Is.EqualTo(new U<Vector3, Entity>[] { new Vector3(1, 2, 3) }));
@@ -73,17 +101,17 @@ public class TestMouseInput : TestInput {
 			.Returns(Maybe.None<U<Vector3, Entity>>());
 
 		_ = Mock.Get(this.inputManager)
-			.Setup(i => i.IsMouseButtonPressed(MouseButton.Left))
+			.Setup(i => i.IsPressed(InputKeys.MouseLeft))
 			.Returns(this.TrueInFrames(this.game.UpdateTime.FrameCount));
 
-		var input = new MouseInput {
-			key = MouseButton.Left,
+		var input = new Input {
+			key = InputKeys.MouseLeft,
 			mode = InputMode.OnPress,
 		};
 		var targets = input
 			.GetTargets(this.inputManager)
 			.Map(getTargets => getTargets(this.getTarget, this.game.Script))
-			.Map(this.Unpack)
+			.Map(this.Unpack())
 			.UnpackOr(Array.Empty<U<Vector3, Entity>>());
 
 		Assert.That(targets, Is.EqualTo(Array.Empty<U<Vector3, Entity>>()));
@@ -95,14 +123,14 @@ public class TestMouseInput : TestInput {
 			.Setup(g => g.GetTarget())
 			.Returns(Maybe.Some((U<Vector3, Entity>)new Vector3(1, 2, 3)));
 
-		var input = new MouseInput {
-			key = MouseButton.Left,
+		var input = new Input {
+			key = InputKeys.MouseLeft,
 			mode = InputMode.OnPress,
 		};
 		var targets = input
 			.GetTargets(this.inputManager)
 			.Map(getTargets => getTargets(this.getTarget, this.game.Script))
-			.Map(this.Unpack)
+			.Map(this.Unpack())
 			.UnpackOr(Array.Empty<U<Vector3, Entity>>());
 
 		Assert.That(targets, Is.Empty);
@@ -115,17 +143,17 @@ public class TestMouseInput : TestInput {
 			.Returns(Maybe.Some((U<Vector3, Entity>)new Vector3(1, 2, 3)));
 
 		_ = Mock.Get(this.inputManager)
-			.Setup(i => i.IsMouseButtonReleased(MouseButton.Right))
+			.Setup(i => i.IsReleased(InputKeys.MouseRight))
 			.Returns(this.TrueInFrames(this.game.UpdateTime.FrameCount));
 
-		var input = new MouseInput {
-			key = MouseButton.Right,
+		var input = new Input {
+			key = InputKeys.MouseRight,
 			mode = InputMode.OnRelease,
 		};
 		var targets = input
 			.GetTargets(this.inputManager)
 			.Map(getTargets => getTargets(this.getTarget, this.game.Script))
-			.Map(this.Unpack)
+			.Map(this.Unpack())
 			.UnpackOr(Array.Empty<U<Vector3, Entity>>());
 
 		Assert.That(targets, Is.EqualTo(new U<Vector3, Entity>[] { new Vector3(1, 2, 3) }));
@@ -137,102 +165,135 @@ public class TestMouseInput : TestInput {
 			.Setup(g => g.GetTarget())
 			.Returns(Maybe.Some((U<Vector3, Entity>)new Vector3(1, 2, 3)));
 
-		var input = new MouseInput {
-			key = MouseButton.Right,
+		var input = new Input {
+			key = InputKeys.MouseRight,
 			mode = InputMode.OnRelease,
 		};
 		var targets = input
 			.GetTargets(this.inputManager)
 			.Map(getTargets => getTargets(this.getTarget, this.game.Script))
-			.Map(this.Unpack)
+			.Map(this.Unpack())
 			.UnpackOr(Array.Empty<U<Vector3, Entity>>());
 
 		Assert.That(targets, Is.Empty);
 	}
-}
 
-public class TestKeyInput : TestInput {
 	[Test]
-	public void OnPressOneTarget() {
+	public void PressAndHoldMultipleTargets() {
+		var entity = new Entity();
+		var targetsDefinition = new U<Vector3, Entity>[] {
+			new Vector3(1, 2, 3),
+			entity,
+			new Vector3(3, 2, 1),
+		};
+		var index = 0;
+
 		_ = Mock.Get(this.getTarget)
 			.Setup(g => g.GetTarget())
-			.Returns(Maybe.Some((U<Vector3, Entity>)new Vector3(1, 2, 3)));
+			.Returns(
+				() => index < targetsDefinition.Length
+					? Maybe.Some(targetsDefinition[index++])
+					: Maybe.None<U<Vector3, Entity>>()
+			);
+
+		var thisFrame = this.game.UpdateTime.FrameCount;
+		_ = Mock.Get(this.inputManager)
+			.Setup(i => i.IsReleased(InputKeys.MouseRight))
+			.Returns(this.TrueInFrames(thisFrame, thisFrame + 3, thisFrame + 10));
 
 		_ = Mock.Get(this.inputManager)
-			.Setup(i => i.IsKeyPressed(Keys.B))
-			.Returns(this.TrueInFrames(this.game.UpdateTime.FrameCount));
+			.Setup(i => i.IsDown(InputKeys.ShiftLeft))
+			.Returns(this.TrueUntilFrame(100));
 
-		var input = new KeyInput {
-			key = Keys.B,
-			mode = InputMode.OnPress,
+		var input = new Input {
+			key = InputKeys.MouseRight,
+			mode = InputMode.OnRelease,
+			hold = InputKeys.ShiftLeft,
 		};
+
 		var targets = input
 			.GetTargets(this.inputManager)
 			.Map(getTargets => getTargets(this.getTarget, this.game.Script))
-			.Map(this.Unpack)
-			.UnpackOr(Array.Empty<U<Vector3, Entity>>());
+			.Map(this.UnpackWithFrame)
+			.UnpackOr(Array.Empty<(U<Vector3, Entity>, int)>());
 
-		Assert.That(targets, Is.EqualTo(new U<Vector3, Entity>[] { new Vector3(1, 2, 3) }));
+		Assert.That(
+			targets,
+			Is.EqualTo(
+				new (U<Vector3, Entity>, int)[] {
+					(new Vector3(1, 2, 3), thisFrame + 1),
+					(entity, thisFrame + 3),
+					(new Vector3(3, 2, 1), thisFrame + 10),
+				}
+			)
+		);
 	}
 
 	[Test]
-	public void OnPressNone() {
+	public void NewGetTargetsBlockedDuringHold() {
 		_ = Mock.Get(this.getTarget)
 			.Setup(g => g.GetTarget())
-			.Returns(Maybe.Some((U<Vector3, Entity>)new Vector3(1, 2, 3)));
+			.Returns(Maybe.Some<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
 
-		var input = new KeyInput {
-			key = Keys.B,
-			mode = InputMode.OnPress,
-		};
-		var targets = input
-			.GetTargets(this.inputManager)
-			.Map(getTargets => getTargets(this.getTarget, this.game.Script))
-			.Map(this.Unpack)
-			.UnpackOr(Array.Empty<U<Vector3, Entity>>());
-
-		Assert.That(targets, Is.Empty);
-	}
-
-	[Test]
-	public void OnReleaseOneTarget() {
-		_ = Mock.Get(this.getTarget)
-			.Setup(g => g.GetTarget())
-			.Returns(Maybe.Some((U<Vector3, Entity>)new Vector3(1, 2, 3)));
+		var thisFrame = this.game.UpdateTime.FrameCount;
+		_ = Mock.Get(this.inputManager)
+			.Setup(i => i.IsPressed(InputKeys.MouseRight))
+			.Returns(true);
 
 		_ = Mock.Get(this.inputManager)
-			.Setup(i => i.IsKeyReleased(Keys.Up))
-			.Returns(this.TrueInFrames(this.game.UpdateTime.FrameCount));
+			.Setup(i => i.IsDown(InputKeys.ShiftLeft))
+			.Returns(this.TrueUntilFrame(100));
 
-		var input = new KeyInput {
-			key = Keys.Up,
-			mode = InputMode.OnRelease,
+		var input = new Input {
+			key = InputKeys.MouseRight,
+			mode = InputMode.OnPress,
+			hold = InputKeys.ShiftLeft,
 		};
-		var targets = input
+
+		_ = input
 			.GetTargets(this.inputManager)
 			.Map(getTargets => getTargets(this.getTarget, this.game.Script))
-			.Map(this.Unpack)
-			.UnpackOr(Array.Empty<U<Vector3, Entity>>());
+			.Map(this.Unpack(1));
 
-		Assert.That(targets, Is.EqualTo(new U<Vector3, Entity>[] { new Vector3(1, 2, 3) }));
+		var newTargets = input
+			.GetTargets(this.inputManager)
+			.Map(_ => true)
+			.UnpackOr(false);
+
+		Assert.That(newTargets, Is.False);
 	}
 
 	[Test]
-	public void OnReleaseNone() {
+	public void IfNotHoldingUnblockNewGetTargetsCall() {
 		_ = Mock.Get(this.getTarget)
 			.Setup(g => g.GetTarget())
-			.Returns(Maybe.Some((U<Vector3, Entity>)new Vector3(1, 2, 3)));
+			.Returns(Maybe.Some<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
 
-		var input = new KeyInput {
-			key = Keys.Up,
-			mode = InputMode.OnRelease,
+		var thisFrame = this.game.UpdateTime.FrameCount;
+		_ = Mock.Get(this.inputManager)
+			.Setup(i => i.IsPressed(InputKeys.MouseRight))
+			.Returns(true);
+
+		_ = Mock.Get(this.inputManager)
+			.Setup(i => i.IsDown(InputKeys.ShiftLeft))
+			.Returns(this.TrueUntilFrame(this.game.UpdateTime.FrameCount + 2));
+
+		var input = new Input {
+			key = InputKeys.MouseRight,
+			mode = InputMode.OnPress,
+			hold = InputKeys.ShiftLeft,
 		};
-		var targets = input
+
+		_ = input
 			.GetTargets(this.inputManager)
 			.Map(getTargets => getTargets(this.getTarget, this.game.Script))
-			.Map(this.Unpack)
-			.UnpackOr(Array.Empty<U<Vector3, Entity>>());
+			.Map(this.Unpack());
 
-		Assert.That(targets, Is.Empty);
+		var newTargets = input
+			.GetTargets(this.inputManager)
+			.Map(_ => true)
+			.UnpackOr(false);
+
+		Assert.That(newTargets, Is.True);
 	}
 }

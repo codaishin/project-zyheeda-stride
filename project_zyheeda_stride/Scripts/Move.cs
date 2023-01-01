@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stride.Core.Mathematics;
+using Stride.Core.MicroThreading;
 using Stride.Engine;
 
 public class Move : StartupScript, IEquipment {
@@ -50,20 +51,35 @@ public class Move : StartupScript, IEquipment {
 	}
 
 	public Either<U<Requirement, Type[]>, IBehaviorStateMachine> GetBehaviorFor(Entity agent) {
-		Stride.Core.MicroThreading.MicroThread? moveThread = null;
+		MicroThread? traverseWaypointsThread = null;
+		MicroThread? collectWaypointsThread = null;
 
 		var executeNext = (IAsyncEnumerable<U<Vector3, Entity>> targets) => {
-			var move = async () => {
+			var waypoints = new List<U<Vector3, Entity>>();
+			var index = 0;
+			var collectWaypoints = async () => {
 				await foreach (var target in targets) {
-					await this.MoveTowardsTarget(agent, target);
+					waypoints.Add(target);
 				}
 			};
-			moveThread?.Cancel();
-			moveThread = this.Script.AddTask(move);
+			var traverseWaypoints = async () => {
+				while (true) {
+					if (index < waypoints.Count) {
+						await this.MoveTowardsTarget(agent, waypoints[index++]);
+					}
+					_ = await this.Script.NextFrame();
+				}
+			};
+
+			collectWaypointsThread?.Cancel();
+			traverseWaypointsThread?.Cancel();
+			collectWaypointsThread = this.Script.AddTask(collectWaypoints);
+			traverseWaypointsThread = this.Script.AddTask(traverseWaypoints);
 		};
 
 		var resetAndIdle = () => {
-			moveThread?.Cancel();
+			collectWaypointsThread?.Cancel();
+			traverseWaypointsThread?.Cancel();
 		};
 
 		return new Move.Behavior {
