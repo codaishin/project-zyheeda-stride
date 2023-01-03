@@ -1,0 +1,75 @@
+!Skeleton
+Id: 75895eb1-08a6-41b0-bbdc-17a0d3b5b727
+SerializedVersion: {Stride: 2.0.0.0}
+Tags: []
+Source: !file ../../models/dummy.fbx
+PivotPosition: {X: 0.0, Y: 0.0, Z: 0.0}
+Nodes:
+    1a29809d060ec267524ac50cf092003e: {Name: RootNode, Depth: 0}
+    805f76adf5a8c2e5296373692d018575: {Name: Dummy, Depth: 1}
+    e775d2c97b273988ac13e8e9250ce994: {Name: root, Depth: 2}
+    cff26a8d4321f1381ec38d4b10f0c91f: {Name: spine, Depth: 3}
+    30634be09093c9e616e59264c98c67e0: {Name: Hip, Depth: 4}
+    16e4ea2ec1bea8241e2f0fa2337f98d0: {Name: spine.001, Depth: 4}
+    f926adb679bceb1eb78966ff60105b95: {Name: AbdomeLower, Depth: 5}
+    2d1bde586f94d778b06963b89ad3b1a6: {Name: spine.002, Depth: 5}
+    1c43dbad0d736e3dd6e7b17afacba145: {Name: AbdomenUpper, Depth: 6}
+    9f58a06d95c24734dfaa382d7618847a: {Name: spine.003, Depth: 6}
+    92653ddefddc2ee4cd2584ee9e1d331b: {Name: Chest, Depth: 7}
+    81ab4c59eebd6a0bf77f60221f8366d6: {Name: spine.004, Depth: 7}
+    e4bb35651c76f90eae086427a0e4e054: {Name: NeckUpper, Depth: 8}
+    99503745b2465196ba4d10a8c568091f: {Name: spine.005, Depth: 8}
+    4a83f6e752fe8246ec30fa8230504e64: {Name: Head, Depth: 9}
+    18301874210ca603b5dbcadc695fdbc9: {Name: spine.005_end, Depth: 9}
+    03538a76c83634e1ff43b92120c3a297: {Name: shoulder.L, Depth: 7}
+    8ed86c3cb3307061268a8a32257ae98d: {Name: Clacical.L, Depth: 8}
+    1e3960489d2f433d44a177c290984775: {Name: upper_arm.L, Depth: 8}
+    35301e5e666a528e52f457099464d9e6: {Name: ArmUpper.L, Depth: 9}
+    36ec6fe391c2dae822b417f657f69188: {Name: forearm.L, Depth: 9}
+    1c9f21dc3a8242e79898f4211763aebc: {Name: ArmLower.L, Depth: 10}
+    aacad7e7f8a84787c9c903256c58ff7b: {Name: hand.L, Depth: 10}
+    dcb69c03cc8e756e7afebfde87298abf: {Name: Hand.L, Depth: 11}
+    d4b3cd483ab79cdb504d881a03432865: {Name: gun.L, Depth: 11}
+    05f409a31b3e3b82b1df01e72c4760bb: {Name: gun.L_end, Depth: 12}
+    85ae8c532f938df508886fb49fceeb20: {Name: shoulder.R, Depth: 7}
+    e959fb0dba073f787c9b3435c19892e7: {Name: Clacical.R, Depth: 8}
+    55432859ea202af09dcda3c75c3c218e: {Name: upper_arm.R, Depth: 8}
+    608dc3ebd6a900e22f3608e2644af504: {Name: ArmUpper.R, Depth: 9}
+    9af1617e319ffbbaa3235ba2f1cdd17e: {Name: forearm.R, Depth: 9}
+    d15e6affbf3e5ba2a444f58d892a06f6: {Name: ArmLower.R, Depth: 10}
+    94aa332a3d6b0557e9792efe9a786300: {Name: hand.R, Depth: 10}
+    73623d28a809add220578039bc182330: {Name: Hand.R, Depth: 11}
+    a94001d6f3ed607fb7c08b255b5c9ce6: {Name: gun.R, Depth: 11}
+    96f378d2621012ecaca494c462658e6a: {Name: gun.R_end, Depth: 12}
+    4779a9ac8cae282c55055babe2a3dadc: {Name: thigh.L, Depth: 4}
+    2ec46c7421b74d9a94b257e9517f9621: {Name: LegUpper.L, Depth: 5}
+    96be28bdd7e12010ae34036913114172: {Name: shin.L, Depth: 5}
+    117d4bb47dd005d6ffe9fa6d0bbe7067: {Name: LugLower.L, Depth: 6}
+    29a04a18113caf4a3aab9c117a482999: {Name: shin.L_end, Depth: 6}
+    8b791d56d867b7315198cb4e1d6ab471: {Name: thigh.R, Depth: 4}
+    339f19807e90a4068d258c4abde239e6: {Name: LegUpper.R, Depth: 5}
+    d486f89619070e3f8d8f866cce703d98: {Name: shin.R, Depth: 5}
+    329cb6a318f6a549f9fe4bdc50fd7659: {Name: LugLower.R, Depth: 6}
+    aff397875629a64f9eb0a0da4355026e: {Name: shin.R_end, Depth: 6}
+    d48d1413a8af82905eed1641da2b8501: {Name: thighIK.L, Depth: 3}
+    9af2f53cc496b90105f7e16d0ff323ae: {Name: thighIK.L_end, Depth: 4}
+    242e2f04576a221f01c4a1f5947e9527: {Name: thighIK.R, Depth: 3}
+    58ebe225bee084a3bbdc51f381395f5f: {Name: thighIK.R_end, Depth: 4}
+    4ca84029a86d06b5ecdd37ef2f13b94e: {Name: shinIK.L, Depth: 3}
+    db7f55e911d3e6a76d26ebb2e130124e: {Name: foot.L, Depth: 4}
+    301e090e60d4a63e991a5f381d9502a4: {Name: Foot.L, Depth: 5}
+    7227cf1c1d62e66e6f49c5dbb22698df: {Name: foot.L_end, Depth: 5}
+    1367040d6c19420ed980f6db1b472c9d: {Name: shinIK.R, Depth: 3}
+    4e0c27c2891f6fec92c437b13fb23cfa: {Name: foot.R, Depth: 4}
+    c7aa2d833bc2afc4a63fec302da8587a: {Name: Foot.R, Depth: 5}
+    5bb3feb4332748db22c6575abb425e2d: {Name: foot.R_end, Depth: 5}
+    ceb68090e46b2a9c405fd650565aebaa: {Name: forearmIK.L, Depth: 3}
+    d899da1dec3ad2cfa0750dc3132692a4: {Name: forearmIK.L_end, Depth: 4}
+    b3d734e146d3d6108c5e7a0d86689da4: {Name: forearmIK.R, Depth: 3}
+    2bd9ac2e2eda7a59af830c15391e558e: {Name: forearmIK.R_end, Depth: 4}
+    42e2c88b30f5c95046ee7a2238fd8ce8: {Name: upper_armIK.L, Depth: 3}
+    61531e0fbd211df521a4e641a889611d: {Name: upper_armIK.L_end, Depth: 4}
+    fa598763060cb985ffb17aeaac0c8813: {Name: upper_armIK.R, Depth: 3}
+    03da6bb1375ddd0502379be5e30ca818: {Name: upper_armIK.R_end, Depth: 4}
+~SourceHashes:
+    feb7699c9cdadc4e61c10ab09a729106~../../models/dummy.fbx: a507fba60540f57ce34c54c4fe27d505

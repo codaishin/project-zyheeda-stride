@@ -1,0 +1,15 @@
+!Model
+Id: 45748d85-2eef-411a-9b7e-1bbda1beda94
+SerializedVersion: {Stride: 2.0.0.0}
+Tags: []
+Source: !file ../../models/dummy.fbx
+Skeleton: 75895eb1-08a6-41b0-bbdc-17a0d3b5b727:dummy Skeleton
+PivotPosition: {X: 0.0, Y: 0.0, Z: 0.0}
+Materials:
+    678241f02eee1295caa05f23a9817c2b:
+        Name: Material
+        MaterialInstance:
+            Material: null
+Modifiers: {}
+~SourceHashes:
+    c2a1da0b13c3bfeee9890597d237bf4b~../../models/dummy.fbx: a507fba60540f57ce34c54c4fe27d505
