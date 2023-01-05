@@ -3,4 +3,5 @@ using Stride.Engine;
 
 using var game = new Game();
 game.Services.AddService<IInputManagerWrapper>(new InputManagerWrapper(game));
+game.Services.AddService<IGetAnimation>(new GetAnimations());
 game.Run();
