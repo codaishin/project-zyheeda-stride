@@ -58,26 +58,28 @@ public class Move : StartupScript, IEquipment {
 		MicroThread? traverseWaypointsThread = null;
 		MicroThread? collectWaypointsThread = null;
 
+		var isRunning = (MicroThread thread) =>
+			thread.State is MicroThreadState.Starting or MicroThreadState.Running;
+
 		var executeNext = (IAsyncEnumerable<U<Vector3, Entity>> targets) => {
-			var waypoints = new List<U<Vector3, Entity>>();
-			var index = 0;
+			var waypoints = new Queue<U<Vector3, Entity>>();
 			var collectWaypoints = async () => {
 				await foreach (var target in targets) {
-					waypoints.Add(target);
+					waypoints.Enqueue(target);
 				}
 			};
+			collectWaypointsThread?.Cancel();
+			collectWaypointsThread = this.Script.AddTask(collectWaypoints);
+
 			var traverseWaypoints = async () => {
-				while (true) {
-					if (index < waypoints.Count) {
-						await this.MoveTowardsTarget(agent, waypoints[index++]);
+				while (isRunning(collectWaypointsThread) || waypoints.Count > 0) {
+					if (waypoints.TryDequeue(out var waypoint)) {
+						await this.MoveTowardsTarget(agent, waypoint);
 					}
 					_ = await this.Script.NextFrame();
-				}
+				};
 			};
-
-			collectWaypointsThread?.Cancel();
 			traverseWaypointsThread?.Cancel();
-			collectWaypointsThread = this.Script.AddTask(collectWaypoints);
 			traverseWaypointsThread = this.Script.AddTask(traverseWaypoints);
 		};
 
