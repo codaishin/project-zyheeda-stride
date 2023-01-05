@@ -40,6 +40,10 @@ public class Move : StartupScript, IEquipment {
 	}
 
 	private async Task MoveTowardsTarget(Entity agent, U<Vector3, Entity> target) {
+		var direction = Move.GetVector3(target) - agent.Transform.Position;
+
+		direction.Normalize();
+		agent.Transform.Rotation = Quaternion.LookRotation(direction, Vector3.UnitY);
 		while (agent.Transform.Position != Move.GetVector3(target)) {
 			_ = await this.Script.NextFrame();
 			agent.Transform.Position = this.MoveTowards(

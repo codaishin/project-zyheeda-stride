@@ -462,4 +462,56 @@ public class TestMove : GameTestCollection {
 			Is.EqualTo(new[] { startFrame + offset, startFrame + 1 + offset })
 		);
 	}
+
+	[Test]
+	public void LookAtTarget() {
+		var moveComponent = new Move { speed = 100_000 };
+		var move = new Entity { moveComponent };
+		var agent = new Entity();
+		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
+
+		this.scene.Entities.Add(agent);
+		this.scene.Entities.Add(move);
+
+		var behavior = moveComponent
+			.GetBehaviorFor(agent)
+			.Switch(TestMove.GetBehaviorFail, b => b);
+
+		behavior.ExecuteNext(targets);
+		this.game.WaitFrames(1);
+
+		this.game.WaitFrames(2);
+
+		Assert.That(
+			agent.Transform.Rotation,
+			Is.EqualTo(Quaternion.LookRotation(Vector3.UnitX, Vector3.UnitY))
+		);
+	}
+
+	[Test]
+	public void LookAtTargetFromOFfset() {
+		var moveComponent = new Move { speed = 100_000 };
+		var move = new Entity { moveComponent };
+		var agent = new Entity();
+		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
+
+		agent.Transform.Position = new Vector3(3, 0, 0);
+
+		this.scene.Entities.Add(agent);
+		this.scene.Entities.Add(move);
+
+		var behavior = moveComponent
+			.GetBehaviorFor(agent)
+			.Switch(TestMove.GetBehaviorFail, b => b);
+
+		behavior.ExecuteNext(targets);
+		this.game.WaitFrames(1);
+
+		this.game.WaitFrames(2);
+
+		Assert.That(
+			agent.Transform.Rotation,
+			Is.EqualTo(Quaternion.LookRotation(-Vector3.UnitX, Vector3.UnitY))
+		);
+	}
 }
