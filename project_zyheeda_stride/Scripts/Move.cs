@@ -2,15 +2,21 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Stride.Core.Mathematics;
 using Stride.Core.MicroThreading;
 using Stride.Engine;
 
+
 public class Move : StartupScript, IEquipment {
 	public float speed;
 
-	public override void Start() { }
+	private IGetAnimation? getAnimation;
+
+	public override void Start() {
+		this.getAnimation = this.Game.Services.GetService<IGetAnimation>();
+	}
 
 	private struct Behavior : IBehaviorStateMachine {
 		public Action<IAsyncEnumerable<U<Vector3, Entity>>> executeNext;
@@ -39,11 +45,23 @@ public class Move : StartupScript, IEquipment {
 		return target.Switch(v => v, e => e.Transform.Position);
 	}
 
+	private static Func<AnimationComponent, Func<IGetAnimation, IMaybe<IPlayingAnimation>>> GetPlayFnFor(
+		string key
+	) {
+		return
+			(AnimationComponent animationComponent) =>
+			(IGetAnimation getAnimation) =>
+				getAnimation.IsPlaying(animationComponent, key)
+					? Maybe.None<IPlayingAnimation>()
+					: getAnimation.Play(animationComponent, key);
+	}
+
 	private async Task MoveTowardsTarget(Entity agent, U<Vector3, Entity> target) {
 		var direction = Move.GetVector3(target) - agent.Transform.Position;
 
 		direction.Normalize();
 		agent.Transform.Rotation = Quaternion.LookRotation(direction, Vector3.UnitY);
+
 		while (agent.Transform.Position != Move.GetVector3(target)) {
 			_ = await this.Script.NextFrame();
 			agent.Transform.Position = this.MoveTowards(
@@ -58,11 +76,30 @@ public class Move : StartupScript, IEquipment {
 		MicroThread? traverseWaypointsThread = null;
 		MicroThread? collectWaypointsThread = null;
 
+		var animationComponent = agent
+			.GetChildren()
+			.Select(c => c.Get<AnimationComponent>())
+			.FirstOrDefault();
+
 		var isRunning = (MicroThread thread) =>
 			thread.State is MicroThreadState.Starting or MicroThreadState.Running;
 
+		var play = (string animationKey) => {
+			_ = Move
+				.GetPlayFnFor(animationKey)
+				.Apply(animationComponent.ToEither("no AnimationComponent"))
+				.Apply(this.getAnimation.ToEither("no IGetAnimation"));
+		};
+
 		var executeNext = (IAsyncEnumerable<U<Vector3, Entity>> targets) => {
 			var waypoints = new Queue<U<Vector3, Entity>>();
+
+			(string, Func<Task>) getAnimationAndTask() {
+				return waypoints.TryDequeue(out var waypoint)
+					? ("walk", async () => await this.MoveTowardsTarget(agent, waypoint))
+					: ("idle", async () => await this.Script.NextFrame());
+			}
+
 			var collectWaypoints = async () => {
 				await foreach (var target in targets) {
 					waypoints.Enqueue(target);
@@ -73,11 +110,11 @@ public class Move : StartupScript, IEquipment {
 
 			var traverseWaypoints = async () => {
 				while (isRunning(collectWaypointsThread) || waypoints.Count > 0) {
-					if (waypoints.TryDequeue(out var waypoint)) {
-						await this.MoveTowardsTarget(agent, waypoint);
-					}
-					_ = await this.Script.NextFrame();
+					var (animation, task) = getAnimationAndTask();
+					play(animation);
+					await task();
 				};
+				play("idle");
 			};
 			traverseWaypointsThread?.Cancel();
 			traverseWaypointsThread = this.Script.AddTask(traverseWaypoints);

@@ -242,9 +242,8 @@ public class TestMove : GameTestCollection {
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		behavior.ExecuteNext(targets);
-		this.game.WaitFrames(2);
 
-		this.game.WaitFrames(1);
+		this.game.WaitFrames(2);
 		waypoints.Add(agent.Transform.Position);
 
 		this.game.WaitFrames(1);
@@ -513,5 +512,230 @@ public class TestMove : GameTestCollection {
 			agent.Transform.Rotation,
 			Is.EqualTo(Quaternion.LookRotation(-Vector3.UnitX, Vector3.UnitY))
 		);
+	}
+
+	[Test]
+	public void PlayWalk() {
+		var moveComponent = new Move { speed = 1 };
+		var move = new Entity { moveComponent };
+		var animations = new AnimationComponent();
+		var agent = new Entity();
+		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
+
+		var getAnimation = Mock.Of<IGetAnimation>();
+		_ = Mock
+			.Get(getAnimation)
+			.Setup(g => g.Play(animations, It.IsAny<string>()))
+			.Returns(Maybe.None<IPlayingAnimation>());
+
+		this.game.Services.RemoveService<IGetAnimation>();
+		this.game.Services.AddService<IGetAnimation>(getAnimation);
+		this.scene.Entities.Add(agent);
+		this.scene.Entities.Add(move);
+		agent.AddChild(new Entity { animations });
+
+		var behavior = moveComponent
+			.GetBehaviorFor(agent)
+			.Switch(TestMove.GetBehaviorFail, b => b);
+
+		this.game.WaitFrames(1);
+
+		behavior.ExecuteNext(targets);
+
+		this.game.WaitFrames(10);
+
+		Mock
+			.Get(getAnimation)
+			.Verify(g => g.Play(animations, "walk"), Times.Once);
+	}
+
+	[Test]
+	public void PlayIdle() {
+		var moveComponent = new Move { speed = 100_000 };
+		var move = new Entity { moveComponent };
+		var animations = new AnimationComponent();
+		var agent = new Entity();
+		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
+
+		var getAnimation = Mock.Of<IGetAnimation>();
+		_ = Mock
+			.Get(getAnimation)
+			.Setup(g => g.Play(animations, It.IsAny<string>()))
+			.Returns(Maybe.None<IPlayingAnimation>());
+
+		this.game.Services.RemoveService<IGetAnimation>();
+		this.game.Services.AddService<IGetAnimation>(getAnimation);
+		this.scene.Entities.Add(agent);
+		this.scene.Entities.Add(move);
+		agent.AddChild(new Entity { animations });
+
+		var behavior = moveComponent
+			.GetBehaviorFor(agent)
+			.Switch(TestMove.GetBehaviorFail, b => b);
+
+		this.game.WaitFrames(1);
+
+		behavior.ExecuteNext(targets);
+
+		this.game.WaitFrames(10);
+
+		Mock
+			.Get(getAnimation)
+			.Verify(g => g.Play(animations, "idle"), Times.Once);
+	}
+
+	[Test]
+	public void PlayWalkWithMultipleWaypoints() {
+		var moveComponent = new Move { speed = 100_000 };
+		var move = new Entity { moveComponent };
+		var animations = new AnimationComponent();
+		var agent = new Entity();
+		var targets = new U<Vector3, Entity>[] {
+			new Vector3(1, 0, 0),
+			new Vector3(1, 1, 0)
+		}.ToAsyncEnumerable();
+
+		var getAnimation = Mock.Of<IGetAnimation>();
+		_ = Mock
+			.Get(getAnimation)
+			.Setup(g => g.Play(animations, It.IsAny<string>()))
+			.Returns(Maybe.None<IPlayingAnimation>());
+		_ = Mock
+			.Get(getAnimation)
+			.Setup(g => g.IsPlaying(animations, It.IsAny<string>()))
+			.Returns(false);
+
+		this.game.Services.RemoveService<IGetAnimation>();
+		this.game.Services.AddService<IGetAnimation>(getAnimation);
+		this.scene.Entities.Add(agent);
+		this.scene.Entities.Add(move);
+		agent.AddChild(new Entity { animations });
+
+		var behavior = moveComponent
+			.GetBehaviorFor(agent)
+			.Switch(TestMove.GetBehaviorFail, b => b);
+
+		this.game.WaitFrames(1);
+
+		behavior.ExecuteNext(targets);
+
+		this.game.WaitFrames(10);
+
+		Mock
+			.Get(getAnimation)
+			.Verify(g => g.Play(animations, "walk"), Times.AtLeast(2));
+		Mock
+			.Get(getAnimation)
+			.Verify(g => g.Play(animations, "idle"), Times.Exactly(1));
+	}
+
+	[Test]
+	public void DoNotPlayIfPlaying() {
+		var moveComponent = new Move { speed = 100_000 };
+		var move = new Entity { moveComponent };
+		var animations = new AnimationComponent();
+		var agent = new Entity();
+
+		var targets = new U<Vector3, Entity>[] {
+			new Vector3(1, 0, 0),
+			new Vector3(1, 1, 0),
+		}.ToAsyncEnumerable();
+
+		var getAnimation = Mock.Of<IGetAnimation>();
+		_ = Mock
+			.Get(getAnimation)
+			.Setup(g => g.Play(animations, It.IsAny<string>()))
+			.Returns(Maybe.None<IPlayingAnimation>());
+		_ = Mock
+			.Get(getAnimation)
+			.Setup(g => g.IsPlaying(animations, It.IsAny<string>()))
+			.Returns(true);
+
+		this.game.Services.RemoveService<IGetAnimation>();
+		this.game.Services.AddService<IGetAnimation>(getAnimation);
+		this.scene.Entities.Add(agent);
+		this.scene.Entities.Add(move);
+		agent.AddChild(new Entity { animations });
+
+		var behavior = moveComponent
+			.GetBehaviorFor(agent)
+			.Switch(TestMove.GetBehaviorFail, b => b);
+
+		this.game.WaitFrames(1);
+
+		behavior.ExecuteNext(targets);
+
+		this.game.WaitFrames(10);
+
+		Mock
+			.Get(getAnimation)
+			.Verify(g => g.Play(animations, "walk"), Times.Never);
+		Mock
+			.Get(getAnimation)
+			.Verify(g => g.Play(animations, "idle"), Times.Never);
+	}
+
+	[Test]
+	public void DoNotPlayWalkWhenNoAnimationComponentOnAgent() {
+		var moveComponent = new Move { speed = 1 };
+		var move = new Entity { moveComponent };
+		var agent = new Entity();
+		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
+
+		var getAnimation = Mock.Of<IGetAnimation>();
+
+		this.game.Services.RemoveService<IGetAnimation>();
+		this.game.Services.AddService<IGetAnimation>(getAnimation);
+		this.scene.Entities.Add(agent);
+		this.scene.Entities.Add(move);
+
+		var behavior = moveComponent
+			.GetBehaviorFor(agent)
+			.Switch(TestMove.GetBehaviorFail, b => b);
+
+		this.game.WaitFrames(1);
+
+		behavior.ExecuteNext(targets);
+
+		this.game.WaitFrames(2);
+
+		Mock
+			.Get(getAnimation)
+			.Verify(g => g.Play(It.IsAny<AnimationComponent>(), It.IsAny<string>()), Times.Never);
+	}
+
+	[Test]
+	public void DoNotPlayRunningAnimations() {
+		var moveComponent = new Move { speed = 1 };
+		var move = new Entity { moveComponent };
+		var animations = new AnimationComponent();
+		var agent = new Entity();
+		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
+
+		var getAnimation = Mock.Of<IGetAnimation>();
+		_ = Mock
+			.Get(getAnimation)
+			.Setup(g => g.IsPlaying(animations, It.IsAny<string>()))
+			.Returns(true);
+
+		this.game.Services.RemoveService<IGetAnimation>();
+		this.game.Services.AddService<IGetAnimation>(getAnimation);
+		this.scene.Entities.Add(move);
+		this.scene.Entities.Add(agent);
+		agent.AddChild(new Entity { animations });
+
+		var behavior = moveComponent
+			.GetBehaviorFor(agent)
+			.Switch(TestMove.GetBehaviorFail, b => b);
+
+		this.game.WaitFrames(1);
+
+		behavior.ExecuteNext(targets);
+
+		this.game.WaitFrames(2);
+
+		Mock
+			.Get(getAnimation)
+			.Verify(g => g.Play(animations, It.IsAny<string>()), Times.Never);
 	}
 }
