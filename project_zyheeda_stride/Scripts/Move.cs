@@ -72,7 +72,9 @@ public class Move : StartupScript, IEquipment {
 		}
 	}
 
-	public Either<U<Requirement, Type[]>, IBehaviorStateMachine> GetBehaviorFor(Entity agent) {
+	public Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine> GetBehaviorFor(
+		Entity agent
+	) {
 		MicroThread? traverseWaypointsThread = null;
 		MicroThread? collectWaypointsThread = null;
 

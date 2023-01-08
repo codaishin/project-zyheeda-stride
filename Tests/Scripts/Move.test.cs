@@ -1,6 +1,5 @@
 namespace Tests;
 
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Moq;
@@ -12,7 +11,7 @@ using Stride.Engine;
 public class TestMove : GameTestCollection {
 	private readonly VectorTolerance tolerance = new(0.001f);
 
-	private static IBehaviorStateMachine GetBehaviorFail(U<Requirement, Type[]> error) {
+	private static IBehaviorStateMachine GetBehaviorFail(IEnumerable<U<SystemString, PlayerString>> error) {
 		Assert.Fail($"Error: {error}");
 		return Mock.Of<IBehaviorStateMachine>();
 	}

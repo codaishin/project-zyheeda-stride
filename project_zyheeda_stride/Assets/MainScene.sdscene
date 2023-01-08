@@ -54,8 +54,6 @@ Hierarchy:
                             Entity: ref!! 2b3d03a5-6086-452d-af65-8a103c8713eb
                         agent:
                             Entity: ref!! a70e6895-7fd3-4135-9869-1e5eb430a3c8
-                        onEquipError: {}
-                        onEquip: {}
         -   Entity:
                 Id: 47529c61-f3f5-4e6a-996e-35d7833bb089
                 Name: Camera
