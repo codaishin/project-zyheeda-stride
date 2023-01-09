@@ -13,28 +13,47 @@ using TBehaviorFn = System.Func<
 >;
 
 public class BehaviorController : StartupScript, IBehavior {
-	private class VoidEquipment : IBehaviorStateMachine {
-		private readonly IPlayerMessage? playerMessage;
+	private readonly struct VoidEquipment : IBehaviorStateMachine {
+		private readonly Action<PlayerString> log;
 
-		public VoidEquipment(IPlayerMessage? playerMessage) {
-			this.playerMessage = playerMessage;
+		public VoidEquipment(Action<PlayerString> log) {
+			this.log = log;
 		}
 
 		public void ExecuteNext(IAsyncEnumerable<U<Vector3, Entity>> _) {
-			this.playerMessage?.Log(new PlayerString("nothing equipped"));
+			this.log(new PlayerString("nothing equipped"));
 		}
+
 		public void ResetAndIdle() { }
 	}
 
-	private readonly Action updateBehavior;
+	private IMaybe<ISystemMessage> systemMessage = Maybe.None<ISystemMessage>();
+	private IMaybe<IPlayerMessage> playerMessage = Maybe.None<IPlayerMessage>();
+	private IBehaviorStateMachine behavior;
+	private U<SystemString, PlayerString> NoAgentMessage => new SystemString(
+		this.MissingField(nameof(this.agent))
+	);
+
 	public readonly EventReference<Reference<IEquipment>, IEquipment> equipment;
 	public readonly EventReference<Reference<Entity>, Entity> agent;
-	private ISystemMessage? systemMessage;
-	private IPlayerMessage? playerMessage;
 
-	private IBehaviorStateMachine behavior = new VoidEquipment(null);
+	private void LogMessage(SystemString message) {
+		this.systemMessage.Switch(
+			l => l.Log(message),
+			() => this.Log.Error($"missing system logger: {message.value}")
+		);
+	}
 
-	private U<SystemString, PlayerString> NoAgentMessage => new SystemString(this.MissingField(nameof(this.agent)));
+	private void LogMessage(PlayerString message) {
+		this.playerMessage.Switch(
+			l => l.Log(message),
+			() => this.Log.Error($"missing player logger: {message.value}")
+		);
+	}
+
+	private void LogMessage(U<SystemString, PlayerString> error) {
+		error.Switch(this.LogMessage, this.LogMessage);
+	}
 
 	private Either<IEnumerable<U<SystemString, PlayerString>>, TBehaviorFn> GetBehavior {
 		get {
@@ -42,18 +61,16 @@ public class BehaviorController : StartupScript, IBehavior {
 				(Entity agent) =>
 					this.equipment.Switch(
 						equipment => equipment.GetBehaviorFor(agent),
-						() => new VoidEquipment(this.playerMessage)
+						() => new VoidEquipment(this.LogMessage)
 					);
 			return getBehaviorAndEquipment;
 		}
 	}
 
 	private void ResetBehavior(IEnumerable<U<SystemString, PlayerString>> errors) {
-		this.behavior = new VoidEquipment(this.playerMessage);
+		this.behavior = new VoidEquipment(this.LogMessage);
 		foreach (var error in errors) {
-			error
-				.Switch<Action>(e => () => this.systemMessage?.Log(e), e => () => this.playerMessage?.Log(e))
-				.Invoke();
+			this.LogMessage(error);
 		}
 	}
 
@@ -61,37 +78,29 @@ public class BehaviorController : StartupScript, IBehavior {
 		this.behavior = behavior;
 	}
 
-	private Action UpdateBehaviorFor(Reference<Entity> agent) {
-		return () => {
-			this.GetBehavior
-				.ApplyWeak(agent.MaybeToEither(this.NoAgentMessage))
-				.Flatten()
-				.Switch(
-					error: this.ResetBehavior,
-					value: this.SetNewBehavior
-				);
-		};
+	private void UpdateBehavior() {
+		this.GetBehavior
+			.ApplyWeak(this.agent.MaybeToEither(this.NoAgentMessage))
+			.Flatten()
+			.Switch(
+				error: this.ResetBehavior,
+				value: this.SetNewBehavior
+			);
 	}
 
 	public override void Start() {
-		this.systemMessage = this.Game.Services.GetService<ISystemMessage>();
-		if (this.systemMessage is null) {
-			throw new MissingService<ISystemMessage>();
-		}
-		this.playerMessage = this.Game.Services.GetService<IPlayerMessage>();
-		if (this.playerMessage is null) {
-			throw new MissingService<IPlayerMessage>();
-		}
-		this.updateBehavior();
+		this.systemMessage = this.Game.Services.GetService<ISystemMessage>().ToMaybe();
+		this.playerMessage = this.Game.Services.GetService<IPlayerMessage>().ToMaybe();
+		this.UpdateBehavior();
 	}
 
 	public BehaviorController() {
 		var equipment = new Reference<IEquipment>();
 		var agent = new Reference<Entity>();
-		this.updateBehavior = this.UpdateBehaviorFor(agent);
 
-		this.equipment = new(equipment, this.updateBehavior);
-		this.agent = new(agent, this.updateBehavior);
+		this.equipment = new(equipment, this.UpdateBehavior);
+		this.agent = new(agent, this.UpdateBehavior);
+		this.behavior = new VoidEquipment(this.LogMessage);
 	}
 
 	public void Run(IAsyncEnumerable<U<Vector3, Entity>> targets) {

@@ -246,19 +246,4 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Get(this.playerMessage)
 			.Verify(m => m.Log(message), Times.Once);
 	}
-
-	[Test]
-	public void ErrorWhenInputMessageSystemsMissing() {
-		var behavior = new BehaviorController();
-		this.scene.Entities.Add(new Entity { behavior });
-
-		this.game.Services.RemoveService<IPlayerMessage>();
-
-		_ = Assert.Throws<MissingService<IPlayerMessage>>(() => behavior.Start());
-
-		this.game.Services.RemoveService<ISystemMessage>();
-		this.game.Services.AddService(this.playerMessage);
-
-		_ = Assert.Throws<MissingService<ISystemMessage>>(() => behavior.Start());
-	}
 }
