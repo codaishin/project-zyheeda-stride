@@ -98,6 +98,37 @@ public class TestU3 : GameTestCollection {
 	}
 
 	[Test]
+	public void SwitchActionFirst() {
+		var union = new U<int, string, float>(42);
+		var callback = Mock.Of<Action<int>>();
+		union.Switch(callback, _ => { }, _ => { });
+		Mock
+			.Get(callback)
+			.Verify(c => c.Invoke(42), Times.Once);
+	}
+
+	[Test]
+	public void SwitchActionSecond() {
+		var union = new U<int, string, float>("42");
+		var callback = Mock.Of<Action<string>>();
+		union.Switch(_ => { }, callback, _ => { });
+		Mock
+			.Get(callback)
+			.Verify(c => c.Invoke("42"), Times.Once);
+	}
+
+
+	[Test]
+	public void SwitchActionThird() {
+		var union = new U<int, string, float>(42f);
+		var callback = Mock.Of<Action<float>>();
+		union.Switch(_ => { }, _ => { }, callback);
+		Mock
+			.Get(callback)
+			.Verify(c => c.Invoke(42f), Times.Once);
+	}
+
+	[Test]
 	public void CastFromFstValue() {
 		U<int, string, float> union = 42;
 		Assert.That(

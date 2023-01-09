@@ -85,6 +85,15 @@ public readonly struct U<T1, T2, T3> {
 		return this.fstSndOrTrd.Switch(fst, sndOrTrd => sndOrTrd.Switch(snd, trd));
 	}
 
+	public void Switch(Action<T1> fst, Action<T2> snd, Action<T3> trd) {
+		var action = this.Switch<Action>(
+			v => () => fst(v),
+			v => () => snd(v),
+			v => () => trd(v)
+		);
+		action();
+	}
+
 	public override string? ToString() {
 		var value = this.Switch(
 			a => $"{typeof(T1).Name}: {a?.ToString()}",
