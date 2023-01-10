@@ -1,6 +1,8 @@
 namespace Tests;
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
@@ -8,26 +10,63 @@ using ProjectZyheeda;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 
-public class TestMove : GameTestCollection {
+public class TestMove : GameTestCollection, System.IDisposable {
 	private readonly VectorTolerance tolerance = new(0.001f);
+	private IGetAnimation getAnimation = Mock.Of<IGetAnimation>();
+	private AnimationComponent agentAnimation = new();
+	private Move moveComponent = new();
+	private Entity agent = new();
+	private Entity move = new();
 
-	private static IBehaviorStateMachine GetBehaviorFail(IEnumerable<U<SystemString, PlayerString>> error) {
-		Assert.Fail($"Error: {error}");
+	[SetUp]
+	public void SetUp() {
+		this.getAnimation = Mock.Of<IGetAnimation>();
+		this.game.Services.RemoveService<IGetAnimation>();
+		this.game.Services.AddService<IGetAnimation>(this.getAnimation);
+
+		this.agentAnimation = new AnimationComponent();
+		this.agent = new Entity();
+		this.agent.AddChild(new Entity { this.agentAnimation });
+		this.moveComponent = new Move { speed = 1 };
+		this.move = new Entity { this.moveComponent };
+
+		Mock
+			.Get(this.getAnimation)
+			.SetReturnsDefault(false);
+		Mock
+			.Get(this.getAnimation)
+			.SetReturnsDefault(Maybe.None<IPlayingAnimation>());
+
+		this.scene.Entities.Add(this.move);
+		this.scene.Entities.Add(this.agent);
+
+		this.game.WaitFrames(1);
+	}
+
+	private static string ErrorsToString(
+		IEnumerable<U<SystemString, PlayerString>> errors
+	) {
+		var errorsUnpacked = errors.Select(error => error.Switch(
+			v => $"{v.value} ({v.GetType().Name})",
+			v => $"{v.value} ({v.GetType().Name})"
+		));
+		return string.Join(", ", errorsUnpacked);
+	}
+
+	private static IBehaviorStateMachine GetBehaviorFail(
+		IEnumerable<U<SystemString, PlayerString>> errors
+	) {
+		Assert.Fail($"Errors: {TestMove.ErrorsToString(errors)}");
 		return Mock.Of<IBehaviorStateMachine>();
 	}
 
 	[Test]
 	public void MoveTowardsTarget100() {
-		var moveComponent = new Move { speed = 1 };
-		var move = new Entity { moveComponent };
-		var agent = new Entity();
 		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
 
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		this.moveComponent.speed = 1;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		behavior.ExecuteNext(targets);
@@ -38,7 +77,7 @@ public class TestMove : GameTestCollection {
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
 		Assert.That(
-			agent.Transform.Position,
+			this.agent.Transform.Position,
 			Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance)
 		);
 	}
@@ -47,15 +86,10 @@ public class TestMove : GameTestCollection {
 	public void MoveTowardsTargetEntity() {
 		var target = new Entity();
 		var targets = new U<Vector3, Entity>[] { target }.ToAsyncEnumerable();
-		var moveComponent = new Move { speed = 1 };
-		var move = new Entity { moveComponent };
-		var agent = new Entity();
 
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		this.moveComponent.speed = 1;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		target.Transform.Position = new Vector3(1, 0, 0);
@@ -67,7 +101,7 @@ public class TestMove : GameTestCollection {
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
 		Assert.That(
-			agent.Transform.Position,
+			this.agent.Transform.Position,
 			Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance)
 		);
 	}
@@ -76,15 +110,10 @@ public class TestMove : GameTestCollection {
 	public void MoveTowardsTargetEntityAfterChangingTargetPosition() {
 		var target = new Entity();
 		var targets = new U<Vector3, Entity>[] { target }.ToAsyncEnumerable();
-		var moveComponent = new Move { speed = 1 };
-		var move = new Entity { moveComponent };
-		var agent = new Entity();
 
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		this.moveComponent.speed = 1;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		target.Transform.Position = new Vector3(1, 0, 0);
@@ -103,23 +132,18 @@ public class TestMove : GameTestCollection {
 		var distanceY = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
 		Assert.That(
-			agent.Transform.Position,
+			this.agent.Transform.Position,
 			Is.EqualTo(new Vector3(distanceX, distanceY, 0)).Using(this.tolerance)
 		);
 	}
 
 	[Test]
 	public void MoveTowardsTargetFor5Frames() {
-		var moveComponent = new Move { speed = 1 };
-		var move = new Entity { moveComponent };
-		var agent = new Entity();
 		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
 
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		this.moveComponent.speed = 1;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		behavior.ExecuteNext(targets);
@@ -130,23 +154,18 @@ public class TestMove : GameTestCollection {
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
 		Assert.That(
-			agent.Transform.Position,
+			this.agent.Transform.Position,
 			Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance)
 		);
 	}
 
 	[Test]
 	public void MoveTowardsTargetFaster() {
-		var moveComponent = new Move { speed = 42 };
-		var move = new Entity { moveComponent };
-		var agent = new Entity();
 		var targets = new U<Vector3, Entity>[] { new Vector3(100, 0, 0) }.ToAsyncEnumerable();
 
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		this.moveComponent.speed = 42;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		behavior.ExecuteNext(targets);
@@ -158,23 +177,18 @@ public class TestMove : GameTestCollection {
 		distance *= 42f;
 
 		Assert.That(
-			agent.Transform.Position,
+			this.agent.Transform.Position,
 			Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance)
 		);
 	}
 
 	[Test]
 	public void MoveTowardsTargetWithChangingSpeed() {
-		var moveComponent = new Move { speed = 1 };
-		var move = new Entity { moveComponent };
-		var agent = new Entity();
 		var targets = new U<Vector3, Entity>[] { new Vector3(100, 0, 0) }.ToAsyncEnumerable();
 
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		this.moveComponent.speed = 1;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		behavior.ExecuteNext(targets);
@@ -185,28 +199,23 @@ public class TestMove : GameTestCollection {
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
 		start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		moveComponent.speed = 0.5f;
+		this.moveComponent.speed = 0.5f;
 		this.game.WaitFrames(1);
 		distance += ((float)this.game.UpdateTime.Total.TotalSeconds - start) * 0.5f;
 
 		Assert.That(
-			agent.Transform.Position,
+			this.agent.Transform.Position,
 			Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance)
 		);
 	}
 
 	[Test]
 	public void MoveTowardsTarget0Neg10() {
-		var moveComponent = new Move { speed = 1 };
-		var move = new Entity { moveComponent };
-		var agent = new Entity();
 		var targets = new U<Vector3, Entity>[] { new Vector3(0, -1, 0) }.ToAsyncEnumerable();
 
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		this.moveComponent.speed = 1;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		behavior.ExecuteNext(targets);
@@ -217,7 +226,7 @@ public class TestMove : GameTestCollection {
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
 		Assert.That(
-			agent.Transform.Position,
+			this.agent.Transform.Position,
 			Is.EqualTo(new Vector3(0, -distance, 0)).Using(this.tolerance)
 		);
 	}
@@ -225,28 +234,23 @@ public class TestMove : GameTestCollection {
 	[Test]
 	public void UseMultipleTargetsAsMoveWaypoints() {
 		var waypoints = new List<Vector3>();
-		var moveComponent = new Move { speed = 100 };
-		var move = new Entity { moveComponent };
-		var agent = new Entity();
 		var targets = new U<Vector3, Entity>[]{
 			new Vector3(1, 0, 0),
 			new Vector3(1, 1, 0),
 		}.ToAsyncEnumerable();
 
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		this.moveComponent.speed = 100;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		behavior.ExecuteNext(targets);
 
 		this.game.WaitFrames(2);
-		waypoints.Add(agent.Transform.Position);
+		waypoints.Add(this.agent.Transform.Position);
 
 		this.game.WaitFrames(1);
-		waypoints.Add(agent.Transform.Position);
+		waypoints.Add(this.agent.Transform.Position);
 
 		Assert.That(
 			waypoints,
@@ -256,19 +260,14 @@ public class TestMove : GameTestCollection {
 
 	[Test]
 	public void MoveTowardsTargetFromOffsetPosition() {
-		var moveComponent = new Move { speed = 1 };
-		var move = new Entity { moveComponent };
-		var agent = new Entity();
 		var targets = new U<Vector3, Entity>[] { new Vector3(1, 1, 0) }.ToAsyncEnumerable();
 
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		this.moveComponent.speed = 1;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
-		agent.Transform.Position = new Vector3(1, 0, 0);
+		this.agent.Transform.Position = new Vector3(1, 0, 0);
 
 		behavior.ExecuteNext(targets);
 		this.game.WaitFrames(1);
@@ -278,23 +277,18 @@ public class TestMove : GameTestCollection {
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
 		Assert.That(
-			agent.Transform.Position,
+			this.agent.Transform.Position,
 			Is.EqualTo(new Vector3(1, distance, 0)).Using(this.tolerance)
 		);
 	}
 
 	[Test]
 	public void MoveTowardsTargetWithNotNormalizedInitialDistance() {
-		var moveComponent = new Move { speed = 1 };
-		var move = new Entity { moveComponent };
-		var agent = new Entity();
 		var targets = new U<Vector3, Entity>[] { new Vector3(1, 1, 0) }.ToAsyncEnumerable();
 
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		this.moveComponent.speed = 1;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		behavior.ExecuteNext(targets);
@@ -308,23 +302,18 @@ public class TestMove : GameTestCollection {
 		target.Normalize();
 
 		Assert.That(
-			agent.Transform.Position,
+			this.agent.Transform.Position,
 			Is.EqualTo(target * distance).Using(this.tolerance)
 		);
 	}
 
 	[Test]
 	public void DoNotOvershoot() {
-		var moveComponent = new Move { speed = 100_000 };
-		var move = new Entity { moveComponent };
-		var agent = new Entity();
 		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
 
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		this.moveComponent.speed = 100_000;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		behavior.ExecuteNext(targets);
@@ -332,21 +321,16 @@ public class TestMove : GameTestCollection {
 
 		this.game.WaitFrames(2);
 
-		Assert.That(agent.Transform.Position, Is.EqualTo(new Vector3(1, 0, 0)));
+		Assert.That(this.agent.Transform.Position, Is.EqualTo(new Vector3(1, 0, 0)));
 	}
 
 	[Test]
 	public void SuspendBehaviorWhenResetAndIdleCalled() {
-		var moveComponent = new Move { speed = 1 };
-		var move = new Entity { moveComponent };
-		var agent = new Entity();
 		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
 
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		this.moveComponent.speed = 1;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		behavior.ExecuteNext(targets);
@@ -361,23 +345,18 @@ public class TestMove : GameTestCollection {
 		this.game.WaitFrames(1);
 
 		Assert.That(
-			agent.Transform.Position,
+			this.agent.Transform.Position,
 			Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance)
 		);
 	}
 
 	[Test]
 	public void ExecuteNextAfterResetAndIdle() {
-		var moveComponent = new Move { speed = 1 };
-		var move = new Entity { moveComponent };
-		var agent = new Entity();
 		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
 
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		this.moveComponent.speed = 1;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		behavior.ResetAndIdle();
@@ -390,24 +369,19 @@ public class TestMove : GameTestCollection {
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
 		Assert.That(
-			agent.Transform.Position,
+			this.agent.Transform.Position,
 			Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance)
 		);
 	}
 
 	[Test]
 	public void ExecuteNextOverridesLastExecution() {
-		var moveComponent = new Move { speed = 1 };
-		var move = new Entity { moveComponent };
-		var agent = new Entity();
 		var targetsA = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
 		var targetsB = new U<Vector3, Entity>[] { new Vector3(-1, 0, 0) }.ToAsyncEnumerable();
 
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		this.moveComponent.speed = 1;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		behavior.ExecuteNext(targetsA);
@@ -419,16 +393,13 @@ public class TestMove : GameTestCollection {
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
 		Assert.That(
-			agent.Transform.Position,
+			this.agent.Transform.Position,
 			Is.EqualTo(new Vector3(-distance, 0, 0)).Using(this.tolerance)
 		);
 	}
 
 	[Test]
 	public async Task DoNotBlockNewWaypoints() {
-		var moveComponent = new Move { speed = 100 };
-		var move = new Entity { moveComponent };
-		var agent = new Entity();
 		var startFrame = this.game.UpdateTime.FrameCount;
 
 		var token = new TaskCompletionSource<List<int>>();
@@ -443,11 +414,9 @@ public class TestMove : GameTestCollection {
 			token.SetResult(frames);
 		}
 
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		this.moveComponent.speed = 100;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		behavior.ExecuteNext(getTargets());
@@ -463,16 +432,10 @@ public class TestMove : GameTestCollection {
 
 	[Test]
 	public void LookAtTarget() {
-		var moveComponent = new Move { speed = 100_000 };
-		var move = new Entity { moveComponent };
-		var agent = new Entity();
 		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
 
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		behavior.ExecuteNext(targets);
@@ -481,25 +444,19 @@ public class TestMove : GameTestCollection {
 		this.game.WaitFrames(2);
 
 		Assert.That(
-			agent.Transform.Rotation,
+			this.agent.Transform.Rotation,
 			Is.EqualTo(Quaternion.LookRotation(Vector3.UnitX, Vector3.UnitY))
 		);
 	}
 
 	[Test]
 	public void LookAtTargetFromOffset() {
-		var moveComponent = new Move { speed = 100_000 };
-		var move = new Entity { moveComponent };
-		var agent = new Entity();
 		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
 
-		agent.Transform.Position = new Vector3(3, 0, 0);
+		this.agent.Transform.Position = new Vector3(3, 0, 0);
 
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		behavior.ExecuteNext(targets);
@@ -508,28 +465,22 @@ public class TestMove : GameTestCollection {
 		this.game.WaitFrames(2);
 
 		Assert.That(
-			agent.Transform.Rotation,
+			this.agent.Transform.Rotation,
 			Is.EqualTo(Quaternion.LookRotation(-Vector3.UnitX, Vector3.UnitY))
 		);
 	}
 
 	[Test]
 	public void NoRotationChangeWhenTargetIsCurrentPosition() {
-		var moveComponent = new Move { speed = 100_000 };
-		var move = new Entity { moveComponent };
-		var agent = new Entity();
 		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
 
-		agent.Transform.Position = new Vector3(1, 0, 0);
+		this.agent.Transform.Position = new Vector3(1, 0, 0);
 
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
-		var expectedRotation = agent.Transform.Rotation;
+		var expectedRotation = this.agent.Transform.Rotation;
 
 		behavior.ExecuteNext(targets);
 		this.game.WaitFrames(1);
@@ -537,33 +488,23 @@ public class TestMove : GameTestCollection {
 		this.game.WaitFrames(2);
 
 		Assert.That(
-			agent.Transform.Rotation,
+			this.agent.Transform.Rotation,
 			Is.EqualTo(expectedRotation)
 		);
 	}
 
 	[Test]
 	public void PlayWalk() {
-		var moveComponent = new Move { speed = 1 };
-		var move = new Entity { moveComponent };
-		var animations = new AnimationComponent();
-		var agent = new Entity();
 		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
 
-		var getAnimation = Mock.Of<IGetAnimation>();
 		_ = Mock
-			.Get(getAnimation)
-			.Setup(g => g.Play(animations, It.IsAny<string>()))
+			.Get(this.getAnimation)
+			.Setup(g => g.Play(this.agentAnimation, It.IsAny<string>()))
 			.Returns(Maybe.None<IPlayingAnimation>());
 
-		this.game.Services.RemoveService<IGetAnimation>();
-		this.game.Services.AddService<IGetAnimation>(getAnimation);
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-		agent.AddChild(new Entity { animations });
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		this.moveComponent.speed = 1;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		this.game.WaitFrames(1);
@@ -573,32 +514,22 @@ public class TestMove : GameTestCollection {
 		this.game.WaitFrames(10);
 
 		Mock
-			.Get(getAnimation)
-			.Verify(g => g.Play(animations, "walk"), Times.Once);
+			.Get(this.getAnimation)
+			.Verify(g => g.Play(this.agentAnimation, "walk"), Times.Once);
 	}
 
 	[Test]
 	public void PlayIdle() {
-		var moveComponent = new Move { speed = 100_000 };
-		var move = new Entity { moveComponent };
-		var animations = new AnimationComponent();
-		var agent = new Entity();
 		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
 
-		var getAnimation = Mock.Of<IGetAnimation>();
 		_ = Mock
-			.Get(getAnimation)
-			.Setup(g => g.Play(animations, It.IsAny<string>()))
+			.Get(this.getAnimation)
+			.Setup(g => g.Play(this.agentAnimation, It.IsAny<string>()))
 			.Returns(Maybe.None<IPlayingAnimation>());
 
-		this.game.Services.RemoveService<IGetAnimation>();
-		this.game.Services.AddService<IGetAnimation>(getAnimation);
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-		agent.AddChild(new Entity { animations });
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		this.moveComponent.speed = 100_000;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		this.game.WaitFrames(1);
@@ -608,39 +539,29 @@ public class TestMove : GameTestCollection {
 		this.game.WaitFrames(10);
 
 		Mock
-			.Get(getAnimation)
-			.Verify(g => g.Play(animations, "idle"), Times.Once);
+			.Get(this.getAnimation)
+			.Verify(g => g.Play(this.agentAnimation, "idle"), Times.Once);
 	}
 
 	[Test]
 	public void PlayWalkWithMultipleWaypoints() {
-		var moveComponent = new Move { speed = 100_000 };
-		var move = new Entity { moveComponent };
-		var animations = new AnimationComponent();
-		var agent = new Entity();
 		var targets = new U<Vector3, Entity>[] {
 			new Vector3(1, 0, 0),
 			new Vector3(1, 1, 0)
 		}.ToAsyncEnumerable();
 
-		var getAnimation = Mock.Of<IGetAnimation>();
 		_ = Mock
-			.Get(getAnimation)
-			.Setup(g => g.Play(animations, It.IsAny<string>()))
+			.Get(this.getAnimation)
+			.Setup(g => g.Play(this.agentAnimation, It.IsAny<string>()))
 			.Returns(Maybe.None<IPlayingAnimation>());
 		_ = Mock
-			.Get(getAnimation)
-			.Setup(g => g.IsPlaying(animations, It.IsAny<string>()))
+			.Get(this.getAnimation)
+			.Setup(g => g.IsPlaying(this.agentAnimation, It.IsAny<string>()))
 			.Returns(false);
 
-		this.game.Services.RemoveService<IGetAnimation>();
-		this.game.Services.AddService<IGetAnimation>(getAnimation);
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-		agent.AddChild(new Entity { animations });
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		this.moveComponent.speed = 100_000;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		this.game.WaitFrames(1);
@@ -650,43 +571,32 @@ public class TestMove : GameTestCollection {
 		this.game.WaitFrames(10);
 
 		Mock
-			.Get(getAnimation)
-			.Verify(g => g.Play(animations, "walk"), Times.AtLeast(2));
+			.Get(this.getAnimation)
+			.Verify(g => g.Play(this.agentAnimation, "walk"), Times.Exactly(2));
 		Mock
-			.Get(getAnimation)
-			.Verify(g => g.Play(animations, "idle"), Times.Exactly(1));
+			.Get(this.getAnimation)
+			.Verify(g => g.Play(this.agentAnimation, "idle"), Times.Once);
 	}
 
 	[Test]
 	public void DoNotPlayIfPlaying() {
-		var moveComponent = new Move { speed = 100_000 };
-		var move = new Entity { moveComponent };
-		var animations = new AnimationComponent();
-		var agent = new Entity();
-
 		var targets = new U<Vector3, Entity>[] {
 			new Vector3(1, 0, 0),
 			new Vector3(1, 1, 0),
 		}.ToAsyncEnumerable();
 
-		var getAnimation = Mock.Of<IGetAnimation>();
 		_ = Mock
-			.Get(getAnimation)
-			.Setup(g => g.Play(animations, It.IsAny<string>()))
+			.Get(this.getAnimation)
+			.Setup(g => g.Play(this.agentAnimation, It.IsAny<string>()))
 			.Returns(Maybe.None<IPlayingAnimation>());
 		_ = Mock
-			.Get(getAnimation)
-			.Setup(g => g.IsPlaying(animations, It.IsAny<string>()))
+			.Get(this.getAnimation)
+			.Setup(g => g.IsPlaying(this.agentAnimation, It.IsAny<string>()))
 			.Returns(true);
 
-		this.game.Services.RemoveService<IGetAnimation>();
-		this.game.Services.AddService<IGetAnimation>(getAnimation);
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-		agent.AddChild(new Entity { animations });
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		this.moveComponent.speed = 100_000;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		this.game.WaitFrames(1);
@@ -696,64 +606,25 @@ public class TestMove : GameTestCollection {
 		this.game.WaitFrames(10);
 
 		Mock
-			.Get(getAnimation)
-			.Verify(g => g.Play(animations, "walk"), Times.Never);
+			.Get(this.getAnimation)
+			.Verify(g => g.Play(this.agentAnimation, "walk"), Times.Never);
 		Mock
-			.Get(getAnimation)
-			.Verify(g => g.Play(animations, "idle"), Times.Never);
-	}
-
-	[Test]
-	public void DoNotPlayWalkWhenNoAnimationComponentOnAgent() {
-		var moveComponent = new Move { speed = 1 };
-		var move = new Entity { moveComponent };
-		var agent = new Entity();
-		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
-
-		var getAnimation = Mock.Of<IGetAnimation>();
-
-		this.game.Services.RemoveService<IGetAnimation>();
-		this.game.Services.AddService<IGetAnimation>(getAnimation);
-		this.scene.Entities.Add(agent);
-		this.scene.Entities.Add(move);
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
-
-		this.game.WaitFrames(1);
-
-		behavior.ExecuteNext(targets);
-
-		this.game.WaitFrames(2);
-
-		Mock
-			.Get(getAnimation)
-			.Verify(g => g.Play(It.IsAny<AnimationComponent>(), It.IsAny<string>()), Times.Never);
+			.Get(this.getAnimation)
+			.Verify(g => g.Play(this.agentAnimation, "idle"), Times.Never);
 	}
 
 	[Test]
 	public void DoNotPlayRunningAnimations() {
-		var moveComponent = new Move { speed = 1 };
-		var move = new Entity { moveComponent };
-		var animations = new AnimationComponent();
-		var agent = new Entity();
 		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
 
-		var getAnimation = Mock.Of<IGetAnimation>();
 		_ = Mock
-			.Get(getAnimation)
-			.Setup(g => g.IsPlaying(animations, It.IsAny<string>()))
+			.Get(this.getAnimation)
+			.Setup(g => g.IsPlaying(this.agentAnimation, It.IsAny<string>()))
 			.Returns(true);
 
-		this.game.Services.RemoveService<IGetAnimation>();
-		this.game.Services.AddService<IGetAnimation>(getAnimation);
-		this.scene.Entities.Add(move);
-		this.scene.Entities.Add(agent);
-		agent.AddChild(new Entity { animations });
-
-		var behavior = moveComponent
-			.GetBehaviorFor(agent)
+		this.moveComponent.speed = 1;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		this.game.WaitFrames(1);
@@ -763,7 +634,69 @@ public class TestMove : GameTestCollection {
 		this.game.WaitFrames(2);
 
 		Mock
-			.Get(getAnimation)
-			.Verify(g => g.Play(animations, It.IsAny<string>()), Times.Never);
+			.Get(this.getAnimation)
+			.Verify(g => g.Play(this.agentAnimation, It.IsAny<string>()), Times.Never);
+	}
+
+	[Test]
+	public void MissingAnimationComponent() {
+		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
+
+		this.agent.Name = "Agent";
+		this.agent.RemoveChild(this.agentAnimation.Entity);
+
+		this.moveComponent.speed = 1;
+		var valueString = this.moveComponent
+			.GetBehaviorFor(this.agent)
+			.Switch(TestMove.ErrorsToString, b => "behavior");
+
+		Assert.That(valueString, Is.EqualTo("Missing AnimationComponent on Agent (SystemString)"));
+	}
+
+	[Test]
+	public void MissingGetAnimationService() {
+		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
+
+		this.game.Services.RemoveService<IGetAnimation>();
+
+		var moveComponent = new Move();
+		this.scene.Entities.Add(new Entity { moveComponent });
+
+		var valueString = moveComponent
+			.GetBehaviorFor(this.agent)
+			.Switch(TestMove.ErrorsToString, b => "behavior");
+
+		Assert.That(valueString, Is.EqualTo("Missing IGetAnimation Service (SystemString)"));
+	}
+
+	[Test]
+	public void MissingGetAnimationServiceAndAnimationComponent() {
+		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
+
+		this.game.Services.RemoveService<IGetAnimation>();
+		this.agent.Name = "Agent";
+		this.agent.RemoveChild(this.agentAnimation.Entity);
+
+		var moveComponent = new Move();
+		this.scene.Entities.Add(new Entity { moveComponent });
+
+		var valueString = moveComponent
+			.GetBehaviorFor(this.agent)
+			.Switch(TestMove.ErrorsToString, b => "behavior");
+
+		Assert.Multiple(() => {
+			Assert.That(
+				valueString,
+				Contains.Substring("Missing IGetAnimation Service (SystemString)")
+			);
+			Assert.That(
+				valueString,
+				Contains.Substring("Missing AnimationComponent on Agent (SystemString)")
+			);
+		});
+	}
+
+	public void Dispose() {
+		GC.SuppressFinalize(this);
 	}
 }
