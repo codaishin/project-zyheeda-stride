@@ -7,13 +7,11 @@ using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
 using Stride.Core.Mathematics;
-using Stride.Core.MicroThreading;
 using Stride.Engine;
 
 public class TestInput : GameTestCollection {
 	protected IGetTarget getTarget = Mock.Of<IGetTarget>();
 	protected IInputManagerWrapper inputManager = Mock.Of<IInputManagerWrapper>();
-	private readonly List<MicroThread> threads = new();
 
 	protected Func<bool> TrueInFrames(params int[] frames) {
 		var index = 0;
@@ -35,7 +33,7 @@ public class TestInput : GameTestCollection {
 	) {
 		return asyncTargets => {
 			var targets = new List<U<Vector3, Entity>>();
-			var token = new TaskCompletionSource<bool>();
+			var token = new TaskCompletionSource();
 			_ = this.game.Script.AddTask(
 				async () => {
 					await foreach (var target in asyncTargets) {
@@ -44,7 +42,7 @@ public class TestInput : GameTestCollection {
 							break;
 						}
 					}
-					token.SetResult(true);
+					token.SetResult();
 				}
 			);
 
@@ -57,13 +55,13 @@ public class TestInput : GameTestCollection {
 		IAsyncEnumerable<U<Vector3, Entity>> asyncTargets
 	) {
 		var targets = new List<(U<Vector3, Entity>, int)>();
-		var token = new TaskCompletionSource<bool>();
+		var token = new TaskCompletionSource();
 		_ = this.game.Script.AddTask(
 			async () => {
 				await foreach (var target in asyncTargets) {
 					targets.Add((target, this.game.UpdateTime.FrameCount));
 				}
-				token.SetResult(true);
+				token.SetResult();
 			}
 		);
 
@@ -203,7 +201,7 @@ public class TestInput : GameTestCollection {
 
 		_ = Mock.Get(this.inputManager)
 			.Setup(i => i.IsDown(InputKeys.ShiftLeft))
-			.Returns(this.TrueUntilFrame(100));
+			.Returns(this.TrueUntilFrame(thisFrame + 100));
 
 		var input = new Input {
 			key = InputKeys.MouseRight,
@@ -242,7 +240,7 @@ public class TestInput : GameTestCollection {
 
 		_ = Mock.Get(this.inputManager)
 			.Setup(i => i.IsDown(InputKeys.ShiftLeft))
-			.Returns(this.TrueUntilFrame(100));
+			.Returns(this.TrueUntilFrame(thisFrame + 100));
 
 		var input = new Input {
 			key = InputKeys.MouseRight,

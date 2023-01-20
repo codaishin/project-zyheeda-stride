@@ -47,23 +47,22 @@ Hierarchy:
                         Children: {}
                     8b37a82e5cae7e5f5b5425042496cce9: !ProjectZyheeda.Move,project_zyheeda_stride
                         Id: 4a870bbe-c8f2-4a51-815c-981d3359ba54
-                        speed: 5.0
+                        speed: 2.0
+                        playAnimation: walk
                     9b5cb50a584d5327c762e2a4399d81c3: !ProjectZyheeda.BehaviorController,project_zyheeda_stride
                         Id: eb3fa7f1-d59c-4486-93c5-e3db39670ea6
                         equipment:
                             Entity: ref!! 2b3d03a5-6086-452d-af65-8a103c8713eb
                         agent:
                             Entity: ref!! a70e6895-7fd3-4135-9869-1e5eb430a3c8
-                        onEquipError: {}
-                        onEquip: {}
         -   Entity:
                 Id: 47529c61-f3f5-4e6a-996e-35d7833bb089
                 Name: Camera
                 Components:
                     d00e07ff586d6d7cf248ebd5edf3f5af: !TransformComponent
                         Id: 5cc5e608-ca18-4092-92ba-0c36a856337b
-                        Position: {X: 2.6, Y: 0.6, Z: -1.0}
-                        Rotation: {X: 0.0, Y: 0.82903755, Z: 0.0, W: 0.5591929}
+                        Position: {X: 6.1952677, Y: 2.376318, Z: -2.4525821}
+                        Rotation: {X: -0.062812164, Y: 0.82379085, Z: 0.09312285, W: 0.555654}
                         Scale: {X: 1.0, Y: 1.0, Z: 1.0}
                         Children: {}
                     2174bf14446d2409bf324502442eee01: !CameraComponent
@@ -80,6 +79,26 @@ Hierarchy:
                         KeyboardRotationSpeed: {X: 3.0, Y: 3.0}
                         MouseRotationSpeed: {X: 1.0, Y: 1.0}
                         TouchRotationSpeed: {X: 1.0, Y: 0.7}
+        -   Entity:
+                Id: 5db70085-ecec-47a3-ab14-a890edc92d80
+                Name: dummy
+                Components:
+                    2f52a8938881eeaafa2436b3e8240cb0: !TransformComponent
+                        Id: f1c858c7-525a-42ac-a4c0-61a573304c45
+                        Position: {X: 0.0, Y: 0.0, Z: 0.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    9b1605e368427ae0f704ab15b271c1b7: !ModelComponent
+                        Id: 132eb10e-a1cc-4a3b-86a2-5cb7b19e319f
+                        Model: 45748d85-2eef-411a-9b7e-1bbda1beda94:dummy
+                        Materials: {}
+                    c320984b256f275a13d5e222ebdf03b8: !AnimationComponent
+                        Id: e9c60005-fe76-4c32-95e3-e88a99f47527
+                        Animations:
+                            0188dfc3d419d32837434088df9604af~run: 6d009478-f495-49f4-ae4b-494b884896e3:run
+                            7b49924f11cc9b2db72770e729b52f88~walk: ee3590a5-ed57-4a94-9555-5514ef2a3c24:walk
+                            922aa77c255c3670fd8d17ba9b434555~default: 7d3494cd-aaff-4c9b-97cf-aeb32788a315:idle
         -   Entity:
                 Id: 80d8012c-51e0-4aed-b36a-ed018b98fb37
                 Name: Ground
@@ -153,10 +172,10 @@ Hierarchy:
                     115c7e28a5e99dcbfe24034e8156ba3b: !TransformComponent
                         Id: 7e86cbfc-e6e0-48c5-ac5e-4b81d1ee4ef1
                         Position: {X: 0.0, Y: 0.0, Z: 0.0}
-                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Rotation: {X: -0.0, Y: 0.0, Z: 0.0, W: 1.0}
                         Scale: {X: 1.0, Y: 1.0, Z: 1.0}
                         Children:
-                            446ef51b31574579a773d98f06fbf76c: ref!! 7ad7c403-5ce2-4e8f-8d5b-8804f4532705
+                            b329a86c998c57ebdeb79970d6e58e6c: ref!! f1c858c7-525a-42ac-a4c0-61a573304c45
                             7a37a32e0ab6a26dd536f337271b5b54: ref!! 5e3d5ab5-cfd6-4ca2-a0d1-2c6759e8d5f1
         -   Entity:
                 Id: c3ebcead-ded4-4b73-a88f-2fbe1eda413c
@@ -175,17 +194,3 @@ Hierarchy:
                         Id: 10645d24-63df-4082-ab76-8bfd4e6e25d1
                         Type: !LightSkybox
                             Skybox: ca5698db-d108-4273-be8d-712598e31593:Skybox
-        -   Entity:
-                Id: fd6f5264-573a-4ee5-95c6-bb54066c75d1
-                Name: Sphere
-                Components:
-                    28d0ec6dfd4e1363b7fa7098b6a9c141: !TransformComponent
-                        Id: 7ad7c403-5ce2-4e8f-8d5b-8804f4532705
-                        Position: {X: 0.0, Y: 0.5, Z: 0.0}
-                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
-                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
-                        Children: {}
-                    00d14feff8c38527089be15e2f76c452: !ModelComponent
-                        Id: a3ff4852-6f37-4cdf-b517-0c748e89172b
-                        Model: c991fd07-3943-41a1-8a7e-3f3f0aac6924:Sphere
-                        Materials: {}

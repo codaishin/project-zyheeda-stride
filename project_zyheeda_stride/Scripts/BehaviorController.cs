@@ -2,115 +2,85 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Stride.Core.Mathematics;
 using Stride.Engine;
-using BehaviorError = U<Requirement, System.Type[], DependencyError>;
 using TBehaviorFn = System.Func<
-	IEquipment,
-	System.Func<
-		Stride.Engine.Entity,
-		Either<
-			U<Requirement, System.Type[], DependencyError>,
-			(IBehaviorStateMachine, IEquipment)
-		>
+	Stride.Engine.Entity,
+	Either<
+		System.Collections.Generic.IEnumerable<U<SystemString, PlayerString>>,
+		IBehaviorStateMachine
 	>
 >;
-using TEquipErrorEvents = System.Collections.Generic.List<
-	Reference<
-		IEvent<
-			U<
-				Requirement,
-				System.Type[],
-				DependencyError
-			>
-		>
-	>
->;
-using TEquipEvents = System.Collections.Generic.List<
-	Reference<
-		IEvent<
-			IEquipment
-		>
-	>
->;
-
-[Flags]
-public enum DependencyError {
-	Agent = 0b0001,
-	Equipment = 0b0010,
-}
 
 public class BehaviorController : StartupScript, IBehavior {
+	private readonly struct VoidEquipment : IBehaviorStateMachine {
+		private readonly Action<PlayerString> log;
+
+		public VoidEquipment(Action<PlayerString> log) {
+			this.log = log;
+		}
+
+		public void ExecuteNext(IAsyncEnumerable<U<Vector3, Entity>> _) {
+			this.log(new PlayerString("nothing equipped"));
+		}
+
+		public void ResetAndIdle() { }
+	}
+
+	private IMaybe<ISystemMessage> systemMessage = Maybe.None<ISystemMessage>();
+	private IMaybe<IPlayerMessage> playerMessage = Maybe.None<IPlayerMessage>();
+	private IBehaviorStateMachine behavior;
+	private U<SystemString, PlayerString> NoAgentMessage => new SystemString(
+		this.MissingField(nameof(this.agent))
+	);
+
 	public readonly EventReference<Reference<IEquipment>, IEquipment> equipment;
 	public readonly EventReference<Reference<Entity>, Entity> agent;
 
-	public readonly TEquipErrorEvents onEquipError = new();
-	public readonly TEquipEvents onEquip = new();
-
-	private IMaybe<IBehaviorStateMachine> behavior =
-		Maybe.None<IBehaviorStateMachine>();
-
-	private static void Idle() { }
-
-	private static Either<IEnumerable<DependencyError>, TBehaviorFn> GetBehaviorFn() {
-		var getBehaviorAndEquipment =
-			(IEquipment equipment) =>
-			(Entity agent) =>
-				equipment
-					.GetBehaviorFor(agent)
-					.MapError(e => (BehaviorError)e)
-					.Map(behavior => (behavior, equipment));
-
-		return getBehaviorAndEquipment;
+	private void LogMessage(SystemString message) {
+		this.systemMessage.Switch(
+			l => l.Log(message),
+			() => this.Log.Error($"missing system logger: {message.value}")
+		);
 	}
 
-	private void OnError(BehaviorError error) {
-		foreach (var onEquipErrorEvent in this.onEquipError) {
-			onEquipErrorEvent.Switch(
-				some: value => value.Invoke(error),
-				none: BehaviorController.Idle
-			);
+	private void LogMessage(PlayerString message) {
+		this.playerMessage.Switch(
+			l => l.Log(message),
+			() => this.Log.Error($"missing player logger: {message.value}")
+		);
+	}
+
+	private void LogMessage(U<SystemString, PlayerString> error) {
+		error.Switch(this.LogMessage, this.LogMessage);
+	}
+
+	private Either<IEnumerable<U<SystemString, PlayerString>>, TBehaviorFn> GetBehavior {
+		get {
+			var getBehaviorAndEquipment =
+				(Entity agent) =>
+					this.equipment.Switch(
+						equipment => equipment.GetBehaviorFor(agent),
+						() => new VoidEquipment(this.LogMessage)
+					);
+			return getBehaviorAndEquipment;
 		}
 	}
 
-	private void OnEquip(IEquipment equipment) {
-		foreach (var onEquipEvent in this.onEquip) {
-			onEquipEvent.Switch(
-				some: value => value.Invoke(equipment),
-				none: BehaviorController.Idle
-			);
+	private void ResetBehavior(IEnumerable<U<SystemString, PlayerString>> errors) {
+		this.behavior = new VoidEquipment(this.LogMessage);
+		foreach (var error in errors) {
+			this.LogMessage(error);
 		}
 	}
 
-	private void ResetBehavior(BehaviorError error) {
-		this.behavior = Maybe.None<IBehaviorStateMachine>();
-		this.OnError(error);
+	private void SetNewBehavior(IBehaviorStateMachine behavior) {
+		this.behavior = behavior;
 	}
 
-	private void SetNewBehavior(
-		(IBehaviorStateMachine, IEquipment) behaviorAndEquipment
-	) {
-		var (behavior, equipment) = behaviorAndEquipment;
-		this.behavior = Maybe.Some(behavior);
-		this.OnEquip(equipment);
-	}
-
-	private static BehaviorError CombineDependencyErrors(
-		IEnumerable<DependencyError> dependencies
-	) {
-		return dependencies.Aggregate((fst, snd) => fst | snd);
-	}
-
-	private Action UpdateBehavior(
-		Reference<IEquipment> equipment,
-		Reference<Entity> agent
-	) {
-		return () => BehaviorController
-			.GetBehaviorFn()
-			.ApplyWeak(equipment.MaybeToEither(DependencyError.Equipment))
-			.ApplyWeak(agent.MaybeToEither(DependencyError.Agent))
-			.MapError(BehaviorController.CombineDependencyErrors)
+	private void UpdateBehavior() {
+		this.GetBehavior
+			.ApplyWeak(this.agent.MaybeToEither(this.NoAgentMessage))
 			.Flatten()
 			.Switch(
 				error: this.ResetBehavior,
@@ -118,26 +88,26 @@ public class BehaviorController : StartupScript, IBehavior {
 			);
 	}
 
+	public override void Start() {
+		this.systemMessage = this.Game.Services.GetService<ISystemMessage>().ToMaybe();
+		this.playerMessage = this.Game.Services.GetService<IPlayerMessage>().ToMaybe();
+		this.UpdateBehavior();
+	}
+
 	public BehaviorController() {
 		var equipment = new Reference<IEquipment>();
 		var agent = new Reference<Entity>();
-		var onSet = this.UpdateBehavior(equipment, agent);
 
-		this.equipment = new(equipment, onSet);
-		this.agent = new(agent, onSet);
+		this.equipment = new(equipment, this.UpdateBehavior);
+		this.agent = new(agent, this.UpdateBehavior);
+		this.behavior = new VoidEquipment(this.LogMessage);
 	}
 
 	public void Run(IAsyncEnumerable<U<Vector3, Entity>> targets) {
-		this.behavior.Switch(
-			some: b => b.ExecuteNext(targets),
-			none: BehaviorController.Idle
-		);
+		this.behavior.ExecuteNext(targets);
 	}
 
 	public void Reset() {
-		this.behavior.Switch(
-			some: b => b.ResetAndIdle(),
-			none: BehaviorController.Idle
-		);
+		this.behavior.ResetAndIdle();
 	}
 }

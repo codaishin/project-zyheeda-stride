@@ -1,5 +1,7 @@
 namespace Tests;
 
+using System;
+using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
 
@@ -16,6 +18,26 @@ public class TestU2 : GameTestCollection {
 		var union = new U<int, string>("42");
 		var result = union.Switch<string?>(v => null, v => v);
 		Assert.That(result, Is.EqualTo("42"));
+	}
+
+	[Test]
+	public void SwitchActionFirst() {
+		var union = new U<int, string>(42);
+		var callback = Mock.Of<Action<int>>();
+		union.Switch(callback, _ => { });
+		Mock
+			.Get(callback)
+			.Verify(c => c.Invoke(42), Times.Once);
+	}
+
+	[Test]
+	public void SwitchActionSecond() {
+		var union = new U<int, string>("42");
+		var callback = Mock.Of<Action<string>>();
+		union.Switch(_ => { }, callback);
+		Mock
+			.Get(callback)
+			.Verify(c => c.Invoke("42"), Times.Once);
 	}
 
 	[Test]
@@ -73,6 +95,37 @@ public class TestU3 : GameTestCollection {
 		var union = new U<int, string, float>(42f);
 		var result = union.Switch<float?>(_ => null, _ => null, v => v);
 		Assert.That(result, Is.EqualTo(42f));
+	}
+
+	[Test]
+	public void SwitchActionFirst() {
+		var union = new U<int, string, float>(42);
+		var callback = Mock.Of<Action<int>>();
+		union.Switch(callback, _ => { }, _ => { });
+		Mock
+			.Get(callback)
+			.Verify(c => c.Invoke(42), Times.Once);
+	}
+
+	[Test]
+	public void SwitchActionSecond() {
+		var union = new U<int, string, float>("42");
+		var callback = Mock.Of<Action<string>>();
+		union.Switch(_ => { }, callback, _ => { });
+		Mock
+			.Get(callback)
+			.Verify(c => c.Invoke("42"), Times.Once);
+	}
+
+
+	[Test]
+	public void SwitchActionThird() {
+		var union = new U<int, string, float>(42f);
+		var callback = Mock.Of<Action<float>>();
+		union.Switch(_ => { }, _ => { }, callback);
+		Mock
+			.Get(callback)
+			.Verify(c => c.Invoke(42f), Times.Once);
 	}
 
 	[Test]
