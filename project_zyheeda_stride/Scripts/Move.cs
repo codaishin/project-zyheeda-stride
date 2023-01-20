@@ -10,7 +10,10 @@ using Stride.Engine;
 
 
 public class Move : StartupScript, IEquipment {
+	public static readonly string fallbackAnimationKey = "default";
+
 	public float speed;
+	public string playAnimation = "";
 
 	private IGetAnimation? getAnimation;
 
@@ -113,8 +116,8 @@ public class Move : StartupScript, IEquipment {
 			Queue<U<Vector3, Entity>> waypoints
 		) {
 			return waypoints.TryDequeue(out var waypoint)
-				? ("walk", async () => await this.MoveTowards(this.agentTransform, waypoint))
-				: ("idle", async () => await this.move.Script.NextFrame());
+				? (this.move.playAnimation, async () => await this.MoveTowards(this.agentTransform, waypoint))
+				: (Move.fallbackAnimationKey, async () => await this.move.Script.NextFrame());
 		}
 
 		public void ResetAndIdle() {
@@ -139,7 +142,7 @@ public class Move : StartupScript, IEquipment {
 					this.Play(animationKey);
 					await task();
 				};
-				this.Play("idle");
+				this.Play(Move.fallbackAnimationKey);
 			};
 			this.traverseWaypointsThread?.Cancel();
 			this.traverseWaypointsThread = this.move.Script.AddTask(traverseWaypoints);

@@ -27,7 +27,7 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.agentAnimation = new AnimationComponent();
 		this.agent = new Entity();
 		this.agent.AddChild(new Entity { this.agentAnimation });
-		this.moveComponent = new Move { speed = 1 };
+		this.moveComponent = new Move { speed = 1, playAnimation = "walk" };
 		this.move = new Entity { this.moveComponent };
 
 		Mock
@@ -494,7 +494,7 @@ public class TestMove : GameTestCollection, System.IDisposable {
 	}
 
 	[Test]
-	public void PlayWalk() {
+	public void PlayAnimationWalk() {
 		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
 
 		_ = Mock
@@ -519,6 +519,32 @@ public class TestMove : GameTestCollection, System.IDisposable {
 	}
 
 	[Test]
+	public void PlayAnimationRun() {
+		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
+		this.moveComponent.playAnimation = "run";
+
+		_ = Mock
+			.Get(this.getAnimation)
+			.Setup(g => g.Play(this.agentAnimation, It.IsAny<string>()))
+			.Returns(Maybe.None<IPlayingAnimation>());
+
+		this.moveComponent.speed = 1;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
+			.Switch(TestMove.GetBehaviorFail, b => b);
+
+		this.game.WaitFrames(1);
+
+		behavior.ExecuteNext(targets);
+
+		this.game.WaitFrames(10);
+
+		Mock
+			.Get(this.getAnimation)
+			.Verify(g => g.Play(this.agentAnimation, "run"), Times.Once);
+	}
+
+	[Test]
 	public void PlayIdle() {
 		var targets = new U<Vector3, Entity>[] { new Vector3(1, 0, 0) }.ToAsyncEnumerable();
 
@@ -540,7 +566,7 @@ public class TestMove : GameTestCollection, System.IDisposable {
 
 		Mock
 			.Get(this.getAnimation)
-			.Verify(g => g.Play(this.agentAnimation, "idle"), Times.Once);
+			.Verify(g => g.Play(this.agentAnimation, Move.fallbackAnimationKey), Times.Once);
 	}
 
 	[Test]
@@ -575,7 +601,7 @@ public class TestMove : GameTestCollection, System.IDisposable {
 			.Verify(g => g.Play(this.agentAnimation, "walk"), Times.Exactly(2));
 		Mock
 			.Get(this.getAnimation)
-			.Verify(g => g.Play(this.agentAnimation, "idle"), Times.Once);
+			.Verify(g => g.Play(this.agentAnimation, Move.fallbackAnimationKey), Times.Once);
 	}
 
 	[Test]
@@ -610,7 +636,7 @@ public class TestMove : GameTestCollection, System.IDisposable {
 			.Verify(g => g.Play(this.agentAnimation, "walk"), Times.Never);
 		Mock
 			.Get(this.getAnimation)
-			.Verify(g => g.Play(this.agentAnimation, "idle"), Times.Never);
+			.Verify(g => g.Play(this.agentAnimation, Move.fallbackAnimationKey), Times.Never);
 	}
 
 	[Test]
