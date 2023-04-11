@@ -1,0 +1,19 @@
+!Animation
+Id: b1d901ba-2513-4f4e-a848-3a240d8ec261
+SerializedVersion: {Stride: 2.0.0.0}
+Tags: []
+Source: !file ../../models/runHoldRifle.fbx
+ClipDuration:
+    Enabled: false
+    StartAnimationTime: 0:00:00:00.0000000
+    EndAnimationTime: 0:00:30:00.0000000
+PivotPosition: {X: 0.0, Y: 0.0, Z: 0.0}
+RepeatMode: LoopInfinite
+Type: !StandardAnimationAssetType {}
+Skeleton: 75895eb1-08a6-41b0-bbdc-17a0d3b5b727:dummy Skeleton
+RootMotion: false
+PreviewModel: 45748d85-2eef-411a-9b7e-1bbda1beda94:dummy
+AnimationTimeMinimum: 0:00:00:00.0000000
+AnimationTimeMaximum: 0:00:00:00.8333300
+~SourceHashes:
+    57665a7104eda5c3638578f4206d47d2~../../models/runHoldRifle.fbx: d2dd26e93ccb7a493182c6234996d583
