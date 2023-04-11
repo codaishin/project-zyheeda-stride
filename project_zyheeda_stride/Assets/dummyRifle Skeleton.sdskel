@@ -1,0 +1,16 @@
+!Skeleton
+Id: 6699ad32-ce46-4c3c-a82c-be140e4d831d
+SerializedVersion: {Stride: 2.0.0.0}
+Tags: []
+Source: !file ../../models/dummyRifle.fbx
+PivotPosition: {X: 0.0, Y: 0.0, Z: 0.0}
+Nodes:
+    81732ab6278a2a7617edaadfbdf49547: {Name: RootNode, Depth: 0}
+    33e39ed073b197ec41c9c04264859093: {Name: Mesh, Depth: 1}
+    6c104262eca48f8f53c3db7ac00de3b9: {Name: Armature, Depth: 1}
+    b358009dad743fc4a0d78427b281f573: {Name: Bone, Depth: 2}
+    a2514156ff430a6e0255d7f8583acb85: {Name: Bone.001, Depth: 3}
+    534b14ea2fae4425e0843cd10864d72d: {Name: Bone.002, Depth: 4}
+    58ef964159b7513809cf2da802ce5f72: {Name: Bone.002_end, Depth: 5}
+~SourceHashes:
+    d9624daa2c9e8162cdf30293d09b46c3~../../models/dummyRifle.fbx: 77ffc635a0785c23e08901b4ffa123db

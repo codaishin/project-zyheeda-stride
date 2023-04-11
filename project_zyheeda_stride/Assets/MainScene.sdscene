@@ -96,9 +96,23 @@ Hierarchy:
                     c320984b256f275a13d5e222ebdf03b8: !AnimationComponent
                         Id: e9c60005-fe76-4c32-95e3-e88a99f47527
                         Animations:
-                            0188dfc3d419d32837434088df9604af~run: 6d009478-f495-49f4-ae4b-494b884896e3:run
-                            7b49924f11cc9b2db72770e729b52f88~walk: ee3590a5-ed57-4a94-9555-5514ef2a3c24:walk
-                            922aa77c255c3670fd8d17ba9b434555~default: 7d3494cd-aaff-4c9b-97cf-aeb32788a315:idle
+                            0188dfc3d419d32837434088df9604af~run: b1d901ba-2513-4f4e-a848-3a240d8ec261:runHoldRifle
+                            7b49924f11cc9b2db72770e729b52f88~walk: cf335415-587a-4533-b128-e84db5f55420:walkHoldRifle
+                            922aa77c255c3670fd8d17ba9b434555~default: 9b805952-a55c-4da3-81b4-d956810deced:holdRifle
+        -   Entity:
+                Id: 7dcac667-fdfd-46ab-80e1-ffb0a2e4edab
+                Name: rifle
+                Components:
+                    cb4d5eee30a7286fd96cf462e9931890: !TransformComponent
+                        Id: cf0eaf33-0d3d-4852-a2be-61922150eba8
+                        Position: {X: -0.01758459, Y: 0.25032148, Z: 0.088884175}
+                        Rotation: {X: -0.050593626, Y: 0.7666758, Z: 0.63864887, W: 0.042144876}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    4f7e9b62d8fcd1f03a18e49ffb7ccb27: !ModelComponent
+                        Id: b4f50447-c34f-42c3-bd4b-6cd67371466b
+                        Model: 18428c98-d86f-490d-96c4-b5711f4c47dc:dummyRifle
+                        Materials: {}
         -   Entity:
                 Id: 80d8012c-51e0-4aed-b36a-ed018b98fb37
                 Name: Ground
@@ -153,6 +167,21 @@ Hierarchy:
                                 BiasParameters: {}
                         Intensity: 20.0
         -   Entity:
+                Id: 91cfe1a5-1185-4832-b51a-a181693ab2bb
+                Name: hand.right.handle
+                Components:
+                    5e4cf8fa5396c843f7d1ff5adb53a909: !TransformComponent
+                        Id: 5bded2de-bef4-402f-8ef6-97a5683027c6
+                        Position: {X: 0.0, Y: 0.0, Z: 0.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 0.005, Y: 0.005, Z: 0.005}
+                        Children:
+                            044e41159ef51c8b13c462997b908482: ref!! cf0eaf33-0d3d-4852-a2be-61922150eba8
+                    c320ecde24941e94f3a9be1e5c5b3375: !ModelNodeLinkComponent
+                        Id: 2484d037-eef2-47f6-b135-4a4e6b7727e0
+                        Target: ref!! 132eb10e-a1cc-4a3b-86a2-5cb7b19e319f
+                        NodeName: gun.R
+        -   Entity:
                 Id: 96a3fb43-e76c-456f-a87b-cb71a2b3bd33
                 Name: GetMousePosition
                 Components:
@@ -177,6 +206,7 @@ Hierarchy:
                         Children:
                             b329a86c998c57ebdeb79970d6e58e6c: ref!! f1c858c7-525a-42ac-a4c0-61a573304c45
                             7a37a32e0ab6a26dd536f337271b5b54: ref!! 5e3d5ab5-cfd6-4ca2-a0d1-2c6759e8d5f1
+                            b5da0543df0afd9880cae4790dd58446: ref!! 5bded2de-bef4-402f-8ef6-97a5683027c6
         -   Entity:
                 Id: c3ebcead-ded4-4b73-a88f-2fbe1eda413c
                 Name: Skybox
