@@ -15,3 +15,6 @@ Cache/
 
 launch.json
 tasks.json
+
+# blender
+*.blend1
