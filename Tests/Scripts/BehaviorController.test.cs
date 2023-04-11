@@ -246,4 +246,24 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Get(this.playerMessage)
 			.Verify(m => m.Log(message), Times.Once);
 	}
+
+
+}
+
+[TestFixture]
+public class BehaviorControllerNonGameTest {
+	[Test]
+	public void NoEquipmentAssignErrorWhenNotInRunningGame() {
+		var controller = new BehaviorController();
+		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
+		controller.agent.Entity = new Entity();
+
+		Assert.DoesNotThrow(
+			() => {
+				controller.equipment.Entity = new Entity {
+					(EntityComponent)mEquipment.Object,
+				};
+			}
+		);
+	}
 }

@@ -79,6 +79,9 @@ public class BehaviorController : StartupScript, IBehavior {
 	}
 
 	private void UpdateBehavior() {
+		if (this.Game == null) {
+			return;
+		}
 		this.GetBehavior
 			.ApplyWeak(this.agent.MaybeToEither(this.NoAgentMessage))
 			.Flatten()
