@@ -55,6 +55,7 @@ public class Move : StartupScript, IEquipment {
 	private class Behavior : IBehaviorStateMachine {
 		private MicroThread? traverseWaypointsThread;
 		private MicroThread? collectWaypointsThread;
+		private TaskCompletionSource<bool>? traverseWaypointsToken;
 
 		private readonly Move move;
 		private readonly IGetAnimation getAnimation;
@@ -125,7 +126,7 @@ public class Move : StartupScript, IEquipment {
 			this.traverseWaypointsThread?.Cancel();
 		}
 
-		public void ExecuteNext(IAsyncEnumerable<U<Vector3, Entity>> targets) {
+		public Task<bool> ExecuteNext(IAsyncEnumerable<U<Vector3, Entity>> targets) {
 			var waypoints = new Queue<U<Vector3, Entity>>();
 
 			var collectWaypoints = async () => {
@@ -136,16 +137,25 @@ public class Move : StartupScript, IEquipment {
 			this.collectWaypointsThread?.Cancel();
 			this.collectWaypointsThread = this.move.Script.AddTask(collectWaypoints);
 
+			if (this.traverseWaypointsThread?.State is not MicroThreadState.Completed) {
+				this.traverseWaypointsToken?.SetResult(false);
+			}
+			this.traverseWaypointsToken = new TaskCompletionSource<bool>();
+
 			var traverseWaypoints = async () => {
 				while (this.CollectingWaypoints || waypoints.Count > 0) {
 					var (animationKey, task) = this.GetAnimationKeyAndTask(waypoints);
 					this.Play(animationKey);
 					await task();
 				};
-				this.Play(Move.fallbackAnimationKey);
+				this.Play(fallbackAnimationKey);
+				this.traverseWaypointsToken.SetResult(true);
 			};
+
 			this.traverseWaypointsThread?.Cancel();
 			this.traverseWaypointsThread = this.move.Script.AddTask(traverseWaypoints);
+
+			return this.traverseWaypointsToken.Task;
 		}
 	}
 }

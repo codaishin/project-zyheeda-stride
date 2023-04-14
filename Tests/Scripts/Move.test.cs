@@ -43,9 +43,7 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.game.WaitFrames(1);
 	}
 
-	private static string ErrorsToString(
-		IEnumerable<U<SystemString, PlayerString>> errors
-	) {
+	private static string ErrorsToString(IEnumerable<U<SystemString, PlayerString>> errors) {
 		var errorsUnpacked = errors.Select(error => error.Switch(
 			v => $"{v.value} ({v.GetType().Name})",
 			v => $"{v.value} ({v.GetType().Name})"
@@ -53,9 +51,7 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		return string.Join(", ", errorsUnpacked);
 	}
 
-	private static IBehaviorStateMachine GetBehaviorFail(
-		IEnumerable<U<SystemString, PlayerString>> errors
-	) {
+	private static IBehaviorStateMachine GetBehaviorFail(IEnumerable<U<SystemString, PlayerString>> errors) {
 		Assert.Fail($"Errors: {TestMove.ErrorsToString(errors)}");
 		return Mock.Of<IBehaviorStateMachine>();
 	}
@@ -76,10 +72,8 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.game.WaitFrames(1);
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
-		Assert.That(
-			this.agent.Transform.Position,
-			Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance)
-		);
+		var position = this.agent.Transform.Position;
+		Assert.That(position, Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance));
 	}
 
 	[Test]
@@ -100,10 +94,8 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.game.WaitFrames(1);
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
-		Assert.That(
-			this.agent.Transform.Position,
-			Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance)
-		);
+		var position = this.agent.Transform.Position;
+		Assert.That(position, Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance));
 	}
 
 	[Test]
@@ -131,10 +123,8 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.game.WaitFrames(1);
 		var distanceY = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
-		Assert.That(
-			this.agent.Transform.Position,
-			Is.EqualTo(new Vector3(distanceX, distanceY, 0)).Using(this.tolerance)
-		);
+		var position = this.agent.Transform.Position;
+		Assert.That(position, Is.EqualTo(new Vector3(distanceX, distanceY, 0)).Using(this.tolerance));
 	}
 
 	[Test]
@@ -153,10 +143,8 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.game.WaitFrames(5);
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
-		Assert.That(
-			this.agent.Transform.Position,
-			Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance)
-		);
+		var position = this.agent.Transform.Position;
+		Assert.That(position, Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance));
 	}
 
 	[Test]
@@ -176,10 +164,8 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 		distance *= 42f;
 
-		Assert.That(
-			this.agent.Transform.Position,
-			Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance)
-		);
+		var position = this.agent.Transform.Position;
+		Assert.That(position, Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance));
 	}
 
 	[Test]
@@ -203,10 +189,8 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.game.WaitFrames(1);
 		distance += ((float)this.game.UpdateTime.Total.TotalSeconds - start) * 0.5f;
 
-		Assert.That(
-			this.agent.Transform.Position,
-			Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance)
-		);
+		var position = this.agent.Transform.Position;
+		Assert.That(position, Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance));
 	}
 
 	[Test]
@@ -225,10 +209,8 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.game.WaitFrames(5);
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
-		Assert.That(
-			this.agent.Transform.Position,
-			Is.EqualTo(new Vector3(0, -distance, 0)).Using(this.tolerance)
-		);
+		var position = this.agent.Transform.Position;
+		Assert.That(position, Is.EqualTo(new Vector3(0, -distance, 0)).Using(this.tolerance));
 	}
 
 	[Test]
@@ -252,10 +234,7 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.game.WaitFrames(1);
 		waypoints.Add(this.agent.Transform.Position);
 
-		Assert.That(
-			waypoints,
-			Is.EqualTo(new[] { new Vector3(1, 0, 0), new Vector3(1, 1, 0) })
-		);
+		Assert.That(waypoints, Is.EqualTo(new[] { new Vector3(1, 0, 0), new Vector3(1, 1, 0) }));
 	}
 
 	[Test]
@@ -276,10 +255,8 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.game.WaitFrames(5);
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
-		Assert.That(
-			this.agent.Transform.Position,
-			Is.EqualTo(new Vector3(1, distance, 0)).Using(this.tolerance)
-		);
+		var position = this.agent.Transform.Position;
+		Assert.That(position, Is.EqualTo(new Vector3(1, distance, 0)).Using(this.tolerance));
 	}
 
 	[Test]
@@ -321,7 +298,8 @@ public class TestMove : GameTestCollection, System.IDisposable {
 
 		this.game.WaitFrames(2);
 
-		Assert.That(this.agent.Transform.Position, Is.EqualTo(new Vector3(1, 0, 0)));
+		var position = this.agent.Transform.Position;
+		Assert.That(position, Is.EqualTo(new Vector3(1, 0, 0)));
 	}
 
 	[Test]
@@ -419,7 +397,7 @@ public class TestMove : GameTestCollection, System.IDisposable {
 			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
-		behavior.ExecuteNext(getTargets());
+		_ = behavior.ExecuteNext(getTargets());
 
 		var frames = await token.Task;
 		var offset = 2;
@@ -671,12 +649,11 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.agent.Name = "Agent";
 		this.agent.RemoveChild(this.agentAnimation.Entity);
 
-		this.moveComponent.speed = 1;
-		var valueString = this.moveComponent
+		var error = this.moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.ErrorsToString, b => "behavior");
+			.Switch(TestMove.ErrorsToString, _ => "no error, got actual behavior");
 
-		Assert.That(valueString, Is.EqualTo("Missing AnimationComponent on Agent (SystemString)"));
+		Assert.That(error, Is.EqualTo("Missing AnimationComponent on Agent (SystemString)"));
 	}
 
 	[Test]
@@ -688,11 +665,11 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		var moveComponent = new Move();
 		this.scene.Entities.Add(new Entity { moveComponent });
 
-		var valueString = moveComponent
+		var error = moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.ErrorsToString, b => "behavior");
+			.Switch(TestMove.ErrorsToString, _ => "no error, got actual behavior");
 
-		Assert.That(valueString, Is.EqualTo("Missing IGetAnimation Service (SystemString)"));
+		Assert.That(error, Is.EqualTo("Missing IGetAnimation Service (SystemString)"));
 	}
 
 	[Test]
@@ -706,20 +683,73 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		var moveComponent = new Move();
 		this.scene.Entities.Add(new Entity { moveComponent });
 
-		var valueString = moveComponent
+		var error = moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.ErrorsToString, b => "behavior");
+			.Switch(TestMove.ErrorsToString, _ => "no error, got actual behavior");
 
 		Assert.Multiple(() => {
-			Assert.That(
-				valueString,
-				Contains.Substring("Missing IGetAnimation Service (SystemString)")
-			);
-			Assert.That(
-				valueString,
-				Contains.Substring("Missing AnimationComponent on Agent (SystemString)")
-			);
+			Assert.That(error, Contains.Substring("Missing IGetAnimation Service (SystemString)"));
+			Assert.That(error, Contains.Substring("Missing AnimationComponent on Agent (SystemString)"));
 		});
+	}
+
+	[Test]
+	public async Task AwaitMovementCompletion() {
+		var target = new Entity();
+		var targets = new U<Vector3, Entity>[] { target }.ToAsyncEnumerable();
+
+		this.moveComponent.speed = 1;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
+			.Switch(GetBehaviorFail, b => b);
+
+		target.Transform.Position = new Vector3(1, 0, 0);
+		var completed = await behavior.ExecuteNext(targets);
+
+		var position = this.agent.Transform.Position;
+
+		Assert.Multiple(() => {
+			Assert.That(position, Is.EqualTo(new Vector3(1, 0, 0)));
+			Assert.That(completed, Is.True);
+		});
+	}
+
+	[Test, Timeout(1000)]
+	public async Task DoNotWaitForCanceledMovementCompletion() {
+		var firstTarget = new Entity();
+		var firstTargets = new U<Vector3, Entity>[] { firstTarget }.ToAsyncEnumerable();
+		var secondTarget = new Entity();
+		var secondTargets = new U<Vector3, Entity>[] { firstTarget }.ToAsyncEnumerable();
+
+		this.moveComponent.speed = 1;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
+			.Switch(GetBehaviorFail, b => b);
+
+		firstTarget.Transform.Position = new Vector3(2, 0, 0);
+		secondTarget.Transform.Position = new Vector3(0, 1, 0);
+
+		var firstTask = behavior.ExecuteNext(firstTargets);
+		_ = behavior.ExecuteNext(new U<Vector3, Entity>[] { firstTarget }.ToAsyncEnumerable());
+
+		var firstCompleted = await firstTask;
+		Assert.That(firstCompleted, Is.False);
+	}
+
+	[Test]
+	public async Task NewTaskAfterOldFinished() {
+		var target = new Entity();
+		var targets = new U<Vector3, Entity>[] { target }.ToAsyncEnumerable();
+
+		this.moveComponent.speed = 1;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
+			.Switch(GetBehaviorFail, b => b);
+
+		target.Transform.Position = new Vector3(1, 0, 0);
+		_ = await behavior.Execute(targets);
+
+		Assert.DoesNotThrow(() => behavior.Execute(targets));
 	}
 
 	public void Dispose() {

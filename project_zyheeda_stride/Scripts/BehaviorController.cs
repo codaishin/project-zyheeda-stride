@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 using TBehaviorFn = System.Func<
@@ -20,8 +21,9 @@ public class BehaviorController : StartupScript, IBehavior {
 			this.log = log;
 		}
 
-		public void ExecuteNext(IAsyncEnumerable<U<Vector3, Entity>> _) {
+		public Task<bool> ExecuteNext(IAsyncEnumerable<U<Vector3, Entity>> _) {
 			this.log(new PlayerString("nothing equipped"));
+			return Task.FromResult(true);
 		}
 
 		public void ResetAndIdle() { }
