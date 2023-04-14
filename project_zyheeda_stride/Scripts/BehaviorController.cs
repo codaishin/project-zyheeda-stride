@@ -21,7 +21,7 @@ public class BehaviorController : StartupScript, IBehavior {
 			this.log = log;
 		}
 
-		public Task<bool> ExecuteNext(IAsyncEnumerable<U<Vector3, Entity>> _) {
+		public Task<bool> Execute(IAsyncEnumerable<U<Vector3, Entity>> _) {
 			this.log(new PlayerString("nothing equipped"));
 			return Task.FromResult(true);
 		}
@@ -109,7 +109,7 @@ public class BehaviorController : StartupScript, IBehavior {
 	}
 
 	public void Run(IAsyncEnumerable<U<Vector3, Entity>> targets) {
-		this.behavior.ExecuteNext(targets);
+		this.behavior.Execute(targets);
 	}
 
 	public void Reset() {

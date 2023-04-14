@@ -126,7 +126,7 @@ public class Move : StartupScript, IEquipment {
 			this.traverseWaypointsThread?.Cancel();
 		}
 
-		public Task<bool> ExecuteNext(IAsyncEnumerable<U<Vector3, Entity>> targets) {
+		public Task<bool> Execute(IAsyncEnumerable<U<Vector3, Entity>> targets) {
 			var waypoints = new Queue<U<Vector3, Entity>>();
 
 			var collectWaypoints = async () => {

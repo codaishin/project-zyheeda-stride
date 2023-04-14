@@ -71,7 +71,7 @@ public class BehaviorControllerTest : GameTestCollection {
 	}
 
 	[Test]
-	public void OnRunExecuteNext() {
+	public void OnRunExecute() {
 		var behavior = Mock.Of<IBehaviorStateMachine>();
 		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
 		var targets = new U<Vector3, Entity>[] { new Vector3(1, 2, 3) }.ToAsyncEnumerable();
@@ -87,7 +87,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		this.controller.Run(targets);
 
-		Mock.Get(behavior).Verify(b => b.ExecuteNext(targets), Times.Once());
+		Mock.Get(behavior).Verify(b => b.Execute(targets), Times.Once());
 	}
 
 	[Test]
@@ -150,7 +150,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		this.controller.Run(targets);
 
-		mBehavior.Verify(b => b.ExecuteNext(targets), Times.Never());
+		mBehavior.Verify(b => b.Execute(targets), Times.Never());
 	}
 
 	[Test]
@@ -178,7 +178,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		this.controller.Run(targets);
 
-		mBehavior.Verify(b => b.ExecuteNext(targets), Times.Never());
+		mBehavior.Verify(b => b.Execute(targets), Times.Never());
 	}
 
 	[Test]
