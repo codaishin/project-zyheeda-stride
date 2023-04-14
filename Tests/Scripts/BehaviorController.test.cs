@@ -2,6 +2,7 @@ namespace Tests;
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
@@ -30,13 +31,13 @@ public class BehaviorControllerTest : GameTestCollection {
 		this.game.WaitFrames(2);
 	}
 
-	private static Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine> Behavior(
+	private static Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine> EitherWithBehavior(
 		IBehaviorStateMachine behavior
 	) {
 		return new Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine>(behavior);
 	}
 
-	private static Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine> SystemErrors(
+	private static Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine> EitherWithSystemErrors(
 		params string[] errors
 	) {
 		return new Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine>(
@@ -44,7 +45,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		);
 	}
 
-	private static Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine> PlayerErrors(
+	private static Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine> EitherWithPlayerErrors(
 		params string[] errors
 	) {
 		return new Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine>(
@@ -60,7 +61,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(agent))
-			.Returns(BehaviorControllerTest.Behavior(behavior));
+			.Returns(BehaviorControllerTest.EitherWithBehavior(behavior));
 
 		this.controller.agent.Entity = agent;
 		this.controller.equipment.Entity = new Entity {
@@ -78,7 +79,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
-			.Returns(BehaviorControllerTest.Behavior(behavior));
+			.Returns(BehaviorControllerTest.EitherWithBehavior(behavior));
 
 		this.controller.agent.Entity = new();
 		this.controller.equipment.Entity = new Entity {
@@ -99,7 +100,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
-			.Returns(BehaviorControllerTest.Behavior(behavior));
+			.Returns(BehaviorControllerTest.EitherWithBehavior(behavior));
 
 		this.controller.agent.Entity = agent;
 		this.controller.equipment.Entity = new Entity {
@@ -118,7 +119,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
-			.Returns(BehaviorControllerTest.Behavior(behavior));
+			.Returns(BehaviorControllerTest.EitherWithBehavior(behavior));
 
 		this.controller.agent.Entity = new();
 		this.controller.equipment.Entity = new Entity {
@@ -139,10 +140,10 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(agent))
-			.Returns(BehaviorControllerTest.Behavior(mBehavior.Object));
+			.Returns(BehaviorControllerTest.EitherWithBehavior(mBehavior.Object));
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsNotIn(agent)))
-			.Returns(BehaviorControllerTest.SystemErrors(""));
+			.Returns(BehaviorControllerTest.EitherWithSystemErrors(""));
 
 		this.controller.equipment.Entity = new Entity { (EntityComponent)mEquipment.Object };
 		this.controller.agent.Entity = agent;
@@ -163,10 +164,10 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		_ = mValidEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
-			.Returns(BehaviorControllerTest.Behavior(mBehavior.Object));
+			.Returns(BehaviorControllerTest.EitherWithBehavior(mBehavior.Object));
 		_ = mInvalidEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
-			.Returns(BehaviorControllerTest.SystemErrors(""));
+			.Returns(BehaviorControllerTest.EitherWithSystemErrors(""));
 
 		this.controller.agent.Entity = new Entity();
 		this.controller.equipment.Entity = new Entity {
@@ -235,7 +236,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
-			.Returns(BehaviorControllerTest.PlayerErrors(message.value));
+			.Returns(BehaviorControllerTest.EitherWithPlayerErrors(message.value));
 
 		this.controller.agent.Entity = new();
 		this.controller.equipment.Entity = new Entity {
@@ -247,7 +248,28 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Verify(m => m.Log(message), Times.Once);
 	}
 
+	[Test]
+	public void ReturnBehaviorTask() {
+		var behavior = Mock.Of<IBehaviorStateMachine>();
+		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
+		var targets = new U<Vector3, Entity>[] { new Vector3(1, 2, 3) }.ToAsyncEnumerable();
+		var task = Task.FromResult(true);
 
+		_ = mEquipment
+			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
+			.Returns(BehaviorControllerTest.EitherWithBehavior(behavior));
+
+		_ = Mock.Get(behavior)
+			.Setup(b => b.Execute(It.IsAny<IAsyncEnumerable<U<Vector3, Entity>>>()))
+			.Returns(task);
+
+		this.controller.agent.Entity = new();
+		this.controller.equipment.Entity = new Entity {
+			(EntityComponent)mEquipment.Object,
+		};
+
+		Assert.That(this.controller.Run(targets), Is.SameAs(task));
+	}
 }
 
 [TestFixture]

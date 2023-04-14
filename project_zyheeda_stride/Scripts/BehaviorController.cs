@@ -108,8 +108,8 @@ public class BehaviorController : StartupScript, IBehavior {
 		this.behavior = new VoidEquipment(this.LogMessage);
 	}
 
-	public void Run(IAsyncEnumerable<U<Vector3, Entity>> targets) {
-		this.behavior.Execute(targets);
+	public Task<bool> Run(IAsyncEnumerable<U<Vector3, Entity>> targets) {
+		return this.behavior.Execute(targets);
 	}
 
 	public void Reset() {
