@@ -21,12 +21,17 @@ public class BehaviorController : StartupScript, IBehavior {
 			this.log = log;
 		}
 
-		public Task<bool> Execute(U<Vector3, Entity> target) {
-			this.log(new PlayerString("nothing equipped"));
-			return Task.FromResult(true);
-		}
+		public static void ResetAndIdle() { }
 
-		public void ResetAndIdle() { }
+		public (Func<Task>, Cancel) GetExecution(U<Vector3, Entity> target) {
+			var log = this.log;
+			Task run() {
+				log(new PlayerString("nothing equipped"));
+				return Task.CompletedTask;
+			}
+			void cancel() { }
+			return (run, cancel);
+		}
 	}
 
 	private IMaybe<ISystemMessage> systemMessage = Maybe.None<ISystemMessage>();
@@ -106,11 +111,7 @@ public class BehaviorController : StartupScript, IBehavior {
 		this.behavior = new VoidEquipment(this.LogMessage);
 	}
 
-	public Task<bool> Run(U<Vector3, Entity> target) {
-		return this.behavior.Execute(target);
-	}
-
-	public void Reset() {
-		this.behavior.ResetAndIdle();
+	public (Func<Task>, Cancel) GetExecution(U<Vector3, Entity> target) {
+		return this.behavior.GetExecution(target);
 	}
 }

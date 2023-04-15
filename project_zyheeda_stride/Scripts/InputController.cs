@@ -19,7 +19,7 @@ public abstract class BaseInputController<IInput> : SyncScript where IInput : Pr
 		var runBehavior =
 			(IGetTarget getTarget) =>
 			(IBehavior behavior) =>
-			() => getTarget.GetTarget().Switch(target => behavior.Run(target), () => { });
+			() => getTarget.GetTarget().Switch(target => behavior.GetExecution(target), () => { });
 
 		runBehavior
 			.ApplyWeak(this.getTarget.MaybeToEither(nameof(this.getTarget)))

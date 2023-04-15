@@ -1,10 +1,10 @@
 ﻿namespace ProjectZyheeda;
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Stride.Core.Mathematics;
-using Stride.Core.MicroThreading;
 using Stride.Engine;
 
 
@@ -52,9 +52,6 @@ public class Move : StartupScript, IEquipment {
 	}
 
 	private class Behavior : IBehaviorStateMachine {
-		private MicroThread? traverseWaypointsThread;
-		private TaskCompletionSource<bool>? traverseWaypointsToken;
-
 		private readonly Move move;
 		private readonly IGetAnimation getAnimation;
 		private readonly TransformComponent agentTransform;
@@ -91,12 +88,12 @@ public class Move : StartupScript, IEquipment {
 			}
 
 			while (agent.Position != Move.GetVector3(target)) {
-				_ = await this.move.Script.NextFrame();
 				agent.Position = this.PositionTowards(
 					agent.Position,
 					Move.GetVector3(target),
 					this.move.speed
 				);
+				_ = await this.move.Script.NextFrame();
 			}
 		}
 
@@ -106,27 +103,16 @@ public class Move : StartupScript, IEquipment {
 			}
 		}
 
-		public void ResetAndIdle() {
-			this.traverseWaypointsThread?.Cancel();
-		}
-
-		public Task<bool> Execute(U<Vector3, Entity> target) {
-			if (this.traverseWaypointsThread?.State is not MicroThreadState.Completed) {
-				this.traverseWaypointsToken?.SetResult(false);
-			}
-			this.traverseWaypointsToken = new TaskCompletionSource<bool>();
-
-			var traverseWaypoints = async () => {
+		public (Func<Task>, Cancel) GetExecution(U<Vector3, Entity> target) {
+			async Task run() {
 				this.Play(this.move.playAnimation);
 				await this.MoveTowards(this.agentTransform, target);
 				this.Play(fallbackAnimationKey);
-				this.traverseWaypointsToken.SetResult(true);
 			};
-
-			this.traverseWaypointsThread?.Cancel();
-			this.traverseWaypointsThread = this.move.Script.AddTask(traverseWaypoints);
-
-			return this.traverseWaypointsToken.Task;
+			void cancel() {
+				this.Play(fallbackAnimationKey);
+			};
+			return (run, cancel);
 		}
 	}
 }

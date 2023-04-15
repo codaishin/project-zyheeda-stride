@@ -71,7 +71,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		Mock
 			.Get(this.behaviorEntity.Components.OfType<IBehavior>().First())
-			.Verify(b => b.Run(new Vector3(1, 2, 3)), Times.Once);
+			.Verify(b => b.GetExecution(new Vector3(1, 2, 3)), Times.Once);
 	}
 
 	[Test]
@@ -90,7 +90,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		Mock
 			.Get(this.behaviorEntity.Components.OfType<IBehavior>().First())
-			.Verify(b => b.Run(It.IsAny<U<Vector3, Entity>>()), Times.Never);
+			.Verify(b => b.GetExecution(It.IsAny<U<Vector3, Entity>>()), Times.Never);
 	}
 
 	[Test]

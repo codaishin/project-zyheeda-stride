@@ -3,7 +3,6 @@ namespace Tests;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
@@ -17,6 +16,7 @@ public class TestMove : GameTestCollection, System.IDisposable {
 	private Move moveComponent = new();
 	private Entity agent = new();
 	private Entity move = new();
+
 
 	private static string ErrorsToString(IEnumerable<U<SystemString, PlayerString>> errors) {
 		var errorsUnpacked = errors.Select(error => error.Switch(
@@ -57,19 +57,20 @@ public class TestMove : GameTestCollection, System.IDisposable {
 	}
 
 	[Test]
-	public void MoveTowardsTarget100() {
+	public void MoveTowardsTarget1() {
 		var target = new Vector3(1, 0, 0);
 
 		this.moveComponent.speed = 1;
 		var behavior = this.moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
-
-		_ = behavior.Execute(target);
-		this.game.WaitFrames(1);
+			.Switch(GetBehaviorFail, b => b);
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
+		var (run, _) = behavior.GetExecution(target);
+
+		this.Tasks.AddTask(run);
 		this.game.WaitFrames(1);
+
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
 		var position = this.agent.Transform.Position;
@@ -86,11 +87,13 @@ public class TestMove : GameTestCollection, System.IDisposable {
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		target.Transform.Position = new Vector3(1, 0, 0);
-		_ = behavior.Execute(target);
-		this.game.WaitFrames(1);
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
+		var (run, _) = behavior.GetExecution(target);
+
+		this.Tasks.AddTask(run);
 		this.game.WaitFrames(1);
+
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
 		var position = this.agent.Transform.Position;
@@ -108,11 +111,13 @@ public class TestMove : GameTestCollection, System.IDisposable {
 
 		target.Transform.Position = new Vector3(1, 0, 0);
 
-		_ = behavior.Execute(target);
-		this.game.WaitFrames(1);
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
+		var (run, _) = behavior.GetExecution(target);
+
+		this.Tasks.AddTask(run);
 		this.game.WaitFrames(1);
+
 		var distanceX = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
 		target.Transform.Position = new Vector3(0, 1, 0);
@@ -134,11 +139,13 @@ public class TestMove : GameTestCollection, System.IDisposable {
 			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
-		_ = behavior.Execute(target);
-		this.game.WaitFrames(1);
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
+		var (run, _) = behavior.GetExecution(target);
+
+		this.Tasks.AddTask(run);
 		this.game.WaitFrames(5);
+
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
 		var position = this.agent.Transform.Position;
@@ -154,11 +161,13 @@ public class TestMove : GameTestCollection, System.IDisposable {
 			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
-		_ = behavior.Execute(target);
-		this.game.WaitFrames(1);
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
+		var (run, _) = behavior.GetExecution(target);
+
+		this.Tasks.AddTask(run);
 		this.game.WaitFrames(5);
+
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 		distance *= 42f;
 
@@ -175,11 +184,13 @@ public class TestMove : GameTestCollection, System.IDisposable {
 			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
-		_ = behavior.Execute(target);
-		this.game.WaitFrames(1);
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
+		var (run, _) = behavior.GetExecution(target);
+
+		this.Tasks.AddTask(run);
 		this.game.WaitFrames(1);
+
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
 		start = (float)this.game.UpdateTime.Total.TotalSeconds;
@@ -200,11 +211,13 @@ public class TestMove : GameTestCollection, System.IDisposable {
 			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
-		_ = behavior.Execute(target);
-		this.game.WaitFrames(1);
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
+		var (run, _) = behavior.GetExecution(target);
+
+		this.Tasks.AddTask(run);
 		this.game.WaitFrames(5);
+
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
 		var position = this.agent.Transform.Position;
@@ -223,11 +236,13 @@ public class TestMove : GameTestCollection, System.IDisposable {
 
 		this.agent.Transform.Position = new Vector3(1, 0, 0);
 
-		_ = behavior.Execute(target);
-		this.game.WaitFrames(1);
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
+		var (run, _) = behavior.GetExecution(target);
+
+		this.Tasks.AddTask(run);
 		this.game.WaitFrames(5);
+
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
 		var position = this.agent.Transform.Position;
@@ -243,11 +258,12 @@ public class TestMove : GameTestCollection, System.IDisposable {
 			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
-		_ = behavior.Execute(target);
-		this.game.WaitFrames(1);
-
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
+		var (run, _) = behavior.GetExecution(target);
+
+		this.Tasks.AddTask(run);
 		this.game.WaitFrames(5);
+
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
 		var direction = new Vector3(1, 1, 0);
@@ -268,8 +284,8 @@ public class TestMove : GameTestCollection, System.IDisposable {
 			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
-		_ = behavior.Execute(target);
-		this.game.WaitFrames(1);
+		var (run, _) = behavior.GetExecution(target);
+		this.Tasks.AddTask(run);
 
 		this.game.WaitFrames(2);
 
@@ -277,79 +293,6 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		Assert.That(position, Is.EqualTo(new Vector3(1, 0, 0)));
 	}
 
-	[Test]
-	public void SuspendBehaviorWhenResetAndIdleCalled() {
-		var target = new Vector3(1, 0, 0);
-
-		this.moveComponent.speed = 1;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
-
-		_ = behavior.Execute(target);
-		this.game.WaitFrames(1);
-
-		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		this.game.WaitFrames(1);
-		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
-
-		behavior.ResetAndIdle();
-
-		this.game.WaitFrames(1);
-
-		Assert.That(
-			this.agent.Transform.Position,
-			Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance)
-		);
-	}
-
-	[Test]
-	public void ExecuteNextAfterResetAndIdle() {
-		var target = new Vector3(1, 0, 0);
-
-		this.moveComponent.speed = 1;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
-
-		behavior.ResetAndIdle();
-
-		_ = behavior.Execute(target);
-		this.game.WaitFrames(1);
-
-		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		this.game.WaitFrames(1);
-		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
-
-		Assert.That(
-			this.agent.Transform.Position,
-			Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance)
-		);
-	}
-
-	[Test]
-	public void ExecuteNextOverridesLastExecution() {
-		var targetA = new Vector3(1, 0, 0);
-		var targetB = new Vector3(-1, 0, 0);
-
-		this.moveComponent.speed = 1;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
-
-		_ = behavior.Execute(targetA);
-		_ = behavior.Execute(targetB);
-		this.game.WaitFrames(1);
-
-		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		this.game.WaitFrames(1);
-		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
-
-		Assert.That(
-			this.agent.Transform.Position,
-			Is.EqualTo(new Vector3(-distance, 0, 0)).Using(this.tolerance)
-		);
-	}
 
 	[Test]
 	public void LookAtTarget() {
@@ -359,8 +302,8 @@ public class TestMove : GameTestCollection, System.IDisposable {
 			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
-		_ = behavior.Execute(target);
-		this.game.WaitFrames(1);
+		var (run, _) = behavior.GetExecution(target);
+		this.Tasks.AddTask(run);
 
 		this.game.WaitFrames(2);
 
@@ -380,8 +323,8 @@ public class TestMove : GameTestCollection, System.IDisposable {
 			.GetBehaviorFor(this.agent)
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
-		_ = behavior.Execute(target);
-		this.game.WaitFrames(1);
+		var (run, _) = behavior.GetExecution(target);
+		this.Tasks.AddTask(run);
 
 		this.game.WaitFrames(2);
 
@@ -403,7 +346,8 @@ public class TestMove : GameTestCollection, System.IDisposable {
 
 		var expectedRotation = this.agent.Transform.Rotation;
 
-		_ = behavior.Execute(target);
+		var (run, _) = behavior.GetExecution(target);
+		this.Tasks.AddTask(run);
 		this.game.WaitFrames(1);
 
 		this.game.WaitFrames(2);
@@ -430,8 +374,9 @@ public class TestMove : GameTestCollection, System.IDisposable {
 
 		this.game.WaitFrames(1);
 
-		_ = behavior.Execute(target);
+		var (run, _) = behavior.GetExecution(target);
 
+		this.Tasks.AddTask(run);
 		this.game.WaitFrames(10);
 
 		Mock
@@ -456,8 +401,9 @@ public class TestMove : GameTestCollection, System.IDisposable {
 
 		this.game.WaitFrames(1);
 
-		_ = behavior.Execute(target);
+		var (run, _) = behavior.GetExecution(target);
 
+		this.Tasks.AddTask(run);
 		this.game.WaitFrames(10);
 
 		Mock
@@ -480,8 +426,9 @@ public class TestMove : GameTestCollection, System.IDisposable {
 			.Switch(TestMove.GetBehaviorFail, b => b);
 
 		this.game.WaitFrames(1);
+		var (run, _) = behavior.GetExecution(target);
 
-		_ = behavior.Execute(target);
+		this.Tasks.AddTask(run);
 
 		this.game.WaitFrames(10);
 
@@ -506,13 +453,42 @@ public class TestMove : GameTestCollection, System.IDisposable {
 
 		this.game.WaitFrames(1);
 
-		_ = behavior.Execute(target);
+		var (run, _) = behavior.GetExecution(target);
+		this.Tasks.AddTask(run);
 
 		this.game.WaitFrames(2);
 
 		Mock
 			.Get(this.getAnimation)
 			.Verify(g => g.Play(this.agentAnimation, It.IsAny<string>()), Times.Never);
+	}
+
+	[Test]
+	public void PlayIdleOnCancel() {
+		var target = new Vector3(1, 0, 0);
+
+		_ = Mock
+			.Get(this.getAnimation)
+			.Setup(g => g.Play(this.agentAnimation, It.IsAny<string>()))
+			.Returns(Maybe.None<IPlayingAnimation>());
+
+		this.moveComponent.speed = 100_000;
+		var behavior = this.moveComponent
+			.GetBehaviorFor(this.agent)
+			.Switch(TestMove.GetBehaviorFail, b => b);
+
+		this.game.WaitFrames(1);
+		var (run, cancel) = behavior.GetExecution(target);
+
+		this.Tasks.AddTask(run);
+
+		this.game.WaitFrames(1);
+
+		cancel();
+
+		Mock
+			.Get(this.getAnimation)
+			.Verify(g => g.Play(this.agentAnimation, Move.fallbackAnimationKey), Times.Once);
 	}
 
 	[Test]
@@ -558,61 +534,6 @@ public class TestMove : GameTestCollection, System.IDisposable {
 			Assert.That(error, Contains.Substring("Missing IGetAnimation Service (SystemString)"));
 			Assert.That(error, Contains.Substring("Missing AnimationComponent on Agent (SystemString)"));
 		});
-	}
-
-	[Test]
-	public async Task AwaitMovementCompletion() {
-		var target = new Entity();
-
-		this.moveComponent.speed = 1;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(GetBehaviorFail, b => b);
-
-		target.Transform.Position = new Vector3(1, 0, 0);
-		var completed = await behavior.Execute(target);
-
-		var position = this.agent.Transform.Position;
-
-		Assert.Multiple(() => {
-			Assert.That(position, Is.EqualTo(new Vector3(1, 0, 0)));
-			Assert.That(completed, Is.True);
-		});
-	}
-
-	[Test, Timeout(1000)]
-	public async Task DoNotWaitForCanceledMovementCompletion() {
-		var firstTarget = new Entity();
-		var secondTarget = new Entity();
-
-		this.moveComponent.speed = 1;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(GetBehaviorFail, b => b);
-
-		firstTarget.Transform.Position = new Vector3(2, 0, 0);
-		secondTarget.Transform.Position = new Vector3(0, 1, 0);
-
-		var firstTask = behavior.Execute(firstTarget);
-		_ = behavior.Execute(secondTarget);
-
-		var firstCompleted = await firstTask;
-		Assert.That(firstCompleted, Is.False);
-	}
-
-	[Test]
-	public async Task NewTaskAfterOldFinished() {
-		var target = new Entity();
-
-		this.moveComponent.speed = 1;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(GetBehaviorFail, b => b);
-
-		target.Transform.Position = new Vector3(1, 0, 0);
-		_ = await behavior.Execute(target);
-
-		Assert.DoesNotThrow(() => behavior.Execute(target));
 	}
 
 	public void Dispose() {

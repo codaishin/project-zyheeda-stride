@@ -44,9 +44,23 @@ public class TestGame {
 public class GameTestCollection {
 	public readonly Game game = TestGame.Game;
 	public readonly Scene scene = TestGame.RootScene;
+	public Runner Tasks { get; private set; } = new();
+
+	public class Runner : StartupScript {
+		public void AddTask(Func<Task> microThreadFunction) {
+			_ = this.Script.AddTask(microThreadFunction);
+		}
+	}
+
+	[SetUp]
+	public void SetupRunner() {
+		this.Tasks = new();
+		this.scene.Entities.Add(new Entity { this.Tasks });
+	}
 
 	[TearDown]
 	public void RemoveEntities() {
+		_ = this.scene.Entities.Remove(this.Tasks.Entity);
 		foreach (var entity in this.scene.Entities) {
 			_ = this.scene.Entities.Remove(entity);
 		}
@@ -55,12 +69,12 @@ public class GameTestCollection {
 
 public static class TestTools {
 	public static void WaitFrames(this Game game, int count) {
-		var token = new TaskCompletionSource<bool>();
+		var token = new TaskCompletionSource();
 		_ = game.Script.AddTask(async () => {
 			for (var frames = 1; frames < count; ++frames) {
 				_ = await game.Script.NextFrame();
 			}
-			token.SetResult(true);
+			token.SetResult();
 		});
 		token.Task.Wait();
 	}
@@ -92,7 +106,7 @@ public class TestGameTests : GameTestCollection {
 		var entity = new Entity();
 		TestGame.RootScene.Entities.Add(entity);
 
-		CollectionAssert.AreEqual(new[] { entity }, TestGame.RootScene.Entities);
+		Assert.That(new[] { entity, this.Tasks.Entity }, Is.EquivalentTo(TestGame.RootScene.Entities));
 	}
 
 	[Test]
@@ -100,6 +114,22 @@ public class TestGameTests : GameTestCollection {
 		var entity = new Entity();
 		TestGame.RootScene.Entities.Add(entity);
 
-		CollectionAssert.AreEqual(new[] { entity }, TestGame.RootScene.Entities);
+		Assert.That(new[] { entity, this.Tasks.Entity }, Is.EquivalentTo(TestGame.RootScene.Entities));
+	}
+
+	[Test]
+	public void RunTasks() {
+		var counter = 0;
+		var incrementCounterOnePerFrame = async () => {
+			while (true) {
+				_ = await this.game.Script.NextFrame();
+				++counter;
+			}
+		};
+
+		this.Tasks.AddTask(incrementCounterOnePerFrame);
+		this.game.WaitFrames(10);
+
+		Assert.That(counter, Is.EqualTo(9));
 	}
 }
