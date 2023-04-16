@@ -2,6 +2,7 @@ namespace Tests;
 
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
@@ -22,12 +23,14 @@ public class TestInputController : GameTestCollection, IDisposable {
 	private Entity controllerEntity = new();
 	private Entity behaviorEntity = new();
 	private Entity getTargetEntity = new();
+	private Entity schedulerEntity = new();
 
 	[SetUp]
 	public void Setup() {
 		var inputManagerWrapper = Mock.Of<IInputManagerWrapper>();
 		var mGetTarget = new Mock<EntityComponent>().As<IGetTarget>();
 		var mBehavior = new Mock<EntityComponent>().As<IBehavior>();
+		var mScheduler = new Mock<EntityComponent>().As<IScheduler>();
 		var controller = new MockController();
 
 		Mock.Get(inputManagerWrapper).SetReturnsDefault<bool>(false);
@@ -45,9 +48,13 @@ public class TestInputController : GameTestCollection, IDisposable {
 		this.scene.Entities.Add(
 			this.getTargetEntity = new Entity { (EntityComponent)mGetTarget.Object }
 		);
+		this.scene.Entities.Add(
+			this.schedulerEntity = new Entity { (EntityComponent)mScheduler.Object }
+		);
 
 		controller.getTarget.Entity = this.getTargetEntity;
 		controller.behavior.Entity = this.behaviorEntity;
+		controller.scheduler.Entity = this.schedulerEntity;
 	}
 
 	[TearDown]
@@ -59,6 +66,8 @@ public class TestInputController : GameTestCollection, IDisposable {
 	public void RunBehaviorWithTarget() {
 		var controller = this.controllerEntity.Get<MockController>();
 		var getTarget = this.getTargetEntity.Components.OfType<IGetTarget>().First();
+		var behavior = this.behaviorEntity.Components.OfType<IBehavior>().First();
+		(Func<Task>, Cancel) execution = (() => Task.CompletedTask, () => { });
 		var calls = 0;
 
 		controller.input.getAction = (_) => calls++ == 0 ? InputAction.Run : InputAction.None;
@@ -66,12 +75,39 @@ public class TestInputController : GameTestCollection, IDisposable {
 		_ = Mock.Get(getTarget)
 			.Setup(c => c.GetTarget())
 			.Returns(Maybe.Some<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
+		_ = Mock.Get(behavior)
+			.Setup(c => c.GetExecution(new Vector3(1, 2, 3)))
+			.Returns(execution);
 
 		this.game.WaitFrames(2);
 
 		Mock
-			.Get(this.behaviorEntity.Components.OfType<IBehavior>().First())
-			.Verify(b => b.GetExecution(new Vector3(1, 2, 3)), Times.Once);
+			.Get(this.schedulerEntity.Components.OfType<IScheduler>().First())
+			.Verify(b => b.Run(execution), Times.Once);
+	}
+
+	[Test]
+	public void EnqueueBehaviorWithTarget() {
+		var controller = this.controllerEntity.Get<MockController>();
+		var getTarget = this.getTargetEntity.Components.OfType<IGetTarget>().First();
+		var behavior = this.behaviorEntity.Components.OfType<IBehavior>().First();
+		(Func<Task>, Cancel) execution = (() => Task.CompletedTask, () => { });
+		var calls = 0;
+
+		controller.input.getAction = (_) => calls++ == 0 ? InputAction.Chain : InputAction.None;
+
+		_ = Mock.Get(getTarget)
+			.Setup(c => c.GetTarget())
+			.Returns(Maybe.Some<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
+		_ = Mock.Get(behavior)
+			.Setup(c => c.GetExecution(new Vector3(1, 2, 3)))
+			.Returns(execution);
+
+		this.game.WaitFrames(2);
+
+		Mock
+			.Get(this.schedulerEntity.Components.OfType<IScheduler>().First())
+			.Verify(b => b.Enqueue(execution), Times.Once);
 	}
 
 	[Test]
@@ -127,6 +163,25 @@ public class TestInputController : GameTestCollection, IDisposable {
 			Assert.That(
 				error?.ToString(),
 				Does.Contain(new MissingField(controller, nameof(controller.behavior)).ToString())
+			);
+		});
+	}
+
+	[Test]
+	public void MissingScheduler() {
+		var controller = this.controllerEntity.Get<MockController>();
+		_ = this.scene.Entities.Remove(controller.Entity);
+
+		controller.scheduler.Entity = null;
+		controller.input.getAction = (_) => InputAction.Run;
+
+		controller.Start();
+
+		Assert.Multiple(() => {
+			var error = Assert.Throws<MissingField>(controller.Update);
+			Assert.That(
+				error?.ToString(),
+				Does.Contain(new MissingField(controller, nameof(controller.scheduler)).ToString())
 			);
 		});
 	}

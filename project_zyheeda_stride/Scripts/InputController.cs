@@ -1,6 +1,8 @@
 namespace ProjectZyheeda;
 
+using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Stride.Engine;
 
 public abstract class BaseInputController<IInput> : SyncScript where IInput : ProjectZyheeda.IInput, new() {
@@ -9,32 +11,47 @@ public abstract class BaseInputController<IInput> : SyncScript where IInput : Pr
 	public readonly IInput input = new();
 	public Reference<IGetTarget> getTarget = new();
 	public Reference<IBehavior> behavior = new();
+	public Reference<IScheduler> scheduler = new();
 
 	public override void Start() {
 		var service = this.Services.GetService<IInputManagerWrapper>() ?? throw new MissingService<IInputManagerWrapper>();
 		this.inputWrapper = service;
 	}
 
-	private void RunBehavior() {
+	private void RunBehavior(InputAction action) {
 		var runBehavior =
 			(IGetTarget getTarget) =>
 			(IBehavior behavior) =>
-			() => getTarget.GetTarget().Switch(target => behavior.GetExecution(target), () => { });
+			(IScheduler scheduler) =>
+			() => {
+				Action<(Func<Task>, Cancel)> deploy =
+					action is InputAction.Run
+						? scheduler.Run
+						: scheduler.Enqueue;
+				getTarget
+					.GetTarget()
+					.Switch(
+						target => deploy(behavior.GetExecution(target)),
+						() => { }
+					);
+			};
 
 		runBehavior
 			.ApplyWeak(this.getTarget.MaybeToEither(nameof(this.getTarget)))
 			.ApplyWeak(this.behavior.MaybeToEither(nameof(this.behavior)))
+			.ApplyWeak(this.scheduler.MaybeToEither(nameof(this.scheduler)))
 			.Switch(
 				missingFields => throw new MissingField(this, missingFields.ToArray()),
-				action => action()
+				run => run()
 			);
 	}
 
 	public override void Update() {
-		if (this.input.GetAction(this.inputWrapper!) is InputAction.None) {
+		var action = this.input.GetAction(this.inputWrapper!);
+		if (action is InputAction.None) {
 			return;
 		}
-		this.RunBehavior();
+		this.RunBehavior(action);
 	}
 }
 
