@@ -8,57 +8,70 @@ using Stride.Core.Mathematics;
 using Stride.Engine;
 
 
-public class Move : StartupScript, IEquipment {
+public class MoveController : StartupScript, IEquipment {
 	public static readonly string fallbackAnimationKey = "default";
 
 	public float speed;
 	public string playAnimation = "";
 
-	private IGetAnimation? getAnimation;
-
-	public override void Start() {
-		this.getAnimation = this.Game.Services.GetService<IGetAnimation>();
-	}
+	private Either<string, IGetAnimation> getAnimation = new("No IGetAnimation assigned");
 
 	private static Vector3 GetVector3(U<Vector3, Entity> target) {
 		return target.Switch(v => v, e => e.Transform.Position);
 	}
 
-	public BehaviorOrErrors GetBehaviorFor(Entity agent) {
-		var animationComponent = agent
+	private static U<SystemString, PlayerString> ToSystemString(string value) {
+		return new SystemString(value);
+	}
+
+	private static IEnumerable<U<SystemString, PlayerString>> ToSystemString(IEnumerable<string> value) {
+		return value.Select(MoveController.ToSystemString);
+	}
+
+	private static Either<string, AnimationComponent> AnimationComponent(Entity agent) {
+		return agent
 			.GetChildren()
 			.Select(c => c.Get<AnimationComponent>())
-			.FirstOrDefault();
+			.FirstOrDefault()
+			.ToEither($"Missing AnimationComponent on {agent.Name}");
+	}
 
-		if (this.getAnimation is not null && animationComponent is not null) {
-			return new Behavior(
+	private Either<string, IGetAnimation> GetAnimation() {
+		return this
+			.Game
+			.Services
+			.GetService<IGetAnimation>()
+			.ToEither("Missing IGetAnimation Service");
+	}
+
+	public override void Start() {
+		this.getAnimation = this.GetAnimation();
+	}
+
+	public BehaviorOrErrors GetBehaviorFor(Entity agent) {
+		var getBehavior =
+			(IGetAnimation getAnimation) =>
+			(AnimationComponent animationComponent) => (IBehaviorStateMachine)new Behavior(
 				this,
-				this.getAnimation,
+				getAnimation,
 				agent.Transform,
 				animationComponent
 			);
-		}
 
-		IEnumerable<U<SystemString, PlayerString>> getErrors() {
-			if (this.getAnimation is null) {
-				yield return new SystemString("Missing IGetAnimation Service");
-			}
-			if (animationComponent is null) {
-				yield return new SystemString($"Missing AnimationComponent on {agent.Name}");
-			}
-		}
-
-		return getErrors().ToArray();
+		return getBehavior
+			.ApplyWeak(this.getAnimation)
+			.ApplyWeak(MoveController.AnimationComponent(agent))
+			.MapError(MoveController.ToSystemString);
 	}
 
 	private class Behavior : IBehaviorStateMachine {
-		private readonly Move move;
+		private readonly MoveController move;
 		private readonly IGetAnimation getAnimation;
 		private readonly TransformComponent agentTransform;
 		private readonly AnimationComponent agentAnimation;
 
 		public Behavior(
-			Move move,
+			MoveController move,
 			IGetAnimation getAnimation,
 			TransformComponent agentTransform,
 			AnimationComponent agentAnimation
@@ -80,17 +93,17 @@ public class Move : StartupScript, IEquipment {
 		}
 
 		private async Task MoveTowards(TransformComponent agent, U<Vector3, Entity> target) {
-			var direction = Move.GetVector3(target) - agent.Position;
+			var direction = MoveController.GetVector3(target) - agent.Position;
 
 			if (direction != Vector3.Zero) {
 				direction.Normalize();
 				agent.Rotation = Quaternion.LookRotation(direction, Vector3.UnitY);
 			}
 
-			while (agent.Position != Move.GetVector3(target)) {
+			while (agent.Position != MoveController.GetVector3(target)) {
 				agent.Position = this.PositionTowards(
 					agent.Position,
-					Move.GetVector3(target),
+					MoveController.GetVector3(target),
 					this.move.speed
 				);
 				_ = await this.move.Script.NextFrame();
