@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Stride.Core.Mathematics;
-using Stride.Core.MicroThreading;
 using Stride.Engine;
 
 
@@ -53,9 +52,6 @@ public class Move : StartupScript, IEquipment {
 	}
 
 	private class Behavior : IBehaviorStateMachine {
-		private MicroThread? traverseWaypointsThread;
-		private MicroThread? collectWaypointsThread;
-
 		private readonly Move move;
 		private readonly IGetAnimation getAnimation;
 		private readonly TransformComponent agentTransform;
@@ -72,11 +68,6 @@ public class Move : StartupScript, IEquipment {
 			this.agentTransform = agentTransform;
 			this.agentAnimation = agentAnimation;
 		}
-
-		private bool CollectingWaypoints =>
-			this.collectWaypointsThread?.State
-				is MicroThreadState.Starting
-				or MicroThreadState.Running;
 
 		private Vector3 PositionTowards(Vector3 current, Vector3 target, float speed) {
 			var diff = target - current;
@@ -97,12 +88,12 @@ public class Move : StartupScript, IEquipment {
 			}
 
 			while (agent.Position != Move.GetVector3(target)) {
-				_ = await this.move.Script.NextFrame();
 				agent.Position = this.PositionTowards(
 					agent.Position,
 					Move.GetVector3(target),
 					this.move.speed
 				);
+				_ = await this.move.Script.NextFrame();
 			}
 		}
 
@@ -112,40 +103,16 @@ public class Move : StartupScript, IEquipment {
 			}
 		}
 
-		private (string, Func<Task>) GetAnimationKeyAndTask(
-			Queue<U<Vector3, Entity>> waypoints
-		) {
-			return waypoints.TryDequeue(out var waypoint)
-				? (this.move.playAnimation, async () => await this.MoveTowards(this.agentTransform, waypoint))
-				: (Move.fallbackAnimationKey, async () => await this.move.Script.NextFrame());
-		}
-
-		public void ResetAndIdle() {
-			this.collectWaypointsThread?.Cancel();
-			this.traverseWaypointsThread?.Cancel();
-		}
-
-		public void ExecuteNext(IAsyncEnumerable<U<Vector3, Entity>> targets) {
-			var waypoints = new Queue<U<Vector3, Entity>>();
-
-			var collectWaypoints = async () => {
-				await foreach (var target in targets) {
-					waypoints.Enqueue(target);
-				}
+		public (Func<Task>, Cancel) GetExecution(U<Vector3, Entity> target) {
+			async Task run() {
+				this.Play(this.move.playAnimation);
+				await this.MoveTowards(this.agentTransform, target);
+				this.Play(fallbackAnimationKey);
 			};
-			this.collectWaypointsThread?.Cancel();
-			this.collectWaypointsThread = this.move.Script.AddTask(collectWaypoints);
-
-			var traverseWaypoints = async () => {
-				while (this.CollectingWaypoints || waypoints.Count > 0) {
-					var (animationKey, task) = this.GetAnimationKeyAndTask(waypoints);
-					this.Play(animationKey);
-					await task();
-				};
-				this.Play(Move.fallbackAnimationKey);
+			void cancel() {
+				this.Play(fallbackAnimationKey);
 			};
-			this.traverseWaypointsThread?.Cancel();
-			this.traverseWaypointsThread = this.move.Script.AddTask(traverseWaypoints);
+			return (run, cancel);
 		}
 	}
 }

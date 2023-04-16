@@ -31,7 +31,7 @@ public class InputManagerWrapper : IInputManagerWrapper {
 	private static U<Keys, MouseButton> Map(InputKeys key) {
 		return InputManagerWrapper.map.TryGetValue(key, out var result)
 			? result
-			: throw new ArgumentException($"mapping for {key} not configured");
+			: throw new ArgumentException($"mapping from custom key ({key}) to stride key not configured");
 	}
 
 	private readonly Game game;

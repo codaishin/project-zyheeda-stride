@@ -27,14 +27,15 @@ Hierarchy:
                     57c62770f9fbf32fd569d768849ded86: !ProjectZyheeda.InputController,project_zyheeda_stride
                         Id: dcb3f888-77c7-4172-ae1b-5462de6b9d70
                         input:
-                            key: MouseLeft
-                            mode: OnPress
-                            hold: ShiftLeft
-                            Log: null
+                            activationKey: MouseLeft
+                            activation: OnPress
+                            chainKey: ShiftLeft
                         getTarget:
                             Entity: ref!! 96a3fb43-e76c-456f-a87b-cb71a2b3bd33
                         behavior:
                             Entity: ref!! 2b3d03a5-6086-452d-af65-8a103c8713eb
+                        scheduler:
+                            Entity: ref!! 2f887163-c6c3-43ba-a199-ba751de9193c
         -   Entity:
                 Id: 2b3d03a5-6086-452d-af65-8a103c8713eb
                 Name: Move
@@ -55,6 +56,18 @@ Hierarchy:
                             Entity: ref!! 2b3d03a5-6086-452d-af65-8a103c8713eb
                         agent:
                             Entity: ref!! a70e6895-7fd3-4135-9869-1e5eb430a3c8
+        -   Entity:
+                Id: 2f887163-c6c3-43ba-a199-ba751de9193c
+                Name: Scheduler
+                Components:
+                    7317b1238bf144dd7a9fa4e69942a54b: !TransformComponent
+                        Id: a57b22ef-dc9e-4b26-bb84-83e73155678c
+                        Position: {X: 0.0, Y: 0.0, Z: 0.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    b70cb45919deaf5ba2baaa96dbf30e72: !ProjectZyheeda.SchedulerController,project_zyheeda_stride
+                        Id: a585c668-e48f-42e3-ba34-c0e88883834e
         -   Entity:
                 Id: 47529c61-f3f5-4e6a-996e-35d7833bb089
                 Name: Camera
@@ -206,6 +219,7 @@ Hierarchy:
                         Children:
                             b329a86c998c57ebdeb79970d6e58e6c: ref!! f1c858c7-525a-42ac-a4c0-61a573304c45
                             7a37a32e0ab6a26dd536f337271b5b54: ref!! 5e3d5ab5-cfd6-4ca2-a0d1-2c6759e8d5f1
+                            daca0c3b51f7344181e239d408cb9e9b: ref!! a57b22ef-dc9e-4b26-bb84-83e73155678c
                             b5da0543df0afd9880cae4790dd58446: ref!! 5bded2de-bef4-402f-8ef6-97a5683027c6
         -   Entity:
                 Id: c3ebcead-ded4-4b73-a88f-2fbe1eda413c

@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 using TBehaviorFn = System.Func<
@@ -20,19 +21,23 @@ public class BehaviorController : StartupScript, IBehavior {
 			this.log = log;
 		}
 
-		public void ExecuteNext(IAsyncEnumerable<U<Vector3, Entity>> _) {
-			this.log(new PlayerString("nothing equipped"));
-		}
+		public static void ResetAndIdle() { }
 
-		public void ResetAndIdle() { }
+		public (Func<Task>, Cancel) GetExecution(U<Vector3, Entity> target) {
+			var log = this.log;
+			Task run() {
+				log(new PlayerString("nothing equipped"));
+				return Task.CompletedTask;
+			}
+			void cancel() { }
+			return (run, cancel);
+		}
 	}
 
 	private IMaybe<ISystemMessage> systemMessage = Maybe.None<ISystemMessage>();
 	private IMaybe<IPlayerMessage> playerMessage = Maybe.None<IPlayerMessage>();
 	private IBehaviorStateMachine behavior;
-	private U<SystemString, PlayerString> NoAgentMessage => new SystemString(
-		this.MissingField(nameof(this.agent))
-	);
+	private U<SystemString, PlayerString> NoAgentMessage => new SystemString(this.MissingField(nameof(this.agent)));
 
 	public readonly EventReference<Reference<IEquipment>, IEquipment> equipment;
 	public readonly EventReference<Reference<Entity>, Entity> agent;
@@ -106,11 +111,7 @@ public class BehaviorController : StartupScript, IBehavior {
 		this.behavior = new VoidEquipment(this.LogMessage);
 	}
 
-	public void Run(IAsyncEnumerable<U<Vector3, Entity>> targets) {
-		this.behavior.ExecuteNext(targets);
-	}
-
-	public void Reset() {
-		this.behavior.ResetAndIdle();
+	public (Func<Task>, Cancel) GetExecution(U<Vector3, Entity> target) {
+		return this.behavior.GetExecution(target);
 	}
 }

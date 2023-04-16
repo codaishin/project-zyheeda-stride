@@ -1,7 +1,9 @@
 namespace Tests;
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
@@ -12,6 +14,22 @@ public class BehaviorControllerTest : GameTestCollection {
 	private ISystemMessage systemMessage = Mock.Of<ISystemMessage>();
 	private IPlayerMessage playerMessage = Mock.Of<IPlayerMessage>();
 	private BehaviorController controller = new();
+
+	private static Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine> EitherWithSystemErrors(
+		params string[] errors
+	) {
+		return new Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine>(
+			errors.Select(e => (U<SystemString, PlayerString>)new SystemString(e))
+		);
+	}
+
+	private static Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine> EitherWithPlayerErrors(
+		params string[] errors
+	) {
+		return new Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine>(
+			errors.Select(e => (U<SystemString, PlayerString>)new PlayerString(e))
+		);
+	}
 
 	[SetUp]
 	public void Setup() {
@@ -30,26 +48,10 @@ public class BehaviorControllerTest : GameTestCollection {
 		this.game.WaitFrames(2);
 	}
 
-	private static Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine> Behavior(
+	private static Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine> EitherWithBehavior(
 		IBehaviorStateMachine behavior
 	) {
 		return new Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine>(behavior);
-	}
-
-	private static Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine> SystemErrors(
-		params string[] errors
-	) {
-		return new Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine>(
-			errors.Select(e => (U<SystemString, PlayerString>)new SystemString(e))
-		);
-	}
-
-	private static Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine> PlayerErrors(
-		params string[] errors
-	) {
-		return new Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine>(
-			errors.Select(e => (U<SystemString, PlayerString>)new PlayerString(e))
-		);
 	}
 
 	[Test]
@@ -60,7 +62,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(agent))
-			.Returns(BehaviorControllerTest.Behavior(behavior));
+			.Returns(BehaviorControllerTest.EitherWithBehavior(behavior));
 
 		this.controller.agent.Entity = agent;
 		this.controller.equipment.Entity = new Entity {
@@ -71,23 +73,23 @@ public class BehaviorControllerTest : GameTestCollection {
 	}
 
 	[Test]
-	public void OnRunExecuteNext() {
+	public void OnRunExecute() {
 		var behavior = Mock.Of<IBehaviorStateMachine>();
 		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
-		var targets = new U<Vector3, Entity>[] { new Vector3(1, 2, 3) }.ToAsyncEnumerable();
+		var target = new Vector3(1, 2, 3);
 
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
-			.Returns(BehaviorControllerTest.Behavior(behavior));
+			.Returns(BehaviorControllerTest.EitherWithBehavior(behavior));
 
 		this.controller.agent.Entity = new();
 		this.controller.equipment.Entity = new Entity {
 			(EntityComponent)mEquipment.Object,
 		};
 
-		this.controller.Run(targets);
+		_ = this.controller.GetExecution(target);
 
-		Mock.Get(behavior).Verify(b => b.ExecuteNext(targets), Times.Once());
+		Mock.Get(behavior).Verify(b => b.GetExecution(target), Times.Once());
 	}
 
 	[Test]
@@ -99,7 +101,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
-			.Returns(BehaviorControllerTest.Behavior(behavior));
+			.Returns(BehaviorControllerTest.EitherWithBehavior(behavior));
 
 		this.controller.agent.Entity = agent;
 		this.controller.equipment.Entity = new Entity {
@@ -112,45 +114,26 @@ public class BehaviorControllerTest : GameTestCollection {
 	}
 
 	[Test]
-	public void OnCancelResetAndIdle() {
-		var behavior = Mock.Of<IBehaviorStateMachine>();
-		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
-
-		_ = mEquipment
-			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
-			.Returns(BehaviorControllerTest.Behavior(behavior));
-
-		this.controller.agent.Entity = new();
-		this.controller.equipment.Entity = new Entity {
-			(EntityComponent)mEquipment.Object,
-		};
-
-		this.controller.Reset();
-
-		Mock.Get(behavior).Verify(b => b.ResetAndIdle(), Times.Once());
-	}
-
-	[Test]
 	public void NullBehaviorWhenAssigningInvalidAgent() {
 		var mBehavior = new Mock<IBehaviorStateMachine>();
 		var agent = new Entity();
 		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
-		var targets = System.Array.Empty<U<Vector3, Entity>>().ToAsyncEnumerable();
+		var target = Vector3.UnitX;
 
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(agent))
-			.Returns(BehaviorControllerTest.Behavior(mBehavior.Object));
+			.Returns(BehaviorControllerTest.EitherWithBehavior(mBehavior.Object));
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsNotIn(agent)))
-			.Returns(BehaviorControllerTest.SystemErrors(""));
+			.Returns(BehaviorControllerTest.EitherWithSystemErrors(""));
 
 		this.controller.equipment.Entity = new Entity { (EntityComponent)mEquipment.Object };
 		this.controller.agent.Entity = agent;
 		this.controller.agent.Entity = new Entity();
 
-		this.controller.Run(targets);
+		_ = this.controller.GetExecution(target);
 
-		mBehavior.Verify(b => b.ExecuteNext(targets), Times.Never());
+		mBehavior.Verify(b => b.GetExecution(target), Times.Never());
 	}
 
 	[Test]
@@ -159,14 +142,14 @@ public class BehaviorControllerTest : GameTestCollection {
 		var agent = new Entity();
 		var mValidEquipment = new Mock<EntityComponent>().As<IEquipment>();
 		var mInvalidEquipment = new Mock<EntityComponent>().As<IEquipment>();
-		var targets = System.Array.Empty<U<Vector3, Entity>>().ToAsyncEnumerable();
+		var target = Vector3.UnitZ;
 
 		_ = mValidEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
-			.Returns(BehaviorControllerTest.Behavior(mBehavior.Object));
+			.Returns(BehaviorControllerTest.EitherWithBehavior(mBehavior.Object));
 		_ = mInvalidEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
-			.Returns(BehaviorControllerTest.SystemErrors(""));
+			.Returns(BehaviorControllerTest.EitherWithSystemErrors(""));
 
 		this.controller.agent.Entity = new Entity();
 		this.controller.equipment.Entity = new Entity {
@@ -176,9 +159,9 @@ public class BehaviorControllerTest : GameTestCollection {
 			(EntityComponent)mInvalidEquipment.Object,
 		};
 
-		this.controller.Run(targets);
+		_ = this.controller.GetExecution(target);
 
-		mBehavior.Verify(b => b.ExecuteNext(targets), Times.Never());
+		mBehavior.Verify(b => b.GetExecution(target), Times.Never());
 	}
 
 	[Test]
@@ -197,7 +180,7 @@ public class BehaviorControllerTest : GameTestCollection {
 	[Test]
 	public void EquipmentMissingOnUse() {
 		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
-		var targets = System.Array.Empty<U<Vector3, Entity>>().ToAsyncEnumerable();
+		var target = Vector3.UnitZ;
 
 		this.controller.agent.Entity = new Entity("Player");
 
@@ -205,7 +188,9 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Get(this.playerMessage)
 			.Verify(m => m.Log(new PlayerString("nothing equipped")), Times.Never);
 
-		this.controller.Run(targets);
+		var (run, _) = this.controller.GetExecution(target);
+		this.Tasks.AddTask(run);
+		this.game.WaitFrames(1);
 
 		Mock
 			.Get(this.playerMessage)
@@ -215,13 +200,15 @@ public class BehaviorControllerTest : GameTestCollection {
 	[Test]
 	public void EquipmentMissingOnUseBeforeAnythingIsSet() {
 		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
-		var targets = System.Array.Empty<U<Vector3, Entity>>().ToAsyncEnumerable();
+		var target = Vector3.UnitX;
 
 		Mock
 			.Get(this.playerMessage)
 			.Verify(m => m.Log(new PlayerString("nothing equipped")), Times.Never);
 
-		this.controller.Run(targets);
+		var (run, _) = this.controller.GetExecution(target);
+		this.Tasks.AddTask(run);
+		this.game.WaitFrames(1);
 
 		Mock
 			.Get(this.playerMessage)
@@ -235,7 +222,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
-			.Returns(BehaviorControllerTest.PlayerErrors(message.value));
+			.Returns(BehaviorControllerTest.EitherWithPlayerErrors(message.value));
 
 		this.controller.agent.Entity = new();
 		this.controller.equipment.Entity = new Entity {
@@ -247,7 +234,28 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Verify(m => m.Log(message), Times.Once);
 	}
 
+	[Test]
+	public void ReturnBehaviorExecution() {
+		var behavior = Mock.Of<IBehaviorStateMachine>();
+		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
+		var target = new Vector3(1, 2, 3);
+		(Func<Task>, Cancel) execution = (() => Task.CompletedTask, () => { });
 
+		_ = mEquipment
+			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
+			.Returns(BehaviorControllerTest.EitherWithBehavior(behavior));
+
+		_ = Mock.Get(behavior)
+			.Setup(b => b.GetExecution(It.IsAny<U<Vector3, Entity>>()))
+			.Returns(execution);
+
+		this.controller.agent.Entity = new();
+		this.controller.equipment.Entity = new Entity {
+			(EntityComponent)mEquipment.Object,
+		};
+
+		Assert.That(this.controller.GetExecution(target), Is.EqualTo(execution));
+	}
 }
 
 [TestFixture]

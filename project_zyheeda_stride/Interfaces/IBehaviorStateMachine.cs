@@ -1,10 +1,12 @@
 ﻿namespace ProjectZyheeda;
 
-using System.Collections.Generic;
+using System;
+using System.Threading.Tasks;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 
+public delegate void Cancel();
+
 public interface IBehaviorStateMachine {
-	void ExecuteNext(IAsyncEnumerable<U<Vector3, Entity>> targets);
-	void ResetAndIdle();
+	(Func<Task>, Cancel) GetExecution(U<Vector3, Entity> target);
 }
