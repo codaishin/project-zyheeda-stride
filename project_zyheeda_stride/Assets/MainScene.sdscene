@@ -27,10 +27,9 @@ Hierarchy:
                     57c62770f9fbf32fd569d768849ded86: !ProjectZyheeda.InputController,project_zyheeda_stride
                         Id: dcb3f888-77c7-4172-ae1b-5462de6b9d70
                         input:
-                            key: MouseLeft
-                            mode: OnPress
-                            hold: ShiftLeft
-                            Log: null
+                            activationKey: MouseLeft
+                            activation: OnPress
+                            chainKey: ShiftLeft
                         getTarget:
                             Entity: ref!! 96a3fb43-e76c-456f-a87b-cb71a2b3bd33
                         behavior:

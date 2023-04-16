@@ -21,7 +21,7 @@ public class BehaviorController : StartupScript, IBehavior {
 			this.log = log;
 		}
 
-		public Task<bool> Execute(IAsyncEnumerable<U<Vector3, Entity>> _) {
+		public Task<bool> Execute(U<Vector3, Entity> target) {
 			this.log(new PlayerString("nothing equipped"));
 			return Task.FromResult(true);
 		}
@@ -32,9 +32,7 @@ public class BehaviorController : StartupScript, IBehavior {
 	private IMaybe<ISystemMessage> systemMessage = Maybe.None<ISystemMessage>();
 	private IMaybe<IPlayerMessage> playerMessage = Maybe.None<IPlayerMessage>();
 	private IBehaviorStateMachine behavior;
-	private U<SystemString, PlayerString> NoAgentMessage => new SystemString(
-		this.MissingField(nameof(this.agent))
-	);
+	private U<SystemString, PlayerString> NoAgentMessage => new SystemString(this.MissingField(nameof(this.agent)));
 
 	public readonly EventReference<Reference<IEquipment>, IEquipment> equipment;
 	public readonly EventReference<Reference<Entity>, Entity> agent;
@@ -108,8 +106,8 @@ public class BehaviorController : StartupScript, IBehavior {
 		this.behavior = new VoidEquipment(this.LogMessage);
 	}
 
-	public Task<bool> Run(IAsyncEnumerable<U<Vector3, Entity>> targets) {
-		return this.behavior.Execute(targets);
+	public Task<bool> Run(U<Vector3, Entity> target) {
+		return this.behavior.Execute(target);
 	}
 
 	public void Reset() {

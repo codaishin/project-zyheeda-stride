@@ -1,13 +1,11 @@
 namespace ProjectZyheeda;
 
-using System;
-using System.Collections.Generic;
-using Stride.Core.Mathematics;
-using Stride.Engine;
-using Stride.Engine.Processors;
+public enum InputAction {
+	None = 0,
+	Run = 1,
+	Chain = 2,
+}
 
 public interface IInput {
-	IMaybe<Func<IGetTarget, ScriptSystem, IAsyncEnumerable<U<Vector3, Entity>>>> GetTargets(
-		IInputManagerWrapper input
-	);
+	InputAction GetAction(IInputManagerWrapper input);
 }

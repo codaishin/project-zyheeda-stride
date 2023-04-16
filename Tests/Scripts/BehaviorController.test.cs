@@ -14,6 +14,22 @@ public class BehaviorControllerTest : GameTestCollection {
 	private IPlayerMessage playerMessage = Mock.Of<IPlayerMessage>();
 	private BehaviorController controller = new();
 
+	private static Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine> EitherWithSystemErrors(
+		params string[] errors
+	) {
+		return new Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine>(
+			errors.Select(e => (U<SystemString, PlayerString>)new SystemString(e))
+		);
+	}
+
+	private static Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine> EitherWithPlayerErrors(
+		params string[] errors
+	) {
+		return new Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine>(
+			errors.Select(e => (U<SystemString, PlayerString>)new PlayerString(e))
+		);
+	}
+
 	[SetUp]
 	public void Setup() {
 		this.systemMessage = Mock.Of<ISystemMessage>();
@@ -35,22 +51,6 @@ public class BehaviorControllerTest : GameTestCollection {
 		IBehaviorStateMachine behavior
 	) {
 		return new Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine>(behavior);
-	}
-
-	private static Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine> EitherWithSystemErrors(
-		params string[] errors
-	) {
-		return new Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine>(
-			errors.Select(e => (U<SystemString, PlayerString>)new SystemString(e))
-		);
-	}
-
-	private static Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine> EitherWithPlayerErrors(
-		params string[] errors
-	) {
-		return new Either<IEnumerable<U<SystemString, PlayerString>>, IBehaviorStateMachine>(
-			errors.Select(e => (U<SystemString, PlayerString>)new PlayerString(e))
-		);
 	}
 
 	[Test]
@@ -75,7 +75,7 @@ public class BehaviorControllerTest : GameTestCollection {
 	public void OnRunExecute() {
 		var behavior = Mock.Of<IBehaviorStateMachine>();
 		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
-		var targets = new U<Vector3, Entity>[] { new Vector3(1, 2, 3) }.ToAsyncEnumerable();
+		var target = new Vector3(1, 2, 3);
 
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
@@ -86,9 +86,9 @@ public class BehaviorControllerTest : GameTestCollection {
 			(EntityComponent)mEquipment.Object,
 		};
 
-		this.controller.Run(targets);
+		_ = this.controller.Run(target);
 
-		Mock.Get(behavior).Verify(b => b.Execute(targets), Times.Once());
+		Mock.Get(behavior).Verify(b => b.Execute(target), Times.Once());
 	}
 
 	[Test]
@@ -136,7 +136,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		var mBehavior = new Mock<IBehaviorStateMachine>();
 		var agent = new Entity();
 		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
-		var targets = System.Array.Empty<U<Vector3, Entity>>().ToAsyncEnumerable();
+		var target = Vector3.UnitX;
 
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(agent))
@@ -149,9 +149,9 @@ public class BehaviorControllerTest : GameTestCollection {
 		this.controller.agent.Entity = agent;
 		this.controller.agent.Entity = new Entity();
 
-		this.controller.Run(targets);
+		_ = this.controller.Run(target);
 
-		mBehavior.Verify(b => b.Execute(targets), Times.Never());
+		mBehavior.Verify(b => b.Execute(target), Times.Never());
 	}
 
 	[Test]
@@ -160,7 +160,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		var agent = new Entity();
 		var mValidEquipment = new Mock<EntityComponent>().As<IEquipment>();
 		var mInvalidEquipment = new Mock<EntityComponent>().As<IEquipment>();
-		var targets = System.Array.Empty<U<Vector3, Entity>>().ToAsyncEnumerable();
+		var target = Vector3.UnitZ;
 
 		_ = mValidEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))
@@ -177,9 +177,9 @@ public class BehaviorControllerTest : GameTestCollection {
 			(EntityComponent)mInvalidEquipment.Object,
 		};
 
-		this.controller.Run(targets);
+		_ = this.controller.Run(target);
 
-		mBehavior.Verify(b => b.Execute(targets), Times.Never());
+		mBehavior.Verify(b => b.Execute(target), Times.Never());
 	}
 
 	[Test]
@@ -198,7 +198,7 @@ public class BehaviorControllerTest : GameTestCollection {
 	[Test]
 	public void EquipmentMissingOnUse() {
 		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
-		var targets = System.Array.Empty<U<Vector3, Entity>>().ToAsyncEnumerable();
+		var target = Vector3.UnitZ;
 
 		this.controller.agent.Entity = new Entity("Player");
 
@@ -206,7 +206,7 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Get(this.playerMessage)
 			.Verify(m => m.Log(new PlayerString("nothing equipped")), Times.Never);
 
-		this.controller.Run(targets);
+		_ = this.controller.Run(target);
 
 		Mock
 			.Get(this.playerMessage)
@@ -216,13 +216,13 @@ public class BehaviorControllerTest : GameTestCollection {
 	[Test]
 	public void EquipmentMissingOnUseBeforeAnythingIsSet() {
 		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
-		var targets = System.Array.Empty<U<Vector3, Entity>>().ToAsyncEnumerable();
+		var target = Vector3.UnitX;
 
 		Mock
 			.Get(this.playerMessage)
 			.Verify(m => m.Log(new PlayerString("nothing equipped")), Times.Never);
 
-		this.controller.Run(targets);
+		_ = this.controller.Run(target);
 
 		Mock
 			.Get(this.playerMessage)
@@ -252,7 +252,7 @@ public class BehaviorControllerTest : GameTestCollection {
 	public void ReturnBehaviorTask() {
 		var behavior = Mock.Of<IBehaviorStateMachine>();
 		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
-		var targets = new U<Vector3, Entity>[] { new Vector3(1, 2, 3) }.ToAsyncEnumerable();
+		var target = new Vector3(1, 2, 3);
 		var task = Task.FromResult(true);
 
 		_ = mEquipment
@@ -260,7 +260,7 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Returns(BehaviorControllerTest.EitherWithBehavior(behavior));
 
 		_ = Mock.Get(behavior)
-			.Setup(b => b.Execute(It.IsAny<IAsyncEnumerable<U<Vector3, Entity>>>()))
+			.Setup(b => b.Execute(It.IsAny<U<Vector3, Entity>>()))
 			.Returns(task);
 
 		this.controller.agent.Entity = new();
@@ -268,7 +268,7 @@ public class BehaviorControllerTest : GameTestCollection {
 			(EntityComponent)mEquipment.Object,
 		};
 
-		Assert.That(this.controller.Run(targets), Is.SameAs(task));
+		Assert.That(this.controller.Run(target), Is.SameAs(task));
 	}
 }
 
