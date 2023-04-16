@@ -4,7 +4,7 @@ using System;
 using System.Threading.Tasks;
 
 public interface IScheduler {
-	void Run(Func<Task> func);
-	void Enqueue(Func<Task> func);
+	void Run((Func<Task>, Cancel) execution);
+	void Enqueue((Func<Task>, Cancel) execution);
 	void Clear();
 }
