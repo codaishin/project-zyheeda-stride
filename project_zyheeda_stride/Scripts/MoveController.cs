@@ -1,7 +1,6 @@
 ﻿namespace ProjectZyheeda;
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Stride.Core.Mathematics;
@@ -14,38 +13,28 @@ public class MoveController : StartupScript, IEquipment {
 	public float speed;
 	public string playAnimation = "";
 
-	private Either<string, IGetAnimation> getAnimation = new("No IGetAnimation assigned");
+	private Either<U<SystemString, PlayerString>, IGetAnimation> animationGetter = new U<SystemString, PlayerString>(
+		new SystemString("No IGetAnimation assigned")
+	);
 
-	private static Vector3 GetVector3(U<Vector3, Entity> target) {
-		return target.Switch(v => v, e => e.Transform.Position);
-	}
-
-	private static U<SystemString, PlayerString> ToSystemString(string value) {
-		return new SystemString(value);
-	}
-
-	private static IEnumerable<U<SystemString, PlayerString>> ToSystemString(IEnumerable<string> value) {
-		return value.Select(MoveController.ToSystemString);
-	}
-
-	private static Either<string, AnimationComponent> AnimationComponent(Entity agent) {
+	private static Either<U<SystemString, PlayerString>, AnimationComponent> AnimationComponentFromChildren(Entity agent) {
 		return agent
 			.GetChildren()
 			.Select(c => c.Get<AnimationComponent>())
 			.FirstOrDefault()
-			.ToEither($"Missing AnimationComponent on {agent.Name}");
+			.ToEither(new U<SystemString, PlayerString>(new SystemString($"Missing AnimationComponent on {agent.Name}")));
 	}
 
-	private Either<string, IGetAnimation> GetAnimation() {
+	private Either<U<SystemString, PlayerString>, IGetAnimation> AnimationGetterFromService() {
 		return this
 			.Game
 			.Services
 			.GetService<IGetAnimation>()
-			.ToEither("Missing IGetAnimation Service");
+			.ToEither(new U<SystemString, PlayerString>(new SystemString("Missing IGetAnimation Service")));
 	}
 
 	public override void Start() {
-		this.getAnimation = this.GetAnimation();
+		this.animationGetter = this.AnimationGetterFromService();
 	}
 
 	public BehaviorOrErrors GetBehaviorFor(Entity agent) {
@@ -58,10 +47,10 @@ public class MoveController : StartupScript, IEquipment {
 				animationComponent
 			);
 
+		var animationComponent = MoveController.AnimationComponentFromChildren(agent);
 		return getBehavior
-			.ApplyWeak(this.getAnimation)
-			.ApplyWeak(MoveController.AnimationComponent(agent))
-			.MapError(MoveController.ToSystemString);
+			.ApplyWeak(this.animationGetter)
+			.ApplyWeak(animationComponent);
 	}
 
 	private class Behavior : IBehaviorStateMachine {
@@ -93,19 +82,15 @@ public class MoveController : StartupScript, IEquipment {
 		}
 
 		private async Task MoveTowards(TransformComponent agent, U<Vector3, Entity> target) {
-			var direction = MoveController.GetVector3(target) - agent.Position;
+			var direction = target.Position() - agent.Position;
 
 			if (direction != Vector3.Zero) {
 				direction.Normalize();
 				agent.Rotation = Quaternion.LookRotation(direction, Vector3.UnitY);
 			}
 
-			while (agent.Position != MoveController.GetVector3(target)) {
-				agent.Position = this.PositionTowards(
-					agent.Position,
-					MoveController.GetVector3(target),
-					this.move.speed
-				);
+			while (agent.Position != target.Position()) {
+				agent.Position = this.PositionTowards(agent.Position, target.Position(), this.move.speed);
 				_ = await this.move.Script.NextFrame();
 			}
 		}
