@@ -70,12 +70,10 @@ public class MoveController : StartupScript, IEquipment {
 			this.agentAnimation = agentAnimation;
 		}
 
-		private Vector3 PositionTowards(Vector3 current, Vector3 target, float speed) {
-			var diff = target - current;
-			var delta = (float)this.move.Game.UpdateTime.Elapsed.TotalSeconds * speed;
-			return delta < diff.Length()
-				? current + (Vector3.Normalize(diff) * delta)
-				: target;
+		private void Play(string animationKey) {
+			if (!this.animationGetter.IsPlaying(this.agentAnimation, animationKey)) {
+				_ = this.animationGetter.Play(this.agentAnimation, animationKey);
+			}
 		}
 
 		private Coroutine MoveTowards(TransformComponent agent, U<Vector3, Entity> target) {
@@ -87,14 +85,9 @@ public class MoveController : StartupScript, IEquipment {
 			}
 
 			while (agent.Position != target.Position()) {
-				agent.Position = this.PositionTowards(agent.Position, target.Position(), this.move.speed);
+				var delta = (float)this.move.Game.UpdateTime.Elapsed.TotalSeconds * this.move.speed;
+				agent.Position = agent.Position.MoveTowards(target.Position(), delta);
 				yield return new WaitFrame();
-			}
-		}
-
-		private void Play(string animationKey) {
-			if (!this.animationGetter.IsPlaying(this.agentAnimation, animationKey)) {
-				_ = this.animationGetter.Play(this.agentAnimation, animationKey);
 			}
 		}
 
