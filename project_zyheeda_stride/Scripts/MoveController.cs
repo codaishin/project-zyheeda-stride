@@ -2,7 +2,6 @@
 
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 
@@ -55,18 +54,18 @@ public class MoveController : StartupScript, IEquipment {
 
 	private class Behavior : IBehaviorStateMachine {
 		private readonly MoveController move;
-		private readonly IGetAnimation getAnimation;
+		private readonly IGetAnimation animationGetter;
 		private readonly TransformComponent agentTransform;
 		private readonly AnimationComponent agentAnimation;
 
 		public Behavior(
 			MoveController move,
-			IGetAnimation getAnimation,
+			IGetAnimation animationGetter,
 			TransformComponent agentTransform,
 			AnimationComponent agentAnimation
 		) {
 			this.move = move;
-			this.getAnimation = getAnimation;
+			this.animationGetter = animationGetter;
 			this.agentTransform = agentTransform;
 			this.agentAnimation = agentAnimation;
 		}
@@ -74,14 +73,12 @@ public class MoveController : StartupScript, IEquipment {
 		private Vector3 PositionTowards(Vector3 current, Vector3 target, float speed) {
 			var diff = target - current;
 			var delta = (float)this.move.Game.UpdateTime.Elapsed.TotalSeconds * speed;
-			if (delta >= diff.Length()) {
-				return target;
-			}
-			diff.Normalize();
-			return current + (diff * delta);
+			return delta < diff.Length()
+				? current + (Vector3.Normalize(diff) * delta)
+				: target;
 		}
 
-		private async Task MoveTowards(TransformComponent agent, U<Vector3, Entity> target) {
+		private Coroutine MoveTowards(TransformComponent agent, U<Vector3, Entity> target) {
 			var direction = target.Position() - agent.Position;
 
 			if (direction != Vector3.Zero) {
@@ -91,20 +88,22 @@ public class MoveController : StartupScript, IEquipment {
 
 			while (agent.Position != target.Position()) {
 				agent.Position = this.PositionTowards(agent.Position, target.Position(), this.move.speed);
-				_ = await this.move.Script.NextFrame();
+				yield return new WaitFrame();
 			}
 		}
 
 		private void Play(string animationKey) {
-			if (!this.getAnimation.IsPlaying(this.agentAnimation, animationKey)) {
-				_ = this.getAnimation.Play(this.agentAnimation, animationKey);
+			if (!this.animationGetter.IsPlaying(this.agentAnimation, animationKey)) {
+				_ = this.animationGetter.Play(this.agentAnimation, animationKey);
 			}
 		}
 
-		public (Func<Task>, Cancel) GetExecution(U<Vector3, Entity> target) {
-			async Task run() {
+		public (Func<Coroutine>, Cancel) GetExecution(U<Vector3, Entity> target) {
+			Coroutine run() {
 				this.Play(this.move.playAnimation);
-				await this.MoveTowards(this.agentTransform, target);
+				foreach (var yield in this.MoveTowards(this.agentTransform, target)) {
+					yield return yield;
+				}
 				this.Play(fallbackAnimationKey);
 			};
 			void cancel() {

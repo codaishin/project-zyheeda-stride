@@ -3,12 +3,14 @@ namespace Tests;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
 using Stride.Core.Mathematics;
 using Stride.Engine;
+
+
+
 
 public class BehaviorControllerTest : GameTestCollection {
 	private ISystemMessage systemMessage = Mock.Of<ISystemMessage>();
@@ -189,8 +191,9 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Verify(m => m.Log(new PlayerString("nothing equipped")), Times.Never);
 
 		var (run, _) = this.controller.GetExecution(target);
-		this.Tasks.AddTask(run);
-		this.game.WaitFrames(1);
+		var coroutine = run().GetEnumerator();
+
+		_ = coroutine.MoveNext();
 
 		Mock
 			.Get(this.playerMessage)
@@ -207,8 +210,9 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Verify(m => m.Log(new PlayerString("nothing equipped")), Times.Never);
 
 		var (run, _) = this.controller.GetExecution(target);
-		this.Tasks.AddTask(run);
-		this.game.WaitFrames(1);
+		var coroutine = run().GetEnumerator();
+
+		_ = coroutine.MoveNext();
 
 		Mock
 			.Get(this.playerMessage)
@@ -239,7 +243,10 @@ public class BehaviorControllerTest : GameTestCollection {
 		var behavior = Mock.Of<IBehaviorStateMachine>();
 		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
 		var target = new Vector3(1, 2, 3);
-		(Func<Task>, Cancel) execution = (() => Task.CompletedTask, () => { });
+		(Func<IEnumerable<U<WaitFrame, WaitMilliSeconds>>>, Action) execution = (
+			() => Array.Empty<U<WaitFrame, WaitMilliSeconds>>(),
+			() => { }
+		);
 
 		_ = mEquipment
 			.Setup(e => e.GetBehaviorFor(It.IsAny<Entity>()))

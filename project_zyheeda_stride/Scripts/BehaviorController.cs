@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 using TBehaviorFn = System.Func<
@@ -23,11 +22,11 @@ public class BehaviorController : StartupScript, IBehavior {
 
 		public static void ResetAndIdle() { }
 
-		public (Func<Task>, Cancel) GetExecution(U<Vector3, Entity> target) {
+		public (Func<Coroutine>, Cancel) GetExecution(U<Vector3, Entity> target) {
 			var log = this.log;
-			Task run() {
+			Coroutine run() {
 				log(new PlayerString("nothing equipped"));
-				return Task.CompletedTask;
+				yield break;
 			}
 			void cancel() { }
 			return (run, cancel);
@@ -111,7 +110,7 @@ public class BehaviorController : StartupScript, IBehavior {
 		this.behavior = new VoidEquipment(this.LogMessage);
 	}
 
-	public (Func<Task>, Cancel) GetExecution(U<Vector3, Entity> target) {
+	public (Func<Coroutine>, Cancel) GetExecution(U<Vector3, Entity> target) {
 		return this.behavior.GetExecution(target);
 	}
 }

@@ -16,6 +16,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 	private MoveController moveComponent = new();
 	private Entity agent = new();
 	private Entity move = new();
+	private SchedulerController scheduler = new();
 
 
 	private static string ErrorsToString(IEnumerable<U<SystemString, PlayerString>> errors) {
@@ -33,6 +34,8 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 	[SetUp]
 	public void SetUp() {
+		this.scheduler = new();
+
 		this.getAnimation = Mock.Of<IGetAnimation>();
 		this.game.Services.RemoveService<IGetAnimation>();
 		this.game.Services.AddService<IGetAnimation>(this.getAnimation);
@@ -50,6 +53,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 			.Get(this.getAnimation)
 			.SetReturnsDefault(Maybe.None<IPlayingAnimation>());
 
+		this.scene.Entities.Add(new Entity { this.scheduler });
 		this.scene.Entities.Add(this.move);
 		this.scene.Entities.Add(this.agent);
 
@@ -66,9 +70,8 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 			.Switch(GetBehaviorFail, b => b);
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		var (run, _) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(1);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -89,9 +92,8 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		target.Transform.Position = new Vector3(1, 0, 0);
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		var (run, _) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(1);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -113,9 +115,8 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		var (run, _) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(1);
 
 		var distanceX = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -141,9 +142,8 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		var (run, _) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(5);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -163,9 +163,8 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		var (run, _) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(5);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -186,9 +185,8 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		var (run, _) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(1);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -213,9 +211,8 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		var (run, _) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(5);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -238,9 +235,8 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		var (run, _) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(5);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -259,9 +255,8 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		var (run, _) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(5);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -284,8 +279,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 			.GetBehaviorFor(this.agent)
 			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
-		var (run, _) = behavior.GetExecution(target);
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 
 		this.game.WaitFrames(2);
 
@@ -302,8 +296,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 			.GetBehaviorFor(this.agent)
 			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
-		var (run, _) = behavior.GetExecution(target);
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 
 		this.game.WaitFrames(2);
 
@@ -323,8 +316,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 			.GetBehaviorFor(this.agent)
 			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
-		var (run, _) = behavior.GetExecution(target);
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 
 		this.game.WaitFrames(2);
 
@@ -346,8 +338,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 		var expectedRotation = this.agent.Transform.Rotation;
 
-		var (run, _) = behavior.GetExecution(target);
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(1);
 
 		this.game.WaitFrames(2);
@@ -374,9 +365,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 		this.game.WaitFrames(1);
 
-		var (run, _) = behavior.GetExecution(target);
-
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(10);
 
 		Mock
@@ -401,9 +390,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 		this.game.WaitFrames(1);
 
-		var (run, _) = behavior.GetExecution(target);
-
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(10);
 
 		Mock
@@ -426,9 +413,8 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
 		this.game.WaitFrames(1);
-		var (run, _) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 
 		this.game.WaitFrames(10);
 
@@ -453,8 +439,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 		this.game.WaitFrames(1);
 
-		var (run, _) = behavior.GetExecution(target);
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 
 		this.game.WaitFrames(2);
 
@@ -480,7 +465,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		this.game.WaitFrames(1);
 		var (run, cancel) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run((run, cancel));
 
 		this.game.WaitFrames(1);
 
