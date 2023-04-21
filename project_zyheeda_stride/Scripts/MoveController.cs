@@ -1,6 +1,7 @@
 ﻿namespace ProjectZyheeda;
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Stride.Core.Mathematics;
 using Stride.Engine;
@@ -12,39 +13,39 @@ public class MoveController : StartupScript, IEquipment {
 	public float speed;
 	public string playAnimation = "";
 
-	private Either<U<SystemString, PlayerString>, IGetAnimation> animationGetter = new U<SystemString, PlayerString>(
-		new SystemString("No IGetAnimation assigned")
+	private Either<U<SystemStr, PlayerStr>, IGetAnimation> animationGetter = new U<SystemStr, PlayerStr>(
+		new SystemStr("No IGetAnimation assigned")
 	);
 
-	private static Either<U<SystemString, PlayerString>, AnimationComponent> AnimationComponentFromChildren(Entity agent) {
+	private static Either<U<SystemStr, PlayerStr>, AnimationComponent> AnimationComponentFromChildren(Entity agent) {
 		return agent
 			.GetChildren()
 			.Select(c => c.Get<AnimationComponent>())
 			.FirstOrDefault()
-			.ToEither(new U<SystemString, PlayerString>(new SystemString($"Missing AnimationComponent on {agent.Name}")));
+			.ToEither(new U<SystemStr, PlayerStr>(new SystemStr($"Missing AnimationComponent on {agent.Name}")));
 	}
 
-	private Either<U<SystemString, PlayerString>, IGetAnimation> AnimationGetterFromService() {
+	private Either<U<SystemStr, PlayerStr>, IGetAnimation> AnimationGetterFromService() {
 		return this
 			.Game
 			.Services
 			.GetService<IGetAnimation>()
-			.ToEither(new U<SystemString, PlayerString>(new SystemString("Missing IGetAnimation Service")));
+			.ToEither(new U<SystemStr, PlayerStr>(new SystemStr("Missing IGetAnimation Service")));
 	}
 
 	public override void Start() {
 		this.animationGetter = this.AnimationGetterFromService();
 	}
 
-	public BehaviorOrErrors GetBehaviorFor(Entity agent) {
+	public Either<IEnumerable<U<SystemStr, PlayerStr>>, FGetCoroutine> PrepareCoroutineFor(Entity agent) {
 		var getBehavior =
 			(IGetAnimation getAnimation) =>
-			(AnimationComponent animationComponent) => (IBehaviorStateMachine)new Behavior(
+			(AnimationComponent animationComponent) => (FGetCoroutine)new Behavior(
 				this,
 				getAnimation,
 				agent.Transform,
 				animationComponent
-			);
+			).GetExecution;
 
 		var animationComponent = MoveController.AnimationComponentFromChildren(agent);
 		return getBehavior
@@ -52,7 +53,7 @@ public class MoveController : StartupScript, IEquipment {
 			.ApplyWeak(animationComponent);
 	}
 
-	private class Behavior : IBehaviorStateMachine {
+	private class Behavior {
 		private readonly MoveController move;
 		private readonly IGetAnimation animationGetter;
 		private readonly TransformComponent agentTransform;

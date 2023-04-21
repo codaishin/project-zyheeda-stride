@@ -9,7 +9,7 @@ public class SystemMessage : ISystemMessage {
 		this.logger
 			??= GlobalLogger.GetLogger(this.GetType().Name);
 
-	public void Log(SystemString message) {
+	public void Log(SystemStr message) {
 		this.Logger.Error(message.value);
 	}
 }

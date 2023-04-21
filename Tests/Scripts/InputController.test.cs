@@ -80,7 +80,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 			.Setup(c => c.GetTarget())
 			.Returns(Maybe.Some<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
 		_ = Mock.Get(behavior)
-			.Setup(c => c.GetExecution(new Vector3(1, 2, 3)))
+			.Setup(c => c.GetCoroutine(new Vector3(1, 2, 3)))
 			.Returns(execution);
 
 		this.game.WaitFrames(2);
@@ -108,7 +108,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 			.Setup(c => c.GetTarget())
 			.Returns(Maybe.Some<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
 		_ = Mock.Get(behavior)
-			.Setup(c => c.GetExecution(new Vector3(1, 2, 3)))
+			.Setup(c => c.GetCoroutine(new Vector3(1, 2, 3)))
 			.Returns(execution);
 
 		this.game.WaitFrames(2);
@@ -134,7 +134,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		Mock
 			.Get(this.behaviorEntity.Components.OfType<IBehavior>().First())
-			.Verify(b => b.GetExecution(It.IsAny<U<Vector3, Entity>>()), Times.Never);
+			.Verify(b => b.GetCoroutine(It.IsAny<U<Vector3, Entity>>()), Times.Never);
 	}
 
 	[Test]

@@ -17,7 +17,7 @@ public class PlayerMessage : IPlayerMessage {
 		this.game = game;
 	}
 
-	public void Log(PlayerString message) {
+	public void Log(PlayerStr message) {
 		_ = this.game.Script.AddTask(async () => {
 			var start = this.game.UpdateTime.Total;
 			do {
