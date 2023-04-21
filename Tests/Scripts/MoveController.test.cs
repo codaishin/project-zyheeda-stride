@@ -11,7 +11,7 @@ using Stride.Engine;
 
 public class TestMoveController : GameTestCollection, System.IDisposable {
 	private readonly VectorTolerance tolerance = new(0.001f);
-	private IGetAnimation getAnimation = Mock.Of<IGetAnimation>();
+	private IAnimation getAnimation = Mock.Of<IAnimation>();
 	private AnimationComponent agentAnimation = new();
 	private MoveController moveComponent = new();
 	private Entity agent = new();
@@ -19,7 +19,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 	private SchedulerController scheduler = new();
 
 
-	private static string ErrorsToString(IEnumerable<U<SystemString, PlayerString>> errors) {
+	private static string ErrorsToString(IEnumerable<U<SystemStr, PlayerStr>> errors) {
 		var errorsUnpacked = errors.Select(error => error.Switch(
 			v => $"{v.value} ({v.GetType().Name})",
 			v => $"{v.value} ({v.GetType().Name})"
@@ -27,23 +27,23 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		return string.Join(", ", errorsUnpacked);
 	}
 
-	private static IBehaviorStateMachine GetBehaviorFail(IEnumerable<U<SystemString, PlayerString>> errors) {
+	private static FGetCoroutine FailWithErrors(IEnumerable<U<SystemStr, PlayerStr>> errors) {
 		Assert.Fail($"Errors: {TestMoveController.ErrorsToString(errors)}");
-		return Mock.Of<IBehaviorStateMachine>();
+		return Mock.Of<FGetCoroutine>();
 	}
 
 	[SetUp]
 	public void SetUp() {
 		this.scheduler = new();
 
-		this.getAnimation = Mock.Of<IGetAnimation>();
-		this.game.Services.RemoveService<IGetAnimation>();
-		this.game.Services.AddService<IGetAnimation>(this.getAnimation);
+		this.getAnimation = Mock.Of<IAnimation>();
+		this.game.Services.RemoveService<IAnimation>();
+		this.game.Services.AddService<IAnimation>(this.getAnimation);
 
 		this.agentAnimation = new AnimationComponent();
 		this.agent = new Entity();
 		this.agent.AddChild(new Entity { this.agentAnimation });
-		this.moveComponent = new MoveController { speed = 1, playAnimation = "walk" };
+		this.moveComponent = new MoveController { speed = 1, animationKey = "walk" };
 		this.move = new Entity { this.moveComponent };
 
 		Mock
@@ -65,13 +65,13 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		var target = new Vector3(1, 0, 0);
 
 		this.moveComponent.speed = 1;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(GetBehaviorFail, b => b);
+		var getCoroutine = this.moveComponent
+			.PrepareCoroutineFor(this.agent)
+			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
 
-		this.scheduler.Run(behavior.GetExecution(target));
+		this.scheduler.Run(getCoroutine(target));
 		this.game.WaitFrames(1);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -85,15 +85,15 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		var target = new Entity();
 
 		this.moveComponent.speed = 1;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(TestMoveController.GetBehaviorFail, b => b);
+		var getCoroutine = this.moveComponent
+			.PrepareCoroutineFor(this.agent)
+			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
 
 		target.Transform.Position = new Vector3(1, 0, 0);
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
 
-		this.scheduler.Run(behavior.GetExecution(target));
+		this.scheduler.Run(getCoroutine(target));
 		this.game.WaitFrames(1);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -107,16 +107,16 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		var target = new Entity();
 
 		this.moveComponent.speed = 1;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(TestMoveController.GetBehaviorFail, b => b);
+		var getCoroutine = this.moveComponent
+			.PrepareCoroutineFor(this.agent)
+			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
 
 		target.Transform.Position = new Vector3(1, 0, 0);
 
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
 
-		this.scheduler.Run(behavior.GetExecution(target));
+		this.scheduler.Run(getCoroutine(target));
 		this.game.WaitFrames(1);
 
 		var distanceX = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -136,14 +136,14 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		var target = new Vector3(1, 0, 0);
 
 		this.moveComponent.speed = 1;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(TestMoveController.GetBehaviorFail, b => b);
+		var getCoroutine = this.moveComponent
+			.PrepareCoroutineFor(this.agent)
+			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
 
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
 
-		this.scheduler.Run(behavior.GetExecution(target));
+		this.scheduler.Run(getCoroutine(target));
 		this.game.WaitFrames(5);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -157,14 +157,14 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		var target = new Vector3(100, 0, 0);
 
 		this.moveComponent.speed = 42;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(TestMoveController.GetBehaviorFail, b => b);
+		var getCoroutine = this.moveComponent
+			.PrepareCoroutineFor(this.agent)
+			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
 
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
 
-		this.scheduler.Run(behavior.GetExecution(target));
+		this.scheduler.Run(getCoroutine(target));
 		this.game.WaitFrames(5);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -179,21 +179,23 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		var target = new Vector3(100, 0, 0);
 
 		this.moveComponent.speed = 1;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(TestMoveController.GetBehaviorFail, b => b);
+		var getCoroutine = this.moveComponent
+			.PrepareCoroutineFor(this.agent)
+			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
 
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
 
-		this.scheduler.Run(behavior.GetExecution(target));
+		this.scheduler.Run(getCoroutine(target));
 		this.game.WaitFrames(1);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
 
 		start = (float)this.game.UpdateTime.Total.TotalSeconds;
+
 		this.moveComponent.speed = 0.5f;
 		this.game.WaitFrames(1);
+
 		distance += ((float)this.game.UpdateTime.Total.TotalSeconds - start) * 0.5f;
 
 		var position = this.agent.Transform.Position;
@@ -205,14 +207,14 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		var target = new Vector3(0, -1, 0);
 
 		this.moveComponent.speed = 1;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(TestMoveController.GetBehaviorFail, b => b);
+		var getCoroutine = this.moveComponent
+			.PrepareCoroutineFor(this.agent)
+			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
 
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
 
-		this.scheduler.Run(behavior.GetExecution(target));
+		this.scheduler.Run(getCoroutine(target));
 		this.game.WaitFrames(5);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -227,16 +229,16 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		var target = new Vector3(1, 1, 0);
 
 		this.moveComponent.speed = 1;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(TestMoveController.GetBehaviorFail, b => b);
+		var getCoroutine = this.moveComponent
+			.PrepareCoroutineFor(this.agent)
+			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
 
 		this.agent.Transform.Position = new Vector3(1, 0, 0);
 
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
 
-		this.scheduler.Run(behavior.GetExecution(target));
+		this.scheduler.Run(getCoroutine(target));
 		this.game.WaitFrames(5);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -250,13 +252,13 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		var target = new Vector3(1, 1, 0);
 
 		this.moveComponent.speed = 1;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(TestMoveController.GetBehaviorFail, b => b);
+		var getCoroutine = this.moveComponent
+			.PrepareCoroutineFor(this.agent)
+			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
 
-		this.scheduler.Run(behavior.GetExecution(target));
+		this.scheduler.Run(getCoroutine(target));
 		this.game.WaitFrames(5);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -275,11 +277,11 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		var target = new Vector3(1, 0, 0);
 
 		this.moveComponent.speed = 100_000;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(TestMoveController.GetBehaviorFail, b => b);
+		var getCoroutine = this.moveComponent
+			.PrepareCoroutineFor(this.agent)
+			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
 
-		this.scheduler.Run(behavior.GetExecution(target));
+		this.scheduler.Run(getCoroutine(target));
 
 		this.game.WaitFrames(2);
 
@@ -292,11 +294,11 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 	public void LookAtTarget() {
 		var target = new Vector3(1, 0, 0);
 
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(TestMoveController.GetBehaviorFail, b => b);
+		var getCoroutine = this.moveComponent
+			.PrepareCoroutineFor(this.agent)
+			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
 
-		this.scheduler.Run(behavior.GetExecution(target));
+		this.scheduler.Run(getCoroutine(target));
 
 		this.game.WaitFrames(2);
 
@@ -312,11 +314,11 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 		this.agent.Transform.Position = new Vector3(3, 0, 0);
 
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(TestMoveController.GetBehaviorFail, b => b);
+		var getCoroutine = this.moveComponent
+			.PrepareCoroutineFor(this.agent)
+			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
 
-		this.scheduler.Run(behavior.GetExecution(target));
+		this.scheduler.Run(getCoroutine(target));
 
 		this.game.WaitFrames(2);
 
@@ -332,13 +334,13 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 		this.agent.Transform.Position = new Vector3(1, 0, 0);
 
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(TestMoveController.GetBehaviorFail, b => b);
+		var getCoroutine = this.moveComponent
+			.PrepareCoroutineFor(this.agent)
+			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
 
 		var expectedRotation = this.agent.Transform.Rotation;
 
-		this.scheduler.Run(behavior.GetExecution(target));
+		this.scheduler.Run(getCoroutine(target));
 		this.game.WaitFrames(1);
 
 		this.game.WaitFrames(2);
@@ -359,13 +361,13 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 			.Returns(Maybe.None<IPlayingAnimation>());
 
 		this.moveComponent.speed = 1;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(TestMoveController.GetBehaviorFail, b => b);
+		var getCoroutine = this.moveComponent
+			.PrepareCoroutineFor(this.agent)
+			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
 
 		this.game.WaitFrames(1);
 
-		this.scheduler.Run(behavior.GetExecution(target));
+		this.scheduler.Run(getCoroutine(target));
 		this.game.WaitFrames(10);
 
 		Mock
@@ -376,7 +378,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 	[Test]
 	public void PlayAnimationRun() {
 		var target = new Vector3(1, 0, 0);
-		this.moveComponent.playAnimation = "run";
+		this.moveComponent.animationKey = "run";
 
 		_ = Mock
 			.Get(this.getAnimation)
@@ -384,13 +386,13 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 			.Returns(Maybe.None<IPlayingAnimation>());
 
 		this.moveComponent.speed = 1;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(TestMoveController.GetBehaviorFail, b => b);
+		var getCoroutine = this.moveComponent
+			.PrepareCoroutineFor(this.agent)
+			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
 
 		this.game.WaitFrames(1);
 
-		this.scheduler.Run(behavior.GetExecution(target));
+		this.scheduler.Run(getCoroutine(target));
 		this.game.WaitFrames(10);
 
 		Mock
@@ -408,13 +410,13 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 			.Returns(Maybe.None<IPlayingAnimation>());
 
 		this.moveComponent.speed = 100_000;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(TestMoveController.GetBehaviorFail, b => b);
+		var getCoroutine = this.moveComponent
+			.PrepareCoroutineFor(this.agent)
+			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
 
 		this.game.WaitFrames(1);
 
-		this.scheduler.Run(behavior.GetExecution(target));
+		this.scheduler.Run(getCoroutine(target));
 
 		this.game.WaitFrames(10);
 
@@ -433,13 +435,13 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 			.Returns(true);
 
 		this.moveComponent.speed = 1;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(TestMoveController.GetBehaviorFail, b => b);
+		var getCoroutine = this.moveComponent
+			.PrepareCoroutineFor(this.agent)
+			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
 
 		this.game.WaitFrames(1);
 
-		this.scheduler.Run(behavior.GetExecution(target));
+		this.scheduler.Run(getCoroutine(target));
 
 		this.game.WaitFrames(2);
 
@@ -458,12 +460,12 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 			.Returns(Maybe.None<IPlayingAnimation>());
 
 		this.moveComponent.speed = 100_000;
-		var behavior = this.moveComponent
-			.GetBehaviorFor(this.agent)
-			.Switch(TestMoveController.GetBehaviorFail, b => b);
+		var getCoroutine = this.moveComponent
+			.PrepareCoroutineFor(this.agent)
+			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
 
 		this.game.WaitFrames(1);
-		var (run, cancel) = behavior.GetExecution(target);
+		var (run, cancel) = getCoroutine(target);
 
 		this.scheduler.Run((run, cancel));
 
@@ -482,29 +484,29 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		this.agent.RemoveChild(this.agentAnimation.Entity);
 
 		var error = this.moveComponent
-			.GetBehaviorFor(this.agent)
+			.PrepareCoroutineFor(this.agent)
 			.Switch(TestMoveController.ErrorsToString, _ => "no error, got actual behavior");
 
-		Assert.That(error, Is.EqualTo("Missing AnimationComponent on Agent (SystemString)"));
+		Assert.That(error, Is.EqualTo($"Missing AnimationComponent on Agent ({nameof(SystemStr)})"));
 	}
 
 	[Test]
 	public void NoGetAnimationServiceBeforeStart() {
-		this.game.Services.RemoveService<IGetAnimation>();
+		this.game.Services.RemoveService<IAnimation>();
 
 		var moveComponent = new MoveController();
 		this.scene.Entities.Add(new Entity { moveComponent });
 
 		var error = moveComponent
-			.GetBehaviorFor(this.agent)
+			.PrepareCoroutineFor(this.agent)
 			.Switch(TestMoveController.ErrorsToString, _ => "no error, got actual behavior");
 
-		Assert.That(error, Is.EqualTo("No IGetAnimation assigned (SystemString)"));
+		Assert.That(error, Is.EqualTo($"No IGetAnimation assigned ({nameof(SystemStr)})"));
 	}
 
 	[Test]
 	public void MissingGetAnimationService() {
-		this.game.Services.RemoveService<IGetAnimation>();
+		this.game.Services.RemoveService<IAnimation>();
 
 		var moveComponent = new MoveController();
 		this.scene.Entities.Add(new Entity { moveComponent });
@@ -512,15 +514,15 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		this.game.WaitFrames(1);
 
 		var error = moveComponent
-			.GetBehaviorFor(this.agent)
+			.PrepareCoroutineFor(this.agent)
 			.Switch(TestMoveController.ErrorsToString, _ => "no error, got actual behavior");
 
-		Assert.That(error, Is.EqualTo("Missing IGetAnimation Service (SystemString)"));
+		Assert.That(error, Is.EqualTo($"Missing IGetAnimation Service ({nameof(SystemStr)})"));
 	}
 
 	[Test]
 	public void MissingGetAnimationServiceAndAnimationComponent() {
-		this.game.Services.RemoveService<IGetAnimation>();
+		this.game.Services.RemoveService<IAnimation>();
 		this.agent.Name = "Agent";
 		this.agent.RemoveChild(this.agentAnimation.Entity);
 
@@ -530,12 +532,12 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		this.game.WaitFrames(1);
 
 		var error = moveComponent
-			.GetBehaviorFor(this.agent)
+			.PrepareCoroutineFor(this.agent)
 			.Switch(TestMoveController.ErrorsToString, _ => "no error, got actual behavior");
 
 		Assert.Multiple(() => {
-			Assert.That(error, Contains.Substring("Missing IGetAnimation Service (SystemString)"));
-			Assert.That(error, Contains.Substring("Missing AnimationComponent on Agent (SystemString)"));
+			Assert.That(error, Contains.Substring($"Missing AnimationComponent on Agent ({nameof(SystemStr)})"));
+			Assert.That(error, Contains.Substring($"Missing AnimationComponent on Agent ({nameof(SystemStr)})"));
 		});
 	}
 

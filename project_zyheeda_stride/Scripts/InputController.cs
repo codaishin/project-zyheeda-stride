@@ -30,7 +30,7 @@ public abstract class BaseInputController<IInput> : SyncScript where IInput : Pr
 				getTarget
 					.GetTarget()
 					.Switch(
-						target => deploy(behavior.GetExecution(target)),
+						target => deploy(behavior.GetCoroutine(target)),
 						() => { }
 					);
 			};

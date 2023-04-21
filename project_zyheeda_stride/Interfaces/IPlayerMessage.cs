@@ -1,13 +1,13 @@
 namespace ProjectZyheeda;
 
-public readonly struct PlayerString {
+public readonly struct PlayerStr {
 	public readonly string value;
 
-	public PlayerString(string value) {
+	public PlayerStr(string value) {
 		this.value = value;
 	}
 }
 
 public interface IPlayerMessage {
-	void Log(PlayerString message);
+	void Log(PlayerStr message);
 }

@@ -2,6 +2,7 @@ namespace ProjectZyheeda;
 
 using Stride.Engine;
 
+
 public interface IEquipment {
-	BehaviorOrErrors GetBehaviorFor(Entity agent);
+	Either<Errors, FGetCoroutine> PrepareCoroutineFor(Entity agent);
 }
