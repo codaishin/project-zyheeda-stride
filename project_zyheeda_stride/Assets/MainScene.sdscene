@@ -46,12 +46,12 @@ Hierarchy:
                         Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
                         Scale: {X: 1.0, Y: 1.0, Z: 1.0}
                         Children: {}
-                    8b37a82e5cae7e5f5b5425042496cce9: !ProjectZyheeda.Move,project_zyheeda_stride
-                        Id: 4a870bbe-c8f2-4a51-815c-981d3359ba54
+                    d2c26f9ab9074385e6c9d981d5b57bdf: !ProjectZyheeda.MoveController,project_zyheeda_stride
+                        Id: 93319efb-06d3-41db-8335-064b07dbeafb
                         speed: 2.0
                         playAnimation: walk
-                    9b5cb50a584d5327c762e2a4399d81c3: !ProjectZyheeda.BehaviorController,project_zyheeda_stride
-                        Id: eb3fa7f1-d59c-4486-93c5-e3db39670ea6
+                    74ca53bf10b979fccda28376174d91ea: !ProjectZyheeda.BehaviorController,project_zyheeda_stride
+                        Id: cd6e3c0f-8bb1-4757-9dc1-f2f6c1143f2d
                         equipment:
                             Entity: ref!! 2b3d03a5-6086-452d-af65-8a103c8713eb
                         agent:

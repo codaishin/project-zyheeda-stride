@@ -9,13 +9,14 @@ using ProjectZyheeda;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 
-public class TestMove : GameTestCollection, System.IDisposable {
+public class TestMoveController : GameTestCollection, System.IDisposable {
 	private readonly VectorTolerance tolerance = new(0.001f);
 	private IGetAnimation getAnimation = Mock.Of<IGetAnimation>();
 	private AnimationComponent agentAnimation = new();
-	private Move moveComponent = new();
+	private MoveController moveComponent = new();
 	private Entity agent = new();
 	private Entity move = new();
+	private SchedulerController scheduler = new();
 
 
 	private static string ErrorsToString(IEnumerable<U<SystemString, PlayerString>> errors) {
@@ -27,12 +28,14 @@ public class TestMove : GameTestCollection, System.IDisposable {
 	}
 
 	private static IBehaviorStateMachine GetBehaviorFail(IEnumerable<U<SystemString, PlayerString>> errors) {
-		Assert.Fail($"Errors: {TestMove.ErrorsToString(errors)}");
+		Assert.Fail($"Errors: {TestMoveController.ErrorsToString(errors)}");
 		return Mock.Of<IBehaviorStateMachine>();
 	}
 
 	[SetUp]
 	public void SetUp() {
+		this.scheduler = new();
+
 		this.getAnimation = Mock.Of<IGetAnimation>();
 		this.game.Services.RemoveService<IGetAnimation>();
 		this.game.Services.AddService<IGetAnimation>(this.getAnimation);
@@ -40,7 +43,7 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.agentAnimation = new AnimationComponent();
 		this.agent = new Entity();
 		this.agent.AddChild(new Entity { this.agentAnimation });
-		this.moveComponent = new Move { speed = 1, playAnimation = "walk" };
+		this.moveComponent = new MoveController { speed = 1, playAnimation = "walk" };
 		this.move = new Entity { this.moveComponent };
 
 		Mock
@@ -50,6 +53,7 @@ public class TestMove : GameTestCollection, System.IDisposable {
 			.Get(this.getAnimation)
 			.SetReturnsDefault(Maybe.None<IPlayingAnimation>());
 
+		this.scene.Entities.Add(new Entity { this.scheduler });
 		this.scene.Entities.Add(this.move);
 		this.scene.Entities.Add(this.agent);
 
@@ -66,9 +70,8 @@ public class TestMove : GameTestCollection, System.IDisposable {
 			.Switch(GetBehaviorFail, b => b);
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		var (run, _) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(1);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -84,14 +87,13 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.moveComponent.speed = 1;
 		var behavior = this.moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
+			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
 		target.Transform.Position = new Vector3(1, 0, 0);
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		var (run, _) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(1);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -107,15 +109,14 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.moveComponent.speed = 1;
 		var behavior = this.moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
+			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
 		target.Transform.Position = new Vector3(1, 0, 0);
 
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		var (run, _) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(1);
 
 		var distanceX = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -137,13 +138,12 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.moveComponent.speed = 1;
 		var behavior = this.moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
+			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		var (run, _) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(5);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -159,13 +159,12 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.moveComponent.speed = 42;
 		var behavior = this.moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
+			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		var (run, _) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(5);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -182,13 +181,12 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.moveComponent.speed = 1;
 		var behavior = this.moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
+			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		var (run, _) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(1);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -209,13 +207,12 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.moveComponent.speed = 1;
 		var behavior = this.moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
+			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		var (run, _) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(5);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -232,15 +229,14 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.moveComponent.speed = 1;
 		var behavior = this.moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
+			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
 		this.agent.Transform.Position = new Vector3(1, 0, 0);
 
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		var (run, _) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(5);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -256,12 +252,11 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.moveComponent.speed = 1;
 		var behavior = this.moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
+			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
 		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		var (run, _) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(5);
 
 		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
@@ -282,10 +277,9 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.moveComponent.speed = 100_000;
 		var behavior = this.moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
+			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
-		var (run, _) = behavior.GetExecution(target);
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 
 		this.game.WaitFrames(2);
 
@@ -300,10 +294,9 @@ public class TestMove : GameTestCollection, System.IDisposable {
 
 		var behavior = this.moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
+			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
-		var (run, _) = behavior.GetExecution(target);
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 
 		this.game.WaitFrames(2);
 
@@ -321,10 +314,9 @@ public class TestMove : GameTestCollection, System.IDisposable {
 
 		var behavior = this.moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
+			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
-		var (run, _) = behavior.GetExecution(target);
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 
 		this.game.WaitFrames(2);
 
@@ -342,12 +334,11 @@ public class TestMove : GameTestCollection, System.IDisposable {
 
 		var behavior = this.moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
+			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
 		var expectedRotation = this.agent.Transform.Rotation;
 
-		var (run, _) = behavior.GetExecution(target);
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(1);
 
 		this.game.WaitFrames(2);
@@ -370,13 +361,11 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.moveComponent.speed = 1;
 		var behavior = this.moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
+			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
 		this.game.WaitFrames(1);
 
-		var (run, _) = behavior.GetExecution(target);
-
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(10);
 
 		Mock
@@ -397,13 +386,11 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.moveComponent.speed = 1;
 		var behavior = this.moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
+			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
 		this.game.WaitFrames(1);
 
-		var (run, _) = behavior.GetExecution(target);
-
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 		this.game.WaitFrames(10);
 
 		Mock
@@ -423,18 +410,17 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.moveComponent.speed = 100_000;
 		var behavior = this.moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
+			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
 		this.game.WaitFrames(1);
-		var (run, _) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 
 		this.game.WaitFrames(10);
 
 		Mock
 			.Get(this.getAnimation)
-			.Verify(g => g.Play(this.agentAnimation, Move.fallbackAnimationKey), Times.Once);
+			.Verify(g => g.Play(this.agentAnimation, MoveController.fallbackAnimationKey), Times.Once);
 	}
 
 	[Test]
@@ -449,12 +435,11 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.moveComponent.speed = 1;
 		var behavior = this.moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
+			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
 		this.game.WaitFrames(1);
 
-		var (run, _) = behavior.GetExecution(target);
-		this.Tasks.AddTask(run);
+		this.scheduler.Run(behavior.GetExecution(target));
 
 		this.game.WaitFrames(2);
 
@@ -475,12 +460,12 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.moveComponent.speed = 100_000;
 		var behavior = this.moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.GetBehaviorFail, b => b);
+			.Switch(TestMoveController.GetBehaviorFail, b => b);
 
 		this.game.WaitFrames(1);
 		var (run, cancel) = behavior.GetExecution(target);
 
-		this.Tasks.AddTask(run);
+		this.scheduler.Run((run, cancel));
 
 		this.game.WaitFrames(1);
 
@@ -488,7 +473,7 @@ public class TestMove : GameTestCollection, System.IDisposable {
 
 		Mock
 			.Get(this.getAnimation)
-			.Verify(g => g.Play(this.agentAnimation, Move.fallbackAnimationKey), Times.Once);
+			.Verify(g => g.Play(this.agentAnimation, MoveController.fallbackAnimationKey), Times.Once);
 	}
 
 	[Test]
@@ -498,21 +483,37 @@ public class TestMove : GameTestCollection, System.IDisposable {
 
 		var error = this.moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.ErrorsToString, _ => "no error, got actual behavior");
+			.Switch(TestMoveController.ErrorsToString, _ => "no error, got actual behavior");
 
 		Assert.That(error, Is.EqualTo("Missing AnimationComponent on Agent (SystemString)"));
+	}
+
+	[Test]
+	public void NoGetAnimationServiceBeforeStart() {
+		this.game.Services.RemoveService<IGetAnimation>();
+
+		var moveComponent = new MoveController();
+		this.scene.Entities.Add(new Entity { moveComponent });
+
+		var error = moveComponent
+			.GetBehaviorFor(this.agent)
+			.Switch(TestMoveController.ErrorsToString, _ => "no error, got actual behavior");
+
+		Assert.That(error, Is.EqualTo("No IGetAnimation assigned (SystemString)"));
 	}
 
 	[Test]
 	public void MissingGetAnimationService() {
 		this.game.Services.RemoveService<IGetAnimation>();
 
-		var moveComponent = new Move();
+		var moveComponent = new MoveController();
 		this.scene.Entities.Add(new Entity { moveComponent });
+
+		this.game.WaitFrames(1);
 
 		var error = moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.ErrorsToString, _ => "no error, got actual behavior");
+			.Switch(TestMoveController.ErrorsToString, _ => "no error, got actual behavior");
 
 		Assert.That(error, Is.EqualTo("Missing IGetAnimation Service (SystemString)"));
 	}
@@ -523,12 +524,14 @@ public class TestMove : GameTestCollection, System.IDisposable {
 		this.agent.Name = "Agent";
 		this.agent.RemoveChild(this.agentAnimation.Entity);
 
-		var moveComponent = new Move();
+		var moveComponent = new MoveController();
 		this.scene.Entities.Add(new Entity { moveComponent });
+
+		this.game.WaitFrames(1);
 
 		var error = moveComponent
 			.GetBehaviorFor(this.agent)
-			.Switch(TestMove.ErrorsToString, _ => "no error, got actual behavior");
+			.Switch(TestMoveController.ErrorsToString, _ => "no error, got actual behavior");
 
 		Assert.Multiple(() => {
 			Assert.That(error, Contains.Substring("Missing IGetAnimation Service (SystemString)"));

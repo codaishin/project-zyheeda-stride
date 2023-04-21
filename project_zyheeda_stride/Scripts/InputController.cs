@@ -2,7 +2,6 @@ namespace ProjectZyheeda;
 
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 using Stride.Engine;
 
 public abstract class BaseInputController<IInput> : SyncScript where IInput : ProjectZyheeda.IInput, new() {
@@ -24,7 +23,7 @@ public abstract class BaseInputController<IInput> : SyncScript where IInput : Pr
 			(IBehavior behavior) =>
 			(IScheduler scheduler) =>
 			() => {
-				Action<(Func<Task>, Cancel)> deploy =
+				Action<(Func<Coroutine>, Cancel)> deploy =
 					action is InputAction.Run
 						? scheduler.Run
 						: scheduler.Enqueue;

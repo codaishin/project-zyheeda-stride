@@ -7,14 +7,20 @@ using Stride.Core.MicroThreading;
 using Stride.Engine;
 
 public class SchedulerController : StartupScript, IScheduler {
-	private readonly Queue<(Func<Task>, Cancel)> queue = new();
+	private readonly Queue<(Func<Coroutine>, Cancel)> queue = new();
 	private MicroThread? dequeueThread;
 	private Cancel? cancelExecution;
 
 	private async Task Dequeue() {
 		while (this.queue.TryDequeue(out var execution)) {
 			(var runExecution, this.cancelExecution) = execution;
-			await runExecution();
+			var coroutine = runExecution();
+			foreach (var yield in coroutine) {
+				await yield.Switch(
+					async _ => await this.Script.NextFrame(),
+					async y => await Task.Delay(y.milliSeconds)
+				);
+			}
 			this.cancelExecution = null;
 		}
 	}
@@ -34,12 +40,12 @@ public class SchedulerController : StartupScript, IScheduler {
 		this.dequeueThread = null;
 	}
 
-	public void Enqueue((Func<Task>, Cancel) execution) {
+	public void Enqueue((Func<Coroutine>, Cancel) execution) {
 		this.queue.Enqueue(execution);
 		this.StartDequeue();
 	}
 
-	public void Run((Func<Task>, Cancel) execution) {
+	public void Run((Func<Coroutine>, Cancel) execution) {
 		this.Clear();
 		this.Enqueue(execution);
 	}

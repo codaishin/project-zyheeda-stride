@@ -1,8 +1,8 @@
 namespace Tests;
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
@@ -64,10 +64,14 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 	[Test]
 	public void RunBehaviorWithTarget() {
+		static IEnumerable<U<WaitFrame, WaitMilliSeconds>> run() {
+			yield break;
+		}
+
 		var controller = this.controllerEntity.Get<MockController>();
 		var getTarget = this.getTargetEntity.Components.OfType<IGetTarget>().First();
 		var behavior = this.behaviorEntity.Components.OfType<IBehavior>().First();
-		(Func<Task>, Cancel) execution = (() => Task.CompletedTask, () => { });
+		(Func<IEnumerable<U<WaitFrame, WaitMilliSeconds>>>, Action) execution = (run, () => { });
 		var calls = 0;
 
 		controller.input.getAction = (_) => calls++ == 0 ? InputAction.Run : InputAction.None;
@@ -88,10 +92,14 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 	[Test]
 	public void EnqueueBehaviorWithTarget() {
+		static IEnumerable<U<WaitFrame, WaitMilliSeconds>> run() {
+			yield break;
+		}
+
 		var controller = this.controllerEntity.Get<MockController>();
 		var getTarget = this.getTargetEntity.Components.OfType<IGetTarget>().First();
 		var behavior = this.behaviorEntity.Components.OfType<IBehavior>().First();
-		(Func<Task>, Cancel) execution = (() => Task.CompletedTask, () => { });
+		(Func<IEnumerable<U<WaitFrame, WaitMilliSeconds>>>, Action) execution = (run, () => { });
 		var calls = 0;
 
 		controller.input.getAction = (_) => calls++ == 0 ? InputAction.Chain : InputAction.None;

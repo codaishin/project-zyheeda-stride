@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public struct Either<TError, T> {
+public readonly struct Either<TError, T> {
 	private readonly U<TError, T> errorOrValue;
 
 	public Either(T value) {
