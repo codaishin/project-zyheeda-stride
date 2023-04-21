@@ -6,18 +6,25 @@ using System.Linq;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
-using Stride.Core.Mathematics;
 using Stride.Engine;
 
 public class TestMoveController : GameTestCollection, System.IDisposable {
-	private readonly VectorTolerance tolerance = new(0.001f);
-	private IAnimation getAnimation = Mock.Of<IAnimation>();
-	private AnimationComponent agentAnimation = new();
-	private MoveController moveComponent = new();
 	private Entity agent = new();
-	private Entity move = new();
-	private SchedulerController scheduler = new();
+	private MockMoveController moveController = new();
 
+	private class MockMove : IMove {
+		public Func<Entity, Action<string>, IMove.FDelta, FGetCoroutine> prepareCoroutineFor;
+
+		public MockMove() {
+			this.prepareCoroutineFor = (_, __, ___) => Mock.Of<FGetCoroutine>();
+		}
+
+		public FGetCoroutine PrepareCoroutineFor(Entity agent, Action<string> playAnimation, IMove.FDelta delta) {
+			return this.prepareCoroutineFor(agent, playAnimation, delta);
+		}
+	}
+
+	private class MockMoveController : BaseMoveController<MockMove> { }
 
 	private static string ErrorsToString(IEnumerable<U<SystemStr, PlayerStr>> errors) {
 		var errorsUnpacked = errors.Select(error => error.Switch(
@@ -27,463 +34,121 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		return string.Join(", ", errorsUnpacked);
 	}
 
-	private static FGetCoroutine FailWithErrors(IEnumerable<U<SystemStr, PlayerStr>> errors) {
-		Assert.Fail($"Errors: {TestMoveController.ErrorsToString(errors)}");
-		return Mock.Of<FGetCoroutine>();
-	}
-
 	[SetUp]
 	public void SetUp() {
-		this.scheduler = new();
-
-		this.getAnimation = Mock.Of<IAnimation>();
+		var animation = Mock.Of<IAnimation>();
 		this.game.Services.RemoveService<IAnimation>();
-		this.game.Services.AddService<IAnimation>(this.getAnimation);
-
-		this.agentAnimation = new AnimationComponent();
-		this.agent = new Entity();
-		this.agent.AddChild(new Entity { this.agentAnimation });
-		this.moveComponent = new MoveController { speed = 1, animationKey = "walk" };
-		this.move = new Entity { this.moveComponent };
+		this.game.Services.AddService<IAnimation>(animation);
 
 		Mock
-			.Get(this.getAnimation)
+			.Get(animation)
 			.SetReturnsDefault(false);
 		Mock
-			.Get(this.getAnimation)
+			.Get(animation)
 			.SetReturnsDefault(Maybe.None<IPlayingAnimation>());
 
-		this.scene.Entities.Add(new Entity { this.scheduler });
-		this.scene.Entities.Add(this.move);
+		this.agent = new Entity();
+		this.agent.AddChild(new Entity { new AnimationComponent() });
+		this.moveController = new MockMoveController();
+
+		this.scene.Entities.Add(new Entity { this.moveController });
 		this.scene.Entities.Add(this.agent);
 
 		this.game.WaitFrames(1);
 	}
 
 	[Test]
-	public void MoveTowardsTarget1() {
-		var target = new Vector3(1, 0, 0);
-
-		this.moveComponent.speed = 1;
-		var getCoroutine = this.moveComponent
-			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
-
-		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-
-		this.scheduler.Run(getCoroutine(target));
-		this.game.WaitFrames(1);
-
-		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
-
-		var position = this.agent.Transform.Position;
-		Assert.That(position, Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance));
-	}
-
-	[Test]
-	public void MoveTowardsTargetEntity() {
-		var target = new Entity();
-
-		this.moveComponent.speed = 1;
-		var getCoroutine = this.moveComponent
-			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
-
-		target.Transform.Position = new Vector3(1, 0, 0);
-
-		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-
-		this.scheduler.Run(getCoroutine(target));
-		this.game.WaitFrames(1);
-
-		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
-
-		var position = this.agent.Transform.Position;
-		Assert.That(position, Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance));
-	}
-
-	[Test]
-	public void MoveTowardsTargetEntityAfterChangingTargetPosition() {
-		var target = new Entity();
-
-		this.moveComponent.speed = 1;
-		var getCoroutine = this.moveComponent
-			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
-
-		target.Transform.Position = new Vector3(1, 0, 0);
-
-
-		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-
-		this.scheduler.Run(getCoroutine(target));
-		this.game.WaitFrames(1);
-
-		var distanceX = (float)this.game.UpdateTime.Total.TotalSeconds - start;
-
-		target.Transform.Position = new Vector3(0, 1, 0);
-
-		start = (float)this.game.UpdateTime.Total.TotalSeconds;
-		this.game.WaitFrames(1);
-		var distanceY = (float)this.game.UpdateTime.Total.TotalSeconds - start;
-
-		var position = this.agent.Transform.Position;
-		Assert.That(position, Is.EqualTo(new Vector3(distanceX, distanceY, 0)).Using(this.tolerance));
-	}
-
-	[Test]
-	public void MoveTowardsTargetFor5Frames() {
-		var target = new Vector3(1, 0, 0);
-
-		this.moveComponent.speed = 1;
-		var getCoroutine = this.moveComponent
-			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
-
-
-		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-
-		this.scheduler.Run(getCoroutine(target));
-		this.game.WaitFrames(5);
-
-		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
-
-		var position = this.agent.Transform.Position;
-		Assert.That(position, Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance));
-	}
-
-	[Test]
-	public void MoveTowardsTargetFaster() {
-		var target = new Vector3(100, 0, 0);
-
-		this.moveComponent.speed = 42;
-		var getCoroutine = this.moveComponent
-			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
-
-
-		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-
-		this.scheduler.Run(getCoroutine(target));
-		this.game.WaitFrames(5);
-
-		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
-		distance *= 42f;
-
-		var position = this.agent.Transform.Position;
-		Assert.That(position, Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance));
-	}
-
-	[Test]
-	public void MoveTowardsTargetWithChangingSpeed() {
-		var target = new Vector3(100, 0, 0);
-
-		this.moveComponent.speed = 1;
-		var getCoroutine = this.moveComponent
-			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
-
-
-		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-
-		this.scheduler.Run(getCoroutine(target));
-		this.game.WaitFrames(1);
-
-		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
-
-		start = (float)this.game.UpdateTime.Total.TotalSeconds;
-
-		this.moveComponent.speed = 0.5f;
-		this.game.WaitFrames(1);
-
-		distance += ((float)this.game.UpdateTime.Total.TotalSeconds - start) * 0.5f;
-
-		var position = this.agent.Transform.Position;
-		Assert.That(position, Is.EqualTo(new Vector3(distance, 0, 0)).Using(this.tolerance));
-	}
-
-	[Test]
-	public void MoveTowardsTarget0Neg10() {
-		var target = new Vector3(0, -1, 0);
-
-		this.moveComponent.speed = 1;
-		var getCoroutine = this.moveComponent
-			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
-
-
-		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-
-		this.scheduler.Run(getCoroutine(target));
-		this.game.WaitFrames(5);
-
-		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
-
-		var position = this.agent.Transform.Position;
-		Assert.That(position, Is.EqualTo(new Vector3(0, -distance, 0)).Using(this.tolerance));
-	}
-
-
-	[Test]
-	public void MoveTowardsTargetFromOffsetPosition() {
-		var target = new Vector3(1, 1, 0);
-
-		this.moveComponent.speed = 1;
-		var getCoroutine = this.moveComponent
-			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
-
-		this.agent.Transform.Position = new Vector3(1, 0, 0);
-
-
-		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-
-		this.scheduler.Run(getCoroutine(target));
-		this.game.WaitFrames(5);
-
-		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
-
-		var position = this.agent.Transform.Position;
-		Assert.That(position, Is.EqualTo(new Vector3(1, distance, 0)).Using(this.tolerance));
-	}
-
-	[Test]
-	public void MoveTowardsTargetWithNotNormalizedInitialDistance() {
-		var target = new Vector3(1, 1, 0);
-
-		this.moveComponent.speed = 1;
-		var getCoroutine = this.moveComponent
-			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
-
-		var start = (float)this.game.UpdateTime.Total.TotalSeconds;
-
-		this.scheduler.Run(getCoroutine(target));
-		this.game.WaitFrames(5);
-
-		var distance = (float)this.game.UpdateTime.Total.TotalSeconds - start;
-
-		var direction = new Vector3(1, 1, 0);
-		direction.Normalize();
-
-		Assert.That(
-			this.agent.Transform.Position,
-			Is.EqualTo(direction * distance).Using(this.tolerance)
-		);
-	}
-
-	[Test]
-	public void DoNotOvershoot() {
-		var target = new Vector3(1, 0, 0);
-
-		this.moveComponent.speed = 100_000;
-		var getCoroutine = this.moveComponent
-			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
-
-		this.scheduler.Run(getCoroutine(target));
-
-		this.game.WaitFrames(2);
-
-		var position = this.agent.Transform.Position;
-		Assert.That(position, Is.EqualTo(new Vector3(1, 0, 0)));
-	}
-
-
-	[Test]
-	public void LookAtTarget() {
-		var target = new Vector3(1, 0, 0);
-
-		var getCoroutine = this.moveComponent
-			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
-
-		this.scheduler.Run(getCoroutine(target));
-
-		this.game.WaitFrames(2);
-
-		Assert.That(
-			this.agent.Transform.Rotation,
-			Is.EqualTo(Quaternion.LookRotation(Vector3.UnitX, Vector3.UnitY))
-		);
-	}
-
-	[Test]
-	public void LookAtTargetFromOffset() {
-		var target = new Vector3(1, 0, 0);
-
-		this.agent.Transform.Position = new Vector3(3, 0, 0);
-
-		var getCoroutine = this.moveComponent
-			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
-
-		this.scheduler.Run(getCoroutine(target));
-
-		this.game.WaitFrames(2);
-
-		Assert.That(
-			this.agent.Transform.Rotation,
-			Is.EqualTo(Quaternion.LookRotation(-Vector3.UnitX, Vector3.UnitY))
-		);
-	}
-
-	[Test]
-	public void NoRotationChangeWhenTargetIsCurrentPosition() {
-		var target = new Vector3(1, 0, 0);
-
-		this.agent.Transform.Position = new Vector3(1, 0, 0);
-
-		var getCoroutine = this.moveComponent
-			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
-
-		var expectedRotation = this.agent.Transform.Rotation;
-
-		this.scheduler.Run(getCoroutine(target));
-		this.game.WaitFrames(1);
-
-		this.game.WaitFrames(2);
-
-		Assert.That(
-			this.agent.Transform.Rotation,
-			Is.EqualTo(expectedRotation)
-		);
-	}
-
-	[Test]
-	public void PlayAnimationWalk() {
-		var target = new Vector3(1, 0, 0);
+	public void ReturnMoveResult() {
+		var mockGetCoroutine = Mock.Of<FGetCoroutine>();
+		var prepareCoroutineFor = Mock.Of<Func<Entity, Action<string>, IMove.FDelta, FGetCoroutine>>();
+		this.moveController.move.prepareCoroutineFor = prepareCoroutineFor;
 
 		_ = Mock
-			.Get(this.getAnimation)
-			.Setup(g => g.Play(this.agentAnimation, It.IsAny<string>()))
-			.Returns(Maybe.None<IPlayingAnimation>());
+			.Get(prepareCoroutineFor)
+			.Setup(func => func(this.agent, It.IsAny<Action<string>>(), It.IsAny<IMove.FDelta>()))
+			.Returns(mockGetCoroutine);
 
-		this.moveComponent.speed = 1;
-		var getCoroutine = this.moveComponent
+		var getCoroutine = this.moveController
 			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
+			.Switch(
+				_ => throw new AssertionException("got no coroutine function"),
+				getCoroutine => getCoroutine
+			);
 
-		this.game.WaitFrames(1);
+		Assert.That(getCoroutine, Is.SameAs(mockGetCoroutine));
+	}
 
-		this.scheduler.Run(getCoroutine(target));
-		this.game.WaitFrames(10);
+	[Test]
+	public void PlayAnimation() {
+		var runPlay = null as Action<string>;
+		var prepareCoroutineFor = Mock.Of<Func<Entity, Action<string>, IMove.FDelta, FGetCoroutine>>();
+		var animation = this.game.Services.GetService<IAnimation>();
+		var animator = this.agent.GetChild(0).Get<AnimationComponent>();
+
+		this.moveController.move.prepareCoroutineFor = (_, play, __) => {
+			runPlay = play;
+			return Mock.Of<FGetCoroutine>();
+		};
+
+		_ = this.moveController.PrepareCoroutineFor(this.agent);
+
+		runPlay!("walk");
 
 		Mock
-			.Get(this.getAnimation)
-			.Verify(g => g.Play(this.agentAnimation, "walk"), Times.Once);
+			.Get(animation)
+			.Verify(a => a.Play(animator, "walk"), Times.Once);
 	}
 
 	[Test]
-	public void PlayAnimationRun() {
-		var target = new Vector3(1, 0, 0);
-		this.moveComponent.animationKey = "run";
+	public void DoNotPlayActiveAnimations() {
+		var runPlay = null as Action<string>;
+		var prepareCoroutineFor = Mock.Of<Func<Entity, Action<string>, IMove.FDelta, FGetCoroutine>>();
+		var animation = this.game.Services.GetService<IAnimation>();
+		var animator = this.agent.GetChild(0).Get<AnimationComponent>();
+
+		this.moveController.move.prepareCoroutineFor = (_, play, __) => {
+			runPlay = play;
+			return Mock.Of<FGetCoroutine>();
+		};
+
+		_ = this.moveController.PrepareCoroutineFor(this.agent);
+
+		runPlay!("walk");
 
 		_ = Mock
-			.Get(this.getAnimation)
-			.Setup(g => g.Play(this.agentAnimation, It.IsAny<string>()))
-			.Returns(Maybe.None<IPlayingAnimation>());
-
-		this.moveComponent.speed = 1;
-		var getCoroutine = this.moveComponent
-			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
-
-		this.game.WaitFrames(1);
-
-		this.scheduler.Run(getCoroutine(target));
-		this.game.WaitFrames(10);
-
-		Mock
-			.Get(this.getAnimation)
-			.Verify(g => g.Play(this.agentAnimation, "run"), Times.Once);
-	}
-
-	[Test]
-	public void PlayIdle() {
-		var target = new Vector3(1, 0, 0);
-
-		_ = Mock
-			.Get(this.getAnimation)
-			.Setup(g => g.Play(this.agentAnimation, It.IsAny<string>()))
-			.Returns(Maybe.None<IPlayingAnimation>());
-
-		this.moveComponent.speed = 100_000;
-		var getCoroutine = this.moveComponent
-			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
-
-		this.game.WaitFrames(1);
-
-		this.scheduler.Run(getCoroutine(target));
-
-		this.game.WaitFrames(10);
-
-		Mock
-			.Get(this.getAnimation)
-			.Verify(g => g.Play(this.agentAnimation, MoveController.fallbackAnimationKey), Times.Once);
-	}
-
-	[Test]
-	public void DoNotPlayRunningAnimations() {
-		var target = new Vector3(1, 0, 0);
-
-		_ = Mock
-			.Get(this.getAnimation)
-			.Setup(g => g.IsPlaying(this.agentAnimation, It.IsAny<string>()))
+			.Get(animation)
+			.Setup(g => g.IsPlaying(animator, "walk"))
 			.Returns(true);
 
-		this.moveComponent.speed = 1;
-		var getCoroutine = this.moveComponent
-			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
-
-		this.game.WaitFrames(1);
-
-		this.scheduler.Run(getCoroutine(target));
-
-		this.game.WaitFrames(2);
+		runPlay!("walk");
 
 		Mock
-			.Get(this.getAnimation)
-			.Verify(g => g.Play(this.agentAnimation, It.IsAny<string>()), Times.Never);
+			.Get(animation)
+			.Verify(a => a.Play(animator, "walk"), Times.Once);
 	}
 
 	[Test]
-	public void PlayIdleOnCancel() {
-		var target = new Vector3(1, 0, 0);
+	public void MultiplySpeedWithUpdateTimeElapsed() {
+		var runDelta = null as IMove.FDelta;
+		var prepareCoroutineFor = Mock.Of<Func<Entity, Action<string>, IMove.FDelta, FGetCoroutine>>();
 
-		_ = Mock
-			.Get(this.getAnimation)
-			.Setup(g => g.Play(this.agentAnimation, It.IsAny<string>()))
-			.Returns(Maybe.None<IPlayingAnimation>());
+		this.moveController.move.prepareCoroutineFor = (_, __, delta) => {
+			runDelta = delta;
+			return Mock.Of<FGetCoroutine>();
+		};
 
-		this.moveComponent.speed = 100_000;
-		var getCoroutine = this.moveComponent
-			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.FailWithErrors, getCoroutine => getCoroutine);
+		_ = this.moveController.PrepareCoroutineFor(this.agent);
 
-		this.game.WaitFrames(1);
-		var (run, cancel) = getCoroutine(target);
-
-		this.scheduler.Run((run, cancel));
-
-		this.game.WaitFrames(1);
-
-		cancel();
-
-		Mock
-			.Get(this.getAnimation)
-			.Verify(g => g.Play(this.agentAnimation, MoveController.fallbackAnimationKey), Times.Once);
+		var deltaElapsed = (float)this.game.UpdateTime.Elapsed.TotalSeconds;
+		Assert.That(runDelta!(42), Is.EqualTo(42 * deltaElapsed));
 	}
 
 	[Test]
 	public void MissingAnimationComponent() {
 		this.agent.Name = "Agent";
-		this.agent.RemoveChild(this.agentAnimation.Entity);
+		this.agent.GetChild(0).RemoveAll<AnimationComponent>();
 
-		var error = this.moveComponent
+		var error = this.moveController
 			.PrepareCoroutineFor(this.agent)
 			.Switch(TestMoveController.ErrorsToString, _ => "no error, got actual behavior");
 
@@ -524,7 +189,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 	public void MissingGetAnimationServiceAndAnimationComponent() {
 		this.game.Services.RemoveService<IAnimation>();
 		this.agent.Name = "Agent";
-		this.agent.RemoveChild(this.agentAnimation.Entity);
+		this.agent.GetChild(0).RemoveAll<AnimationComponent>();
 
 		var moveComponent = new MoveController();
 		this.scene.Entities.Add(new Entity { moveComponent });

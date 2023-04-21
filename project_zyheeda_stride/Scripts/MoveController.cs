@@ -2,19 +2,21 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Stride.Core.Mathematics;
 using Stride.Engine;
 
 
-public class MoveController : StartupScript, IEquipment {
-	public static readonly string fallbackAnimationKey = "default";
-
-	public float speed;
-	public string animationKey = "";
+public abstract class BaseMoveController<T> :
+	StartupScript,
+	IEquipment
+	where T :
+		IMove,
+		new() {
 
 	private Either<U<SystemStr, PlayerStr>, IAnimation> animation = new U<SystemStr, PlayerStr>(
 		new SystemStr("No IGetAnimation assigned")
 	);
+
+	public readonly T move = new();
 
 	private static Either<U<SystemStr, PlayerStr>, AnimationComponent> AnimatorOnChildOf(Entity agent) {
 		return agent
@@ -39,11 +41,12 @@ public class MoveController : StartupScript, IEquipment {
 	public Either<IEnumerable<U<SystemStr, PlayerStr>>, FGetCoroutine> PrepareCoroutineFor(Entity agent) {
 		var prepareCoroutine =
 			(IAnimation animation) =>
-			(AnimationComponent agentAnimator) => this.PrepareCoroutineFor(
+			(AnimationComponent agentAnimator) => this.move.PrepareCoroutineFor(
 				agent,
-				animation,
-				agentAnimator
+				key => BaseMoveController<T>.Play(animation, key, agentAnimator),
+				speedPerSecond => (float)this.Game.UpdateTime.Elapsed.TotalSeconds * speedPerSecond
 			);
+
 
 		var agentAnimator = MoveController.AnimatorOnChildOf(agent);
 		return prepareCoroutine
@@ -56,41 +59,6 @@ public class MoveController : StartupScript, IEquipment {
 			_ = animation.Play(agentAnimator, animationKey);
 		}
 	}
-
-	private Coroutine MoveTowards(TransformComponent agent, U<Vector3, Entity> target) {
-		var direction = target.Position() - agent.Position;
-
-		if (direction != Vector3.Zero) {
-			direction.Normalize();
-			agent.Rotation = Quaternion.LookRotation(direction, Vector3.UnitY);
-		}
-
-		while (agent.Position != target.Position()) {
-			var delta = (float)this.Game.UpdateTime.Elapsed.TotalSeconds * this.speed;
-			agent.Position = agent.Position.MoveTowards(target.Position(), delta);
-			yield return new WaitFrame();
-		}
-	}
-
-	private FGetCoroutine PrepareCoroutineFor(Entity agent, IAnimation animation, AnimationComponent agentAnimator) {
-		void playAnimation(string animationKey) {
-			MoveController.Play(animation, animationKey, agentAnimator);
-		}
-
-		void cancel() {
-			playAnimation(MoveController.fallbackAnimationKey);
-		};
-
-		return (U<Vector3, Entity> target) => {
-			Coroutine run() {
-				playAnimation(this.animationKey);
-				foreach (var wait in this.MoveTowards(agent.Transform, target)) {
-					yield return wait;
-				}
-				playAnimation(MoveController.fallbackAnimationKey);
-			};
-
-			return (run, cancel);
-		};
-	}
 }
+
+public class MoveController : BaseMoveController<Move> { }
