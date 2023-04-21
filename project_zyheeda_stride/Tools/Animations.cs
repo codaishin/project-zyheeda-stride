@@ -3,7 +3,7 @@ namespace ProjectZyheeda;
 using System.Collections.Generic;
 using Stride.Engine;
 
-public class GetAnimations : IGetAnimation {
+public class Animation : IAnimation {
 	public bool IsPlaying(AnimationComponent animations, string key) {
 		return animations.IsPlaying(key);
 	}

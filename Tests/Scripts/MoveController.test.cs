@@ -11,7 +11,7 @@ using Stride.Engine;
 
 public class TestMoveController : GameTestCollection, System.IDisposable {
 	private readonly VectorTolerance tolerance = new(0.001f);
-	private IGetAnimation getAnimation = Mock.Of<IGetAnimation>();
+	private IAnimation getAnimation = Mock.Of<IAnimation>();
 	private AnimationComponent agentAnimation = new();
 	private MoveController moveComponent = new();
 	private Entity agent = new();
@@ -36,14 +36,14 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 	public void SetUp() {
 		this.scheduler = new();
 
-		this.getAnimation = Mock.Of<IGetAnimation>();
-		this.game.Services.RemoveService<IGetAnimation>();
-		this.game.Services.AddService<IGetAnimation>(this.getAnimation);
+		this.getAnimation = Mock.Of<IAnimation>();
+		this.game.Services.RemoveService<IAnimation>();
+		this.game.Services.AddService<IAnimation>(this.getAnimation);
 
 		this.agentAnimation = new AnimationComponent();
 		this.agent = new Entity();
 		this.agent.AddChild(new Entity { this.agentAnimation });
-		this.moveComponent = new MoveController { speed = 1, playAnimation = "walk" };
+		this.moveComponent = new MoveController { speed = 1, animationKey = "walk" };
 		this.move = new Entity { this.moveComponent };
 
 		Mock
@@ -378,7 +378,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 	[Test]
 	public void PlayAnimationRun() {
 		var target = new Vector3(1, 0, 0);
-		this.moveComponent.playAnimation = "run";
+		this.moveComponent.animationKey = "run";
 
 		_ = Mock
 			.Get(this.getAnimation)
@@ -492,7 +492,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 	[Test]
 	public void NoGetAnimationServiceBeforeStart() {
-		this.game.Services.RemoveService<IGetAnimation>();
+		this.game.Services.RemoveService<IAnimation>();
 
 		var moveComponent = new MoveController();
 		this.scene.Entities.Add(new Entity { moveComponent });
@@ -506,7 +506,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 	[Test]
 	public void MissingGetAnimationService() {
-		this.game.Services.RemoveService<IGetAnimation>();
+		this.game.Services.RemoveService<IAnimation>();
 
 		var moveComponent = new MoveController();
 		this.scene.Entities.Add(new Entity { moveComponent });
@@ -522,7 +522,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 	[Test]
 	public void MissingGetAnimationServiceAndAnimationComponent() {
-		this.game.Services.RemoveService<IGetAnimation>();
+		this.game.Services.RemoveService<IAnimation>();
 		this.agent.Name = "Agent";
 		this.agent.RemoveChild(this.agentAnimation.Entity);
 

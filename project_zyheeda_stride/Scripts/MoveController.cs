@@ -1,6 +1,5 @@
 ﻿namespace ProjectZyheeda;
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Stride.Core.Mathematics;
@@ -11,13 +10,13 @@ public class MoveController : StartupScript, IEquipment {
 	public static readonly string fallbackAnimationKey = "default";
 
 	public float speed;
-	public string playAnimation = "";
+	public string animationKey = "";
 
-	private Either<U<SystemStr, PlayerStr>, IGetAnimation> animationGetter = new U<SystemStr, PlayerStr>(
+	private Either<U<SystemStr, PlayerStr>, IAnimation> animation = new U<SystemStr, PlayerStr>(
 		new SystemStr("No IGetAnimation assigned")
 	);
 
-	private static Either<U<SystemStr, PlayerStr>, AnimationComponent> AnimationComponentFromChildren(Entity agent) {
+	private static Either<U<SystemStr, PlayerStr>, AnimationComponent> AnimatorOnChildOf(Entity agent) {
 		return agent
 			.GetChildren()
 			.Select(c => c.Get<AnimationComponent>())
@@ -25,85 +24,73 @@ public class MoveController : StartupScript, IEquipment {
 			.ToEither(new U<SystemStr, PlayerStr>(new SystemStr($"Missing AnimationComponent on {agent.Name}")));
 	}
 
-	private Either<U<SystemStr, PlayerStr>, IGetAnimation> AnimationGetterFromService() {
+	private Either<U<SystemStr, PlayerStr>, IAnimation> AnimationFromService() {
 		return this
 			.Game
 			.Services
-			.GetService<IGetAnimation>()
+			.GetService<IAnimation>()
 			.ToEither(new U<SystemStr, PlayerStr>(new SystemStr("Missing IGetAnimation Service")));
 	}
 
 	public override void Start() {
-		this.animationGetter = this.AnimationGetterFromService();
+		this.animation = this.AnimationFromService();
 	}
 
 	public Either<IEnumerable<U<SystemStr, PlayerStr>>, FGetCoroutine> PrepareCoroutineFor(Entity agent) {
-		var getBehavior =
-			(IGetAnimation getAnimation) =>
-			(AnimationComponent animationComponent) => (FGetCoroutine)new Behavior(
-				this,
-				getAnimation,
-				agent.Transform,
-				animationComponent
-			).GetExecution;
+		var prepareCoroutine =
+			(IAnimation animation) =>
+			(AnimationComponent agentAnimator) => this.PrepareCoroutineFor(
+				agent,
+				animation,
+				agentAnimator
+			);
 
-		var animationComponent = MoveController.AnimationComponentFromChildren(agent);
-		return getBehavior
-			.ApplyWeak(this.animationGetter)
-			.ApplyWeak(animationComponent);
+		var agentAnimator = MoveController.AnimatorOnChildOf(agent);
+		return prepareCoroutine
+			.ApplyWeak(this.animation)
+			.ApplyWeak(agentAnimator);
 	}
 
-	private class Behavior {
-		private readonly MoveController move;
-		private readonly IGetAnimation animationGetter;
-		private readonly TransformComponent agentTransform;
-		private readonly AnimationComponent agentAnimation;
+	private static void Play(IAnimation animation, string animationKey, AnimationComponent agentAnimator) {
+		if (!animation.IsPlaying(agentAnimator, animationKey)) {
+			_ = animation.Play(agentAnimator, animationKey);
+		}
+	}
 
-		public Behavior(
-			MoveController move,
-			IGetAnimation animationGetter,
-			TransformComponent agentTransform,
-			AnimationComponent agentAnimation
-		) {
-			this.move = move;
-			this.animationGetter = animationGetter;
-			this.agentTransform = agentTransform;
-			this.agentAnimation = agentAnimation;
+	private Coroutine MoveTowards(TransformComponent agent, U<Vector3, Entity> target) {
+		var direction = target.Position() - agent.Position;
+
+		if (direction != Vector3.Zero) {
+			direction.Normalize();
+			agent.Rotation = Quaternion.LookRotation(direction, Vector3.UnitY);
 		}
 
-		private void Play(string animationKey) {
-			if (!this.animationGetter.IsPlaying(this.agentAnimation, animationKey)) {
-				_ = this.animationGetter.Play(this.agentAnimation, animationKey);
-			}
+		while (agent.Position != target.Position()) {
+			var delta = (float)this.Game.UpdateTime.Elapsed.TotalSeconds * this.speed;
+			agent.Position = agent.Position.MoveTowards(target.Position(), delta);
+			yield return new WaitFrame();
+		}
+	}
+
+	private FGetCoroutine PrepareCoroutineFor(Entity agent, IAnimation animation, AnimationComponent agentAnimator) {
+		void playAnimation(string animationKey) {
+			MoveController.Play(animation, animationKey, agentAnimator);
 		}
 
-		private Coroutine MoveTowards(TransformComponent agent, U<Vector3, Entity> target) {
-			var direction = target.Position() - agent.Position;
+		void cancel() {
+			playAnimation(MoveController.fallbackAnimationKey);
+		};
 
-			if (direction != Vector3.Zero) {
-				direction.Normalize();
-				agent.Rotation = Quaternion.LookRotation(direction, Vector3.UnitY);
-			}
-
-			while (agent.Position != target.Position()) {
-				var delta = (float)this.move.Game.UpdateTime.Elapsed.TotalSeconds * this.move.speed;
-				agent.Position = agent.Position.MoveTowards(target.Position(), delta);
-				yield return new WaitFrame();
-			}
-		}
-
-		public (Func<Coroutine>, Cancel) GetExecution(U<Vector3, Entity> target) {
+		return (U<Vector3, Entity> target) => {
 			Coroutine run() {
-				this.Play(this.move.playAnimation);
-				foreach (var yield in this.MoveTowards(this.agentTransform, target)) {
-					yield return yield;
+				playAnimation(this.animationKey);
+				foreach (var wait in this.MoveTowards(agent.Transform, target)) {
+					yield return wait;
 				}
-				this.Play(fallbackAnimationKey);
+				playAnimation(MoveController.fallbackAnimationKey);
 			};
-			void cancel() {
-				this.Play(fallbackAnimationKey);
-			};
+
 			return (run, cancel);
-		}
+		};
 	}
 }
