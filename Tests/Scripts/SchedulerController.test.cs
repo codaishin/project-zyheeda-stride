@@ -29,7 +29,7 @@ public class SchedulerControllerTest : GameTestCollection {
 
 	[Test]
 	public void EnqueueOneFunc() {
-		var func = Mock.Of<Func<IEnumerable<U<WaitFrame, WaitMilliSeconds>>>>();
+		var func = Mock.Of<Func<IEnumerable<IWait>>>();
 
 		this.schedulerController.Enqueue((func, () => { }));
 
@@ -41,13 +41,13 @@ public class SchedulerControllerTest : GameTestCollection {
 	[Test]
 	public void EnqueueTwoFunc() {
 		var result = "";
-		IEnumerable<U<WaitFrame, WaitMilliSeconds>> funcA() {
+		IEnumerable<IWait> funcA() {
 			result += "A";
 			yield return new WaitFrame();
 			result += "A";
 			yield return new WaitFrame();
 		};
-		IEnumerable<U<WaitFrame, WaitMilliSeconds>> funcB() {
+		IEnumerable<IWait> funcB() {
 			result += "B";
 			yield return new WaitFrame();
 			result += "B";
@@ -72,8 +72,8 @@ public class SchedulerControllerTest : GameTestCollection {
 
 	[Test]
 	public void EnqueueAfterPreviousFinished() {
-		var func = Mock.Of<Func<IEnumerable<U<WaitFrame, WaitMilliSeconds>>>>();
-		_ = Mock.Get(func).Setup(func => func()).Returns(Array.Empty<U<WaitFrame, WaitMilliSeconds>>());
+		var func = Mock.Of<Func<IEnumerable<IWait>>>();
+		_ = Mock.Get(func).Setup(func => func()).Returns(Array.Empty<IWait>());
 
 		this.schedulerController.Enqueue((func, () => { }));
 
@@ -88,8 +88,8 @@ public class SchedulerControllerTest : GameTestCollection {
 
 	[Test]
 	public void RunsFunc() {
-		var func = Mock.Of<Func<IEnumerable<U<WaitFrame, WaitMilliSeconds>>>>();
-		_ = Mock.Get(func).Setup(func => func()).Returns(Array.Empty<U<WaitFrame, WaitMilliSeconds>>());
+		var func = Mock.Of<Func<IEnumerable<IWait>>>();
+		_ = Mock.Get(func).Setup(func => func()).Returns(Array.Empty<IWait>());
 
 		this.schedulerController.Run((func, () => { }));
 
@@ -101,13 +101,13 @@ public class SchedulerControllerTest : GameTestCollection {
 	[Test]
 	public void RunAndEnqueueFunc() {
 		var result = "";
-		IEnumerable<U<WaitFrame, WaitMilliSeconds>> funcA() {
+		IEnumerable<IWait> funcA() {
 			result += "A";
 			yield return new WaitFrame();
 			result += "A";
 			yield return new WaitFrame();
 		};
-		IEnumerable<U<WaitFrame, WaitMilliSeconds>> funcB() {
+		IEnumerable<IWait> funcB() {
 			result += "B";
 			yield return new WaitFrame();
 			result += "B";
@@ -133,7 +133,7 @@ public class SchedulerControllerTest : GameTestCollection {
 	[Test]
 	public void RunAndWaitSeconds() {
 		var result = "";
-		IEnumerable<U<WaitFrame, WaitMilliSeconds>> func() {
+		IEnumerable<IWait> func() {
 			result += "A";
 			yield return new WaitMilliSeconds(100);
 			result += "A";
@@ -153,11 +153,11 @@ public class SchedulerControllerTest : GameTestCollection {
 	[Test]
 	public void RunAfterEnqueueShouldClear() {
 		var result = "";
-		IEnumerable<U<WaitFrame, WaitMilliSeconds>> funcA() {
+		IEnumerable<IWait> funcA() {
 			result += "A";
 			yield return new WaitFrame();
 		};
-		IEnumerable<U<WaitFrame, WaitMilliSeconds>> funcB() {
+		IEnumerable<IWait> funcB() {
 			result += "B";
 			yield return new WaitFrame();
 		};
@@ -172,11 +172,11 @@ public class SchedulerControllerTest : GameTestCollection {
 	[Test]
 	public void RunAfterEnqueueShouldCancel() {
 		var result = "";
-		IEnumerable<U<WaitFrame, WaitMilliSeconds>> funcA() {
+		IEnumerable<IWait> funcA() {
 			yield return new WaitFrame();
 			result += "A";
 		};
-		IEnumerable<U<WaitFrame, WaitMilliSeconds>> funcB() {
+		IEnumerable<IWait> funcB() {
 			yield return new WaitFrame();
 			result += "B";
 		};
@@ -195,11 +195,11 @@ public class SchedulerControllerTest : GameTestCollection {
 	[Test]
 	public void EnqueueClearEnqueue() {
 		var result = "";
-		IEnumerable<U<WaitFrame, WaitMilliSeconds>> funcA() {
+		IEnumerable<IWait> funcA() {
 			result += "A";
 			yield return new WaitFrame();
 		};
-		IEnumerable<U<WaitFrame, WaitMilliSeconds>> funcB() {
+		IEnumerable<IWait> funcB() {
 			result += "B";
 			yield return new WaitFrame();
 		};
@@ -215,11 +215,11 @@ public class SchedulerControllerTest : GameTestCollection {
 	[Test]
 	public void EnqueueClearEnqueueCancelFirstEnqueue() {
 		var result = "";
-		IEnumerable<U<WaitFrame, WaitMilliSeconds>> funcA() {
+		IEnumerable<IWait> funcA() {
 			yield return new WaitFrame();
 			result += "A";
 		};
-		IEnumerable<U<WaitFrame, WaitMilliSeconds>> funcB() {
+		IEnumerable<IWait> funcB() {
 			yield return new WaitFrame();
 			result += "B";
 		};
@@ -241,7 +241,7 @@ public class SchedulerControllerTest : GameTestCollection {
 
 	[Test]
 	public void CallCancelOnClear() {
-		static IEnumerable<U<WaitFrame, WaitMilliSeconds>> idle2Frames() {
+		static IEnumerable<IWait> idle2Frames() {
 			yield return new WaitFrame();
 			yield return new WaitFrame();
 		}
@@ -259,7 +259,7 @@ public class SchedulerControllerTest : GameTestCollection {
 
 	[Test]
 	public void CallCancelOnRun() {
-		static IEnumerable<U<WaitFrame, WaitMilliSeconds>> idle2Frames() {
+		static IEnumerable<IWait> idle2Frames() {
 			yield return new WaitFrame();
 			yield return new WaitFrame();
 		}
@@ -277,7 +277,7 @@ public class SchedulerControllerTest : GameTestCollection {
 
 	[Test]
 	public void CallCurrentCancel() {
-		static IEnumerable<U<WaitFrame, WaitMilliSeconds>> idle2Frames() {
+		static IEnumerable<IWait> idle2Frames() {
 			yield return new WaitFrame();
 			yield return new WaitFrame();
 		}
@@ -299,7 +299,7 @@ public class SchedulerControllerTest : GameTestCollection {
 
 	[Test]
 	public void CallCancelOnClearJustOnce() {
-		static IEnumerable<U<WaitFrame, WaitMilliSeconds>> idle2Frames() {
+		static IEnumerable<IWait> idle2Frames() {
 			yield return new WaitFrame();
 			yield return new WaitFrame();
 		}
@@ -318,7 +318,7 @@ public class SchedulerControllerTest : GameTestCollection {
 
 	[Test]
 	public void DoNotCallCancelAfterExecutionFinished() {
-		static IEnumerable<U<WaitFrame, WaitMilliSeconds>> doNotWait() {
+		static IEnumerable<IWait> doNotWait() {
 			yield break;
 		}
 		var cancel = Mock.Of<Action>();

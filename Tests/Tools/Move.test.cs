@@ -1,7 +1,6 @@
 namespace Tests;
 
 using System;
-using System.Linq;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
@@ -48,17 +47,12 @@ public class TestMove {
 	}
 
 	[Test, Timeout(1000)]
-	public void YieldWaitFrame() {
+	public void YieldsWaitFrames() {
 		var target = new Vector3(1, 0, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => { }, _ => 0.1f);
 		var (run, _) = getCoroutine(target);
 
-		Assert.That(
-			() => run()
-				.Select(wait => wait.Switch(frame => frame, _ => throw new Exception("was not WaitFrame")))
-				.ToArray(),
-			Throws.Nothing
-		);
+		Assert.That(run(), Is.All.InstanceOf<WaitFrame>());
 	}
 
 	[Test]

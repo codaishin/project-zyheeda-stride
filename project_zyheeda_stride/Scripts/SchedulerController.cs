@@ -16,10 +16,7 @@ public class SchedulerController : StartupScript, IScheduler {
 			(var runExecution, this.cancelExecution) = execution;
 			var coroutine = runExecution();
 			foreach (var yield in coroutine) {
-				await yield.Switch(
-					async _ => await this.Script.NextFrame(),
-					async y => await Task.Delay(y.milliSeconds)
-				);
+				await yield.Wait(this.Script);
 			}
 			this.cancelExecution = null;
 		}

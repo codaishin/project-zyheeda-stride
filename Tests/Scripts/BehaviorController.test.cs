@@ -243,8 +243,8 @@ public class BehaviorControllerTest : GameTestCollection {
 		var getCoroutine = Mock.Of<FGetCoroutine>();
 		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
 		var target = new Vector3(1, 2, 3);
-		(Func<IEnumerable<U<WaitFrame, WaitMilliSeconds>>>, Action) execution = (
-			() => Array.Empty<U<WaitFrame, WaitMilliSeconds>>(),
+		(Func<IEnumerable<IWait>>, Action) execution = (
+			() => Array.Empty<IWait>(),
 			() => { }
 		);
 
