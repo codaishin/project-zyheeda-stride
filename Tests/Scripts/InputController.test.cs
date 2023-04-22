@@ -64,14 +64,14 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 	[Test]
 	public void RunBehaviorWithTarget() {
-		static IEnumerable<U<WaitFrame, WaitMilliSeconds>> run() {
+		static IEnumerable<IWait> run() {
 			yield break;
 		}
 
 		var controller = this.controllerEntity.Get<MockController>();
 		var getTarget = this.getTargetEntity.Components.OfType<IGetTarget>().First();
 		var behavior = this.behaviorEntity.Components.OfType<IBehavior>().First();
-		(Func<IEnumerable<U<WaitFrame, WaitMilliSeconds>>>, Action) execution = (run, () => { });
+		(Func<IEnumerable<IWait>>, Action) execution = (run, () => { });
 		var calls = 0;
 
 		controller.input.getAction = (_) => calls++ == 0 ? InputAction.Run : InputAction.None;
@@ -92,14 +92,14 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 	[Test]
 	public void EnqueueBehaviorWithTarget() {
-		static IEnumerable<U<WaitFrame, WaitMilliSeconds>> run() {
+		static IEnumerable<IWait> run() {
 			yield break;
 		}
 
 		var controller = this.controllerEntity.Get<MockController>();
 		var getTarget = this.getTargetEntity.Components.OfType<IGetTarget>().First();
 		var behavior = this.behaviorEntity.Components.OfType<IBehavior>().First();
-		(Func<IEnumerable<U<WaitFrame, WaitMilliSeconds>>>, Action) execution = (run, () => { });
+		(Func<IEnumerable<IWait>>, Action) execution = (run, () => { });
 		var calls = 0;
 
 		controller.input.getAction = (_) => calls++ == 0 ? InputAction.Chain : InputAction.None;
