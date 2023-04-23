@@ -5,18 +5,18 @@ using System.Linq;
 using Stride.Engine;
 
 
-public abstract class BaseMoveController<T> :
+public abstract class BaseMoveController<TAnimatedMove> :
 	StartupScript,
 	IEquipment
-	where T :
-		IMove,
+	where TAnimatedMove :
+		IAnimatedMove,
 		new() {
 
 	private Either<U<SystemStr, PlayerStr>, IAnimation> animation = new U<SystemStr, PlayerStr>(
 		new SystemStr("No IGetAnimation assigned")
 	);
 
-	public readonly T move = new();
+	public readonly TAnimatedMove move = new();
 
 	private static Either<U<SystemStr, PlayerStr>, AnimationComponent> AnimatorOnChildOf(Entity agent) {
 		return agent
@@ -43,12 +43,12 @@ public abstract class BaseMoveController<T> :
 			(IAnimation animation) =>
 			(AnimationComponent agentAnimator) => this.move.PrepareCoroutineFor(
 				agent,
-				key => BaseMoveController<T>.Play(animation, key, agentAnimator),
-				speedPerSecond => (float)this.Game.UpdateTime.Elapsed.TotalSeconds * speedPerSecond
+				speedPerSecond => (float)this.Game.UpdateTime.Elapsed.TotalSeconds * speedPerSecond,
+				key => BaseMoveController<TAnimatedMove>.Play(animation, key, agentAnimator)
 			);
 
 
-		var agentAnimator = MoveController.AnimatorOnChildOf(agent);
+		var agentAnimator = BaseMoveController<AnimatedStraightMove>.AnimatorOnChildOf(agent);
 		return prepareCoroutine
 			.ApplyWeak(this.animation)
 			.ApplyWeak(agentAnimator);
@@ -61,4 +61,4 @@ public abstract class BaseMoveController<T> :
 	}
 }
 
-public class MoveController : BaseMoveController<Move> { }
+public class MoveController : BaseMoveController<AnimatedStraightMove> { }

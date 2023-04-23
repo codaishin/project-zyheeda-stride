@@ -12,15 +12,15 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 	private Entity agent = new();
 	private MockMoveController moveController = new();
 
-	private class MockMove : IMove {
-		public Func<Entity, Action<string>, IMove.FDelta, FGetCoroutine> prepareCoroutineFor;
+	private class MockMove : IAnimatedMove {
+		public Func<Entity, FSpeedToDelta, Action<string>, FGetCoroutine> prepareCoroutineFor;
 
 		public MockMove() {
 			this.prepareCoroutineFor = (_, __, ___) => Mock.Of<FGetCoroutine>();
 		}
 
-		public FGetCoroutine PrepareCoroutineFor(Entity agent, Action<string> playAnimation, IMove.FDelta delta) {
-			return this.prepareCoroutineFor(agent, playAnimation, delta);
+		public FGetCoroutine PrepareCoroutineFor(Entity agent, FSpeedToDelta delta, Action<string> playAnimation) {
+			return this.prepareCoroutineFor(agent, delta, playAnimation);
 		}
 	}
 
@@ -60,12 +60,12 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 	[Test]
 	public void ReturnMoveResult() {
 		var mockGetCoroutine = Mock.Of<FGetCoroutine>();
-		var prepareCoroutineFor = Mock.Of<Func<Entity, Action<string>, IMove.FDelta, FGetCoroutine>>();
+		var prepareCoroutineFor = Mock.Of<Func<Entity, FSpeedToDelta, Action<string>, FGetCoroutine>>();
 		this.moveController.move.prepareCoroutineFor = prepareCoroutineFor;
 
 		_ = Mock
 			.Get(prepareCoroutineFor)
-			.Setup(func => func(this.agent, It.IsAny<Action<string>>(), It.IsAny<IMove.FDelta>()))
+			.Setup(func => func(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Action<string>>()))
 			.Returns(mockGetCoroutine);
 
 		var getCoroutine = this.moveController
@@ -81,11 +81,11 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 	[Test]
 	public void PlayAnimation() {
 		var runPlay = null as Action<string>;
-		var prepareCoroutineFor = Mock.Of<Func<Entity, Action<string>, IMove.FDelta, FGetCoroutine>>();
+		var prepareCoroutineFor = Mock.Of<Func<Entity, FSpeedToDelta, Action<string>, FGetCoroutine>>();
 		var animation = this.game.Services.GetService<IAnimation>();
 		var animator = this.agent.GetChild(0).Get<AnimationComponent>();
 
-		this.moveController.move.prepareCoroutineFor = (_, play, __) => {
+		this.moveController.move.prepareCoroutineFor = (_, __, play) => {
 			runPlay = play;
 			return Mock.Of<FGetCoroutine>();
 		};
@@ -102,11 +102,11 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 	[Test]
 	public void DoNotPlayActiveAnimations() {
 		var runPlay = null as Action<string>;
-		var prepareCoroutineFor = Mock.Of<Func<Entity, Action<string>, IMove.FDelta, FGetCoroutine>>();
+		var prepareCoroutineFor = Mock.Of<Func<Entity, FSpeedToDelta, Action<string>, FGetCoroutine>>();
 		var animation = this.game.Services.GetService<IAnimation>();
 		var animator = this.agent.GetChild(0).Get<AnimationComponent>();
 
-		this.moveController.move.prepareCoroutineFor = (_, play, __) => {
+		this.moveController.move.prepareCoroutineFor = (_, __, play) => {
 			runPlay = play;
 			return Mock.Of<FGetCoroutine>();
 		};
@@ -129,10 +129,10 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 	[Test]
 	public void MultiplySpeedWithUpdateTimeElapsed() {
-		var runDelta = null as IMove.FDelta;
-		var prepareCoroutineFor = Mock.Of<Func<Entity, Action<string>, IMove.FDelta, FGetCoroutine>>();
+		var runDelta = null as FSpeedToDelta;
+		var prepareCoroutineFor = Mock.Of<Func<Entity, FSpeedToDelta, Action<string>, FGetCoroutine>>();
 
-		this.moveController.move.prepareCoroutineFor = (_, __, delta) => {
+		this.moveController.move.prepareCoroutineFor = (_, delta, __) => {
 			runDelta = delta;
 			return Mock.Of<FGetCoroutine>();
 		};

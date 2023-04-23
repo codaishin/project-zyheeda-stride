@@ -49,7 +49,8 @@ Hierarchy:
                     d2c26f9ab9074385e6c9d981d5b57bdf: !ProjectZyheeda.MoveController,project_zyheeda_stride
                         Id: 93319efb-06d3-41db-8335-064b07dbeafb
                         move:
-                            speed: 2.0
+                            move:
+                                speed: 2.0
                             animationKey: walk
                     74ca53bf10b979fccda28376174d91ea: !ProjectZyheeda.BehaviorController,project_zyheeda_stride
                         Id: cd6e3c0f-8bb1-4757-9dc1-f2f6c1143f2d
