@@ -51,8 +51,8 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		this.agent.AddChild(new Entity { new AnimationComponent() });
 		this.moveController = new MockMoveController();
 
-		this.scene.Entities.Add(new Entity { this.moveController });
-		this.scene.Entities.Add(this.agent);
+		this.Scene.Entities.Add(new Entity { this.moveController });
+		this.Scene.Entities.Add(this.agent);
 
 		this.game.WaitFrames(1);
 	}
@@ -160,7 +160,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		this.game.Services.RemoveService<IAnimation>();
 
 		var moveComponent = new MoveController();
-		this.scene.Entities.Add(new Entity { moveComponent });
+		this.Scene.Entities.Add(new Entity { moveComponent });
 
 		var error = moveComponent
 			.PrepareCoroutineFor(this.agent)
@@ -174,7 +174,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		this.game.Services.RemoveService<IAnimation>();
 
 		var moveComponent = new MoveController();
-		this.scene.Entities.Add(new Entity { moveComponent });
+		this.Scene.Entities.Add(new Entity { moveComponent });
 
 		this.game.WaitFrames(1);
 
@@ -192,7 +192,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		this.agent.GetChild(0).RemoveAll<AnimationComponent>();
 
 		var moveComponent = new MoveController();
-		this.scene.Entities.Add(new Entity { moveComponent });
+		this.Scene.Entities.Add(new Entity { moveComponent });
 
 		this.game.WaitFrames(1);
 

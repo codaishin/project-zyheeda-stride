@@ -49,12 +49,12 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 		var box = new Entity { colliderComponent };
 		box.Transform.Position = new Vector3(0, 0, -10);
 
-		this.scene.Entities.Add(box);
+		this.Scene.Entities.Add(box);
 
 		this.game.WaitFrames(1);
 
-		this.scene.Entities.Add(new Entity { this.cameraComponent });
-		this.scene.Entities.Add(new Entity { this.getMousePosition });
+		this.Scene.Entities.Add(new Entity { this.cameraComponent });
+		this.Scene.Entities.Add(new Entity { this.getMousePosition });
 	}
 
 	[TearDown]
@@ -94,7 +94,7 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 	}
 
 	[Test]
-	public void Get_0_0_n5() {
+	public void Get00N5() {
 		_ = Mock.Get(this.game.Services.GetService<IInputManagerWrapper>())
 			.SetupGet(i => i.MousePosition)
 			.Returns(new Vector2(0.5f, 0.5f));
@@ -113,7 +113,7 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 	}
 
 	[Test]
-	public void Get_n5_5_n5() {
+	public void GetN55N5() {
 		_ = Mock.Get(this.game.Services.GetService<IInputManagerWrapper>())
 			.SetupGet(i => i.MousePosition)
 			.Returns(new Vector2(0.3f, 0.3f));
@@ -153,7 +153,7 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 
 		this.game.WaitFrames(1);
 
-		Assert.Throws<MissingService<IInputManagerWrapper>>(
+		_ = Assert.Throws<MissingService<IInputManagerWrapper>>(
 			() => this.getMousePosition.GetTarget()
 		);
 	}

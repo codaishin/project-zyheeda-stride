@@ -39,16 +39,16 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		this.game.Services.AddService<IInputManagerWrapper>(inputManagerWrapper);
 
-		this.scene.Entities.Add(
+		this.Scene.Entities.Add(
 			this.controllerEntity = new Entity { controller }
 		);
-		this.scene.Entities.Add(
+		this.Scene.Entities.Add(
 			this.behaviorEntity = new Entity { (EntityComponent)mBehavior.Object }
 		);
-		this.scene.Entities.Add(
+		this.Scene.Entities.Add(
 			this.getTargetEntity = new Entity { (EntityComponent)mGetTarget.Object }
 		);
-		this.scene.Entities.Add(
+		this.Scene.Entities.Add(
 			this.schedulerEntity = new Entity { (EntityComponent)mScheduler.Object }
 		);
 
@@ -140,7 +140,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 	[Test]
 	public void MissingGetTarget() {
 		var controller = this.controllerEntity.Get<MockController>();
-		_ = this.scene.Entities.Remove(controller.Entity);
+		_ = this.Scene.Entities.Remove(controller.Entity);
 
 		controller.getTarget.Entity = null;
 		controller.input.getAction = (_) => InputAction.Run;
@@ -159,7 +159,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 	[Test]
 	public void MissingBehavior() {
 		var controller = this.controllerEntity.Get<MockController>();
-		_ = this.scene.Entities.Remove(controller.Entity);
+		_ = this.Scene.Entities.Remove(controller.Entity);
 
 		controller.behavior.Entity = null;
 		controller.input.getAction = (_) => InputAction.Run;
@@ -178,7 +178,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 	[Test]
 	public void MissingScheduler() {
 		var controller = this.controllerEntity.Get<MockController>();
-		_ = this.scene.Entities.Remove(controller.Entity);
+		_ = this.Scene.Entities.Remove(controller.Entity);
 
 		controller.scheduler.Entity = null;
 		controller.input.getAction = (_) => InputAction.Run;
@@ -197,7 +197,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 	[Test]
 	public void MissingGetTargetAndBehavior() {
 		var controller = this.controllerEntity.Get<MockController>();
-		_ = this.scene.Entities.Remove(controller.Entity);
+		_ = this.Scene.Entities.Remove(controller.Entity);
 
 		controller.getTarget.Entity = null;
 		controller.behavior.Entity = null;

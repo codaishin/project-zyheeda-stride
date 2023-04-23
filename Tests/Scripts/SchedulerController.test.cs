@@ -14,7 +14,7 @@ public class SchedulerControllerTest : GameTestCollection {
 	[SetUp]
 	public void InitSchedulerController() {
 		this.schedulerController = new();
-		this.scene.Entities.Add(new Entity { this.schedulerController });
+		this.Scene.Entities.Add(new Entity { this.schedulerController });
 	}
 
 	[Test]

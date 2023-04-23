@@ -45,7 +45,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		this.game.Services.AddService(this.systemMessage);
 		this.game.Services.AddService(this.playerMessage);
 
-		this.scene.Entities.Add(new Entity { this.controller });
+		this.Scene.Entities.Add(new Entity { this.controller });
 
 		this.game.WaitFrames(2);
 	}
