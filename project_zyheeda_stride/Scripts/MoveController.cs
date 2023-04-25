@@ -48,7 +48,7 @@ public abstract class BaseMoveController<T> :
 			);
 
 
-		var agentAnimator = MoveController.AnimatorOnChildOf(agent);
+		var agentAnimator = BaseMoveController<AnimatedStraightMove>.AnimatorOnChildOf(agent);
 		return prepareCoroutine
 			.ApplyWeak(this.animation)
 			.ApplyWeak(agentAnimator);
