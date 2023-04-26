@@ -37,6 +37,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		this.game.WaitFrames(1);
 
+		this.game.Services.RemoveService<IInputManagerWrapper>();
 		this.game.Services.AddService<IInputManagerWrapper>(inputManagerWrapper);
 
 		this.Scene.Entities.Add(

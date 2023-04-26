@@ -25,6 +25,11 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 		// 	[M21:0 M22:0.2 M23:0 M24:0]
 		// 	[M31:0 M32:0 M33:-0.0010000999 M34:0]
 		// 	[M41:-0 M42:-0 M43: -0.0010000999 M44:1]
+		this.inputManagerWrapper = Mock.Of<IInputManagerWrapper>();
+		this.game.Services.RemoveService<IInputManagerWrapper>();
+		this.game.Services.AddService<IInputManagerWrapper>(this.inputManagerWrapper);
+
+		this.game.WaitFrames(2);
 
 		var viewProjection = new Matrix() {
 			Row1 = new Vector4(0.2f, 0, 0, 0),
@@ -37,8 +42,6 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 			ViewProjectionMatrix = viewProjection
 		};
 
-		this.inputManagerWrapper = Mock.Of<IInputManagerWrapper>();
-		this.game.Services.AddService<IInputManagerWrapper>(this.inputManagerWrapper);
 
 		this.getMousePosition = new GetMousePosition { camera = this.cameraComponent };
 
@@ -55,11 +58,6 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 
 		this.Scene.Entities.Add(new Entity { this.cameraComponent });
 		this.Scene.Entities.Add(new Entity { this.getMousePosition });
-	}
-
-	[TearDown]
-	public void RemoveInputManagerWrapper() {
-		this.game.Services.RemoveService<IInputManagerWrapper>();
 	}
 
 	[Test]
