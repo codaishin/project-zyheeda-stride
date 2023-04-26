@@ -1,23 +1,14 @@
 namespace ProjectZyheeda;
 
-using System;
 using Stride.Core;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 
 [DataContract]
-public class Move : IMove {
-	public static readonly string fallbackAnimationKey = "default";
-
+public class StraightMove : IMove {
 	public float speed;
-	public string animationKey;
 
-	public Move() {
-		this.speed = 0;
-		this.animationKey = "";
-	}
-
-	private Coroutine MoveTowards(TransformComponent agent, U<Vector3, Entity> target, IMove.FDelta delta) {
+	private Coroutine MoveTowards(TransformComponent agent, U<Vector3, Entity> target, FSpeedToDelta delta) {
 		var direction = target.Position() - agent.Position;
 
 		if (direction != Vector3.Zero) {
@@ -31,19 +22,15 @@ public class Move : IMove {
 		}
 	}
 
-	public FGetCoroutine PrepareCoroutineFor(Entity agent, Action<string> playAnimation, IMove.FDelta delta) {
+	public FGetCoroutine PrepareCoroutineFor(Entity agent, FSpeedToDelta delta) {
 		return (U<Vector3, Entity> target) => {
 			Coroutine run() {
-				playAnimation(this.animationKey);
 				foreach (var wait in this.MoveTowards(agent.Transform, target, delta)) {
 					yield return wait;
 				}
-				playAnimation(Move.fallbackAnimationKey);
 			};
 
-			void cancel() {
-				playAnimation(Move.fallbackAnimationKey);
-			};
+			void cancel() { };
 
 			return (run, cancel);
 		};

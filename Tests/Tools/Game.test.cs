@@ -43,7 +43,7 @@ public class TestGame {
 [TestFixture]
 public class GameTestCollection {
 	public readonly Game game = TestGame.Game;
-	public readonly Scene scene = TestGame.RootScene;
+	public Scene Scene { get; private set; } = TestGame.RootScene;
 	public Runner Tasks { get; private set; } = new();
 
 	public class Runner : StartupScript {
@@ -54,16 +54,17 @@ public class GameTestCollection {
 
 	[SetUp]
 	public void SetupRunner() {
+		var scene = new Scene();
+		TestGame.Game.SceneSystem.SceneInstance.RootScene.Children.Add(scene);
+		this.Scene = scene;
 		this.Tasks = new();
-		this.scene.Entities.Add(new Entity { this.Tasks });
+		this.Scene.Entities.Add(new Entity { this.Tasks });
 	}
 
 	[TearDown]
 	public void RemoveEntities() {
-		_ = this.scene.Entities.Remove(this.Tasks.Entity);
-		foreach (var entity in this.scene.Entities) {
-			_ = this.scene.Entities.Remove(entity);
-		}
+		_ = TestGame.Game.SceneSystem.SceneInstance.RootScene.Children.Remove(this.Scene);
+		this.Scene.Dispose();
 	}
 }
 
@@ -99,22 +100,6 @@ public class TestGameTests : GameTestCollection {
 		this.game.WaitFrames(1);
 
 		Assert.That(this.game.UpdateTime.FrameCount, Is.EqualTo(frame + 1));
-	}
-
-	[Test]
-	public void OnlyOneEntityA() {
-		var entity = new Entity();
-		TestGame.RootScene.Entities.Add(entity);
-
-		Assert.That(new[] { entity, this.Tasks.Entity }, Is.EquivalentTo(TestGame.RootScene.Entities));
-	}
-
-	[Test]
-	public void OnlyOneEntityB() {
-		var entity = new Entity();
-		TestGame.RootScene.Entities.Add(entity);
-
-		Assert.That(new[] { entity, this.Tasks.Entity }, Is.EquivalentTo(TestGame.RootScene.Entities));
 	}
 
 	[Test]
