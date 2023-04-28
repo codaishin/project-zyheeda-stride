@@ -7,7 +7,7 @@ using Stride.Core.MicroThreading;
 using Stride.Engine;
 
 public abstract class BaseProjectileController<TMove> :
-	AsyncScript,
+	ProjectZyheedaAsyncScript,
 	IProjectile
 	where TMove : IMove {
 

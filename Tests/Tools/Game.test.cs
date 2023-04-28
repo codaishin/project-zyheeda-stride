@@ -3,6 +3,7 @@ namespace Tests;
 using System;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using ProjectZyheeda;
 using Stride.Engine;
 
 [SetUpFixture]
@@ -65,6 +66,16 @@ public class GameTestCollection {
 	public void RemoveEntities() {
 		_ = TestGame.Game.SceneSystem.SceneInstance.RootScene.Children.Remove(this.Scene);
 		this.Scene.Dispose();
+	}
+
+	[TearDown]
+	public void RemoveEssentialServices() {
+		this.game.Services.RemoveService<IInputManagerWrapper>();
+		this.game.Services.RemoveService<IAnimation>();
+		this.game.Services.RemoveService<ISystemMessage>();
+		this.game.Services.RemoveService<IPlayerMessage>();
+		this.game.Services.RemoveService<IPrefabLoader>();
+		this.game.WaitFrames(1);
 	}
 }
 

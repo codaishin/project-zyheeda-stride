@@ -5,31 +5,18 @@ using System.Collections.Generic;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 
-public class BehaviorController : StartupScript, IBehavior {
-	private IMaybe<ISystemMessage> systemMessage = Maybe.None<ISystemMessage>();
-	private IMaybe<IPlayerMessage> playerMessage = Maybe.None<IPlayerMessage>();
+public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 	private U<SystemStr, PlayerStr> NoAgentMessage => new SystemStr(this.MissingField(nameof(this.agent)));
 	private FGetCoroutine getCoroutine;
 
 	public readonly EventReference<Reference<IEquipment>, IEquipment> equipment;
 	public readonly EventReference<Reference<Entity>, Entity> agent;
 
-	private void LogMessage(SystemStr message) {
-		this.systemMessage.Switch(
-			l => l.Log(message),
-			() => this.Log.Error($"missing system logger: {message.value}")
-		);
-	}
-
-	private void LogMessage(PlayerStr message) {
-		this.playerMessage.Switch(
-			l => l.Log(message),
-			() => this.Log.Error($"missing player logger: {message.value}")
-		);
-	}
-
 	private void LogMessage(U<SystemStr, PlayerStr> error) {
-		error.Switch(this.LogMessage, this.LogMessage);
+		error.Switch(
+			this.EssentialServices.systemMessage.Log,
+			this.EssentialServices.playerMessage.Log
+		);
 	}
 
 	private Either<Errors, Func<Entity, Either<Errors, FGetCoroutine>>> GetBehavior {
@@ -78,8 +65,6 @@ public class BehaviorController : StartupScript, IBehavior {
 	}
 
 	public override void Start() {
-		this.systemMessage = this.Game.Services.GetService<ISystemMessage>().ToMaybe();
-		this.playerMessage = this.Game.Services.GetService<IPlayerMessage>().ToMaybe();
 		this.UpdateBehavior();
 	}
 

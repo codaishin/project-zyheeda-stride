@@ -2,20 +2,17 @@ namespace ProjectZyheeda;
 
 using System;
 using System.Linq;
-using Stride.Engine;
 
-public abstract class BaseInputController<IInput> : SyncScript where IInput : ProjectZyheeda.IInput, new() {
-	private IInputManagerWrapper? inputWrapper;
+public abstract class BaseInputController<IInput> :
+	ProjectZyheedaSyncScript
+	where IInput :
+		ProjectZyheeda.IInput,
+		new() {
 
 	public readonly IInput input = new();
 	public Reference<IGetTarget> getTarget = new();
 	public Reference<IBehavior> behavior = new();
 	public Reference<IScheduler> scheduler = new();
-
-	public override void Start() {
-		var service = this.Services.GetService<IInputManagerWrapper>() ?? throw new MissingService<IInputManagerWrapper>();
-		this.inputWrapper = service;
-	}
 
 	private void RunBehavior(InputAction action) {
 		var runBehavior =
@@ -46,7 +43,7 @@ public abstract class BaseInputController<IInput> : SyncScript where IInput : Pr
 	}
 
 	public override void Update() {
-		var action = this.input.GetAction(this.inputWrapper!);
+		var action = this.input.GetAction(this.EssentialServices.inputManager);
 		if (action is InputAction.None) {
 			return;
 		}
