@@ -155,57 +155,6 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		Assert.That(error, Is.EqualTo($"Missing AnimationComponent on Agent ({nameof(SystemStr)})"));
 	}
 
-	[Test]
-	public void NoGetAnimationServiceBeforeStart() {
-		this.game.Services.RemoveService<IAnimation>();
-
-		var moveComponent = new MoveController();
-		this.Scene.Entities.Add(new Entity { moveComponent });
-
-		var error = moveComponent
-			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.ErrorsToString, _ => "no error, got actual behavior");
-
-		Assert.That(error, Is.EqualTo($"No IGetAnimation assigned ({nameof(SystemStr)})"));
-	}
-
-	[Test]
-	public void MissingGetAnimationService() {
-		this.game.Services.RemoveService<IAnimation>();
-
-		var moveComponent = new MoveController();
-		this.Scene.Entities.Add(new Entity { moveComponent });
-
-		this.game.WaitFrames(1);
-
-		var error = moveComponent
-			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.ErrorsToString, _ => "no error, got actual behavior");
-
-		Assert.That(error, Is.EqualTo($"Missing IGetAnimation Service ({nameof(SystemStr)})"));
-	}
-
-	[Test]
-	public void MissingGetAnimationServiceAndAnimationComponent() {
-		this.game.Services.RemoveService<IAnimation>();
-		this.agent.Name = "Agent";
-		this.agent.GetChild(0).RemoveAll<AnimationComponent>();
-
-		var moveComponent = new MoveController();
-		this.Scene.Entities.Add(new Entity { moveComponent });
-
-		this.game.WaitFrames(1);
-
-		var error = moveComponent
-			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.ErrorsToString, _ => "no error, got actual behavior");
-
-		Assert.Multiple(() => {
-			Assert.That(error, Contains.Substring($"Missing AnimationComponent on Agent ({nameof(SystemStr)})"));
-			Assert.That(error, Contains.Substring($"Missing AnimationComponent on Agent ({nameof(SystemStr)})"));
-		});
-	}
-
 	public void Dispose() {
 		GC.SuppressFinalize(this);
 	}

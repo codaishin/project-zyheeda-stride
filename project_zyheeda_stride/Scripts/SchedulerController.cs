@@ -4,9 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stride.Core.MicroThreading;
-using Stride.Engine;
 
-public class SchedulerController : StartupScript, IScheduler {
+public class SchedulerController : ProjectZyheedaStartupScript, IScheduler {
 	private readonly Queue<(Func<Coroutine>, Cancel)> queue = new();
 	private MicroThread? dequeueThread;
 	private Cancel? cancelExecution;

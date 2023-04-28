@@ -5,26 +5,25 @@ using Stride.Core.Mathematics;
 using Stride.Engine;
 using Stride.Physics;
 using GetTargetFn = System.Func<
-	IInputManagerWrapper,
+	Stride.Physics.Simulation,
 	System.Func<
-		Stride.Physics.Simulation,
+		Stride.Engine.CameraComponent,
 		System.Func<
-			Stride.Engine.CameraComponent,
+			IInputManagerWrapper,
 			IMaybe<U<Stride.Core.Mathematics.Vector3, Stride.Engine.Entity>>
 		>
 	>
 >;
 
-public class GetMousePosition : StartupScript, IGetTarget {
+public class GetMousePosition : ProjectZyheedaStartupScript, IGetTarget {
 	public CameraComponent? camera;
 
-	private IMaybe<IInputManagerWrapper> inputManagerWrapper = Maybe.None<IInputManagerWrapper>();
 	private IMaybe<Simulation> simulation = Maybe.None<Simulation>();
 
 	private static readonly GetTargetFn getTarget =
-		(IInputManagerWrapper inputManagerWrapper) =>
 		(Simulation simulation) =>
-		(CameraComponent camera) => {
+		(CameraComponent camera) =>
+		(IInputManagerWrapper inputManagerWrapper) => {
 			var invViewProj = Matrix.Invert(camera.ViewProjectionMatrix);
 			var mousePos = inputManagerWrapper.MousePosition;
 			var nearPos = new Vector3((mousePos.X * 2f) - 1f, 1f - (mousePos.Y * 2f), 0f);
@@ -44,9 +43,6 @@ public class GetMousePosition : StartupScript, IGetTarget {
 		};
 
 	public override void Start() {
-		this.inputManagerWrapper = this.Game.Services
-			.GetService<IInputManagerWrapper>()
-			.ToMaybe();
 		this.simulation = this
 			.GetSimulation()
 			.ToMaybe();
@@ -54,12 +50,11 @@ public class GetMousePosition : StartupScript, IGetTarget {
 
 	public IMaybe<U<Vector3, Entity>> GetTarget() {
 		return GetMousePosition.getTarget
-			.Apply(this.inputManagerWrapper.MaybeToEither(this.NoService<IInputManagerWrapper>()))
 			.Apply(this.simulation.MaybeToEither(this.NoService<Simulation>()))
 			.Apply(this.camera.ToEither(this.NoField(nameof(this.camera))))
 			.Switch(
 				error => throw error,
-				value => value
+				func => func(this.EssentialServices.inputManager)
 			);
 	}
 

@@ -3,7 +3,7 @@ namespace ProjectZyheeda;
 using System;
 using System.Collections.Generic;
 using Stride.Core.Mathematics;
-using Stride.Engine;
+using Stride.Games;
 using Stride.Input;
 
 public enum InputKeys {
@@ -34,7 +34,7 @@ public class InputManagerWrapper : IInputManagerWrapper {
 			: throw new ArgumentException($"mapping from custom key ({key}) to stride key not configured");
 	}
 
-	private readonly Game game;
+	private readonly IGame game;
 	private InputManager? inputManager;
 
 	private InputManager InputManager => this.inputManager is null
@@ -43,7 +43,7 @@ public class InputManagerWrapper : IInputManagerWrapper {
 
 	public Vector2 MousePosition => this.InputManager.Mouse.Position;
 
-	public InputManagerWrapper(Game game) {
+	public InputManagerWrapper(IGame game) {
 		this.game = game;
 	}
 

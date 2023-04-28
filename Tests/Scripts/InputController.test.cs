@@ -58,11 +58,6 @@ public class TestInputController : GameTestCollection, IDisposable {
 		controller.scheduler.Entity = this.schedulerEntity;
 	}
 
-	[TearDown]
-	public void RemoveInputWrapper() {
-		this.game.Services.RemoveService<IInputManagerWrapper>();
-	}
-
 	[Test]
 	public void RunBehaviorWithTarget() {
 		static IEnumerable<IWait> run() {

@@ -54,7 +54,7 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 
 		this.Scene.Entities.Add(box);
 
-		this.game.WaitFrames(1);
+		this.game.WaitFrames(2);
 
 		this.Scene.Entities.Add(new Entity { this.cameraComponent });
 		this.Scene.Entities.Add(new Entity { this.getMousePosition });
@@ -76,7 +76,7 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 		var farVector = Vector3.Transform(farPos, invViewProj);
 		farVector /= farVector.W;
 
-		this.game.WaitFrames(1);
+		this.game.WaitFrames(2);
 
 		var hit = this.game
 			.SceneSystem
@@ -97,7 +97,7 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 			.SetupGet(i => i.MousePosition)
 			.Returns(new Vector2(0.5f, 0.5f));
 
-		this.game.WaitFrames(1);
+		this.game.WaitFrames(2);
 
 		this.getMousePosition
 			.GetTarget()
@@ -116,7 +116,7 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 			.SetupGet(i => i.MousePosition)
 			.Returns(new Vector2(0.3f, 0.3f));
 
-		this.game.WaitFrames(1);
+		this.game.WaitFrames(2);
 
 		this.getMousePosition
 			.GetTarget()
@@ -135,7 +135,7 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 			.SetupGet(i => i.MousePosition)
 			.Returns(new Vector2(0, 0));
 
-		this.game.WaitFrames(1);
+		this.game.WaitFrames(2);
 
 		this.getMousePosition
 			.GetTarget()
@@ -146,21 +146,10 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 	}
 
 	[Test]
-	public void MissingInputManagerWrapper() {
-		this.game.Services.RemoveService<IInputManagerWrapper>();
-
-		this.game.WaitFrames(1);
-
-		_ = Assert.Throws<MissingService<IInputManagerWrapper>>(
-			() => this.getMousePosition.GetTarget()
-		);
-	}
-
-	[Test]
 	public void MissingCamera() {
 		this.getMousePosition.camera = null;
 
-		this.game.WaitFrames(1);
+		this.game.WaitFrames(2);
 
 		var error = Assert.Throws<MissingField>(
 			() => this.getMousePosition.GetTarget()
