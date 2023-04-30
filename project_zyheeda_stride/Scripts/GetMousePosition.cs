@@ -9,7 +9,7 @@ using GetTargetFn = System.Func<
 	System.Func<
 		Stride.Engine.CameraComponent,
 		System.Func<
-			IInputManagerWrapper,
+			IInputWrapper,
 			IMaybe<U<Stride.Core.Mathematics.Vector3, Stride.Engine.Entity>>
 		>
 	>
@@ -23,7 +23,7 @@ public class GetMousePosition : ProjectZyheedaStartupScript, IGetTarget {
 	private static readonly GetTargetFn getTarget =
 		(Simulation simulation) =>
 		(CameraComponent camera) =>
-		(IInputManagerWrapper inputManagerWrapper) => {
+		(IInputWrapper inputManagerWrapper) => {
 			var invViewProj = Matrix.Invert(camera.ViewProjectionMatrix);
 			var mousePos = inputManagerWrapper.MousePosition;
 			var nearPos = new Vector3((mousePos.X * 2f) - 1f, 1f - (mousePos.Y * 2f), 0f);
@@ -54,7 +54,7 @@ public class GetMousePosition : ProjectZyheedaStartupScript, IGetTarget {
 			.Apply(this.camera.ToEither(this.NoField(nameof(this.camera))))
 			.Switch(
 				error => throw error,
-				func => func(this.EssentialServices.inputManager)
+				func => func(this.EssentialServices.inputWrapper)
 			);
 	}
 
