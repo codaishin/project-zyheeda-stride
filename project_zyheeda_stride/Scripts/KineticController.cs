@@ -6,12 +6,13 @@ using Stride.Core.Mathematics;
 using Stride.Core.MicroThreading;
 using Stride.Engine;
 
-public abstract class BaseProjectileController<TMove> :
+public abstract class BaseKineticController<TMove> :
 	ProjectZyheedaAsyncScript,
 	IProjectile
 	where TMove : IMove {
 
 	public PhysicsComponent? collider;
+	public float baseRange;
 
 	public readonly TMove move;
 	public event Action<PhysicsComponent>? OnHit;
@@ -19,22 +20,19 @@ public abstract class BaseProjectileController<TMove> :
 	private MicroThread? thread;
 	private Action cancel = () => { };
 
-	public BaseProjectileController(TMove move) : base() {
+	public BaseKineticController(TMove move) : base() {
 		this.move = move;
 	}
 
-	private void SystemLog(IMaybe<ISystemMessage> systemLogger, string message) {
-		systemLogger.Switch(
-			l => l.Log(new SystemStr(message)),
-			() => this.Log.Error(message)
-		);
+	private void SystemLog(string message) {
+		this.EssentialServices.systemMessage.Log(new SystemStr(message));
 	}
 
 	public override async Task Execute() {
 		var systemLogger = this.Game.Services.GetService<ISystemMessage>().ToMaybe();
 
 		if (this.collider is null) {
-			this.SystemLog(systemLogger, this.MissingField(nameof(this.collider)));
+			this.SystemLog(this.MissingField(nameof(this.collider)));
 			return;
 		}
 
@@ -46,13 +44,14 @@ public abstract class BaseProjectileController<TMove> :
 		}
 	}
 
-	private FSpeedToDelta ScaleSpeed(float factor) {
-		return (speed) => (float)this.Game.UpdateTime.Elapsed.TotalSeconds * speed * factor;
+	private float Delta(float speed) {
+		return (float)this.Game.UpdateTime.Elapsed.TotalSeconds * speed;
 	}
 
-	public void Follow(Vector3 start, U<Vector3, Entity> target, float speedFactor) {
-		var getCoroutine = this.move.PrepareCoroutineFor(this.Entity, this.ScaleSpeed(speedFactor));
-		(var run, this.cancel) = getCoroutine(target);
+	public void Follow(Vector3 start, U<Vector3, Entity> target, float rangeMultiplier) {
+		var getCoroutine = this.move.PrepareCoroutineFor(this.Entity, this.Delta);
+		var scaledDirection = (target.Position() - start) * this.baseRange * rangeMultiplier;
+		(var run, this.cancel) = getCoroutine(start + scaledDirection);
 
 		this.thread?.Cancel();
 		this.thread = this.Script.AddTask(async () => {
@@ -64,6 +63,6 @@ public abstract class BaseProjectileController<TMove> :
 	}
 }
 
-public class ProjectileController : BaseProjectileController<StraightMove> {
-	public ProjectileController() : base(new StraightMove()) { }
+public class KineticController : BaseKineticController<StraightMove> {
+	public KineticController() : base(new StraightMove()) { }
 }
