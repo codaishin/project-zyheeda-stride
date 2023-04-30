@@ -34,8 +34,9 @@ public abstract class BaseInputController<TInputStream> :
 					action is InputAction.Run
 						? scheduler.Run
 						: scheduler.Enqueue;
-				var m = getTarget.GetTarget();
-				m.Switch(
+				getTarget
+					.GetTarget()
+					.Switch(
 						target => deploy(behavior.GetCoroutine(target)),
 						() => { }
 					);
