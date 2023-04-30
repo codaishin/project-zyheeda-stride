@@ -3,6 +3,15 @@ namespace ProjectZyheeda;
 using System.Threading.Tasks;
 using Stride.Core;
 
+public enum InputActivation { OnPress, OnRelease }
+
+public enum InputKeys {
+	None = default,
+	ShiftLeft,
+	MouseLeft,
+	MouseRight,
+}
+
 [DataContract]
 public class InputStream : IInputStream {
 	public InputKeys activationKey;

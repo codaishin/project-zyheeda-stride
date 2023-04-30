@@ -19,7 +19,7 @@ public class TestEssentialServices {
 			.Setup(g => g.Services)
 			.Returns(service);
 
-		service.AddService(Mock.Of<IInputManagerWrapper>());
+		service.AddService(Mock.Of<IInputWrapper>());
 		service.AddService(Mock.Of<IAnimation>());
 		service.AddService(Mock.Of<ISystemMessage>());
 		service.AddService(Mock.Of<IPlayerMessage>());
@@ -34,7 +34,7 @@ public class TestEssentialServices {
 		var essentialServices = new EssentialServices(this.game);
 
 		Assert.Multiple(() => {
-			Assert.That(essentialServices.inputManager, Is.SameAs(this.game.Services.GetService<IInputManagerWrapper>()));
+			Assert.That(essentialServices.inputWrapper, Is.SameAs(this.game.Services.GetService<IInputWrapper>()));
 			Assert.That(essentialServices.animation, Is.SameAs(this.game.Services.GetService<IAnimation>()));
 			Assert.That(essentialServices.systemMessage, Is.SameAs(this.game.Services.GetService<ISystemMessage>()));
 			Assert.That(essentialServices.playerMessage, Is.SameAs(this.game.Services.GetService<IPlayerMessage>()));
@@ -45,11 +45,11 @@ public class TestEssentialServices {
 
 	[Test]
 	public void MissingInputManager() {
-		this.game.Services.RemoveService<IInputManagerWrapper>();
+		this.game.Services.RemoveService<IInputWrapper>();
 		var essentialServices = new EssentialServices(this.game);
 		Assert.Multiple(() => {
-			Assert.That(essentialServices.inputManager, Is.InstanceOf<InputManagerWrapper>());
-			Assert.That(this.game.Services.GetSafeServiceAs<IInputManagerWrapper>, Is.SameAs(essentialServices.inputManager));
+			Assert.That(essentialServices.inputWrapper, Is.InstanceOf<InputWrapper>());
+			Assert.That(this.game.Services.GetSafeServiceAs<IInputWrapper>, Is.SameAs(essentialServices.inputWrapper));
 		});
 	}
 

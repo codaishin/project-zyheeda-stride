@@ -8,7 +8,7 @@ using Stride.Input;
 
 public readonly struct EssentialServices {
 
-	public readonly IInputManagerWrapper inputManager;
+	public readonly IInputWrapper inputWrapper;
 	public readonly IAnimation animation;
 	public readonly ISystemMessage systemMessage;
 	public readonly IPlayerMessage playerMessage;
@@ -16,7 +16,7 @@ public readonly struct EssentialServices {
 	public readonly IInputDispatcher inputDispatcher;
 
 	public EssentialServices(IGame game) {
-		this.inputManager = EssentialServices.GetOrCreate<IInputManagerWrapper>(game, () => new InputManagerWrapper(game));
+		this.inputWrapper = EssentialServices.GetOrCreate<IInputWrapper>(game, () => new InputWrapper(game));
 		this.animation = EssentialServices.GetOrCreate<IAnimation, Animation>(game);
 		this.systemMessage = EssentialServices.GetOrCreate<ISystemMessage, SystemMessage>(game);
 		this.playerMessage = EssentialServices.GetOrCreate<IPlayerMessage>(game, () => new PlayerMessage(game));

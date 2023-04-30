@@ -2,7 +2,7 @@ namespace Tests;
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
@@ -10,52 +10,76 @@ using Stride.Core.Mathematics;
 using Stride.Engine;
 
 public class TestInputController : GameTestCollection, IDisposable {
-	private class MockInput : IInput {
-		public Func<IInputManagerWrapper, InputAction> getAction = (_) => InputAction.None;
-
-		public InputAction GetAction(IInputManagerWrapper input) {
-			return this.getAction(input);
-		}
+	private class MockController : BaseInputController<IInputStream> {
+		public MockController() : base(Mock.Of<IInputStream>()) { }
 	}
 
-	private class MockController : BaseInputController<MockInput> { }
-
-	private Entity controllerEntity = new();
-	private Entity behaviorEntity = new();
-	private Entity getTargetEntity = new();
-	private Entity schedulerEntity = new();
+	private MockController controller = new();
+	private IBehavior behavior = Mock.Of<IBehavior>();
+	private IGetTarget getTarget = Mock.Of<IGetTarget>();
+	private IScheduler scheduler = Mock.Of<IScheduler>();
+	private List<TaskCompletionSource<InputAction>> newActionFnTaskTokens = new();
+	private ISystemMessage systemMessage = Mock.Of<ISystemMessage>();
 
 	[SetUp]
 	public void Setup() {
-		var inputManagerWrapper = Mock.Of<IInputManagerWrapper>();
-		var mGetTarget = new Mock<EntityComponent>().As<IGetTarget>();
-		var mBehavior = new Mock<EntityComponent>().As<IBehavior>();
-		var mScheduler = new Mock<EntityComponent>().As<IScheduler>();
-		var controller = new MockController();
+		var newActionCallCount = 0;
+		var dispatcher = Mock.Of<IInputDispatcher>();
+		this.controller = new MockController();
 
-		Mock.Get(inputManagerWrapper).SetReturnsDefault<bool>(false);
+		this.behavior = new Mock<EntityComponent>().As<IBehavior>().Object;
+		this.getTarget = new Mock<EntityComponent>().As<IGetTarget>().Object;
+		this.scheduler = new Mock<EntityComponent>().As<IScheduler>().Object;
+		this.newActionFnTaskTokens = new List<TaskCompletionSource<InputAction>> {
+			new TaskCompletionSource<InputAction>(),
+			new TaskCompletionSource<InputAction>(),
+			new TaskCompletionSource<InputAction>(),
+			new TaskCompletionSource<InputAction>(),
+			new TaskCompletionSource<InputAction>(),
+		};
+
+		_ = Mock
+			.Get(this.controller.input)
+			.Setup(i => i.NewAction())
+			.Returns(() => this.newActionFnTaskTokens[newActionCallCount++].Task);
+
+		this.game.Services.RemoveService<ISystemMessage>();
+		this.game.Services.AddService(this.systemMessage = Mock.Of<ISystemMessage>());
+		this.game.Services.RemoveService<IInputDispatcher>();
+		this.game.Services.AddService(dispatcher);
+
+		this.Scene.Entities.Add(new Entity { this.controller });
+		this.Scene.Entities.Add(this.controller.behavior.Entity = new Entity { (EntityComponent)this.behavior });
+		this.Scene.Entities.Add(this.controller.getTarget.Entity = new Entity { (EntityComponent)this.getTarget });
+		this.Scene.Entities.Add(this.controller.scheduler.Entity = new Entity { (EntityComponent)this.scheduler });
+
+		this.game.WaitFrames(2);
+	}
+
+	[Test]
+	public void AddInputStreamToDispatcher() {
+		Mock
+			.Get(this.game.Services.GetService<IInputDispatcher>())
+			.Verify(d => d.Add(this.controller.input), Times.Once);
+	}
+
+	[Test]
+	public void RemoveInputStreamFromDispatcher() {
+		_ = this.Scene.Entities.Remove(this.controller.Entity);
 
 		this.game.WaitFrames(1);
 
-		this.game.Services.RemoveService<IInputManagerWrapper>();
-		this.game.Services.AddService<IInputManagerWrapper>(inputManagerWrapper);
+		this.Scene.Entities.Add(this.controller.Entity);
 
-		this.Scene.Entities.Add(
-			this.controllerEntity = new Entity { controller }
-		);
-		this.Scene.Entities.Add(
-			this.behaviorEntity = new Entity { (EntityComponent)mBehavior.Object }
-		);
-		this.Scene.Entities.Add(
-			this.getTargetEntity = new Entity { (EntityComponent)mGetTarget.Object }
-		);
-		this.Scene.Entities.Add(
-			this.schedulerEntity = new Entity { (EntityComponent)mScheduler.Object }
-		);
+		this.game.WaitFrames(1);
 
-		controller.getTarget.Entity = this.getTargetEntity;
-		controller.behavior.Entity = this.behaviorEntity;
-		controller.scheduler.Entity = this.schedulerEntity;
+		_ = this.Scene.Entities.Remove(this.controller.Entity);
+
+		this.game.WaitFrames(1);
+
+		Mock
+			.Get(this.game.Services.GetService<IInputDispatcher>())
+			.Verify(d => d.Remove(this.controller.input), Times.Exactly(2));
 	}
 
 	[Test]
@@ -64,26 +88,45 @@ public class TestInputController : GameTestCollection, IDisposable {
 			yield break;
 		}
 
-		var controller = this.controllerEntity.Get<MockController>();
-		var getTarget = this.getTargetEntity.Components.OfType<IGetTarget>().First();
-		var behavior = this.behaviorEntity.Components.OfType<IBehavior>().First();
 		(Func<IEnumerable<IWait>>, Action) execution = (run, () => { });
-		var calls = 0;
 
-		controller.input.getAction = (_) => calls++ == 0 ? InputAction.Run : InputAction.None;
-
-		_ = Mock.Get(getTarget)
+		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())
 			.Returns(Maybe.Some<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
-		_ = Mock.Get(behavior)
+		_ = Mock.Get(this.behavior)
 			.Setup(c => c.GetCoroutine(new Vector3(1, 2, 3)))
 			.Returns(execution);
+		this.newActionFnTaskTokens[0].SetResult(InputAction.Run);
 
-		this.game.WaitFrames(2);
+		this.game.WaitFrames(1);
 
 		Mock
-			.Get(this.schedulerEntity.Components.OfType<IScheduler>().First())
+			.Get(this.scheduler)
 			.Verify(b => b.Run(execution), Times.Once);
+	}
+
+	[Test]
+	public void RunBehaviorWithTargetTwice() {
+		static IEnumerable<IWait> run() {
+			yield break;
+		}
+
+		(Func<IEnumerable<IWait>>, Action) execution = (run, () => { });
+
+		_ = Mock.Get(this.getTarget)
+			.Setup(c => c.GetTarget())
+			.Returns(Maybe.Some<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
+		_ = Mock.Get(this.behavior)
+			.Setup(c => c.GetCoroutine(new Vector3(1, 2, 3)))
+			.Returns(execution);
+		this.newActionFnTaskTokens[0].SetResult(InputAction.Run);
+		this.newActionFnTaskTokens[1].SetResult(InputAction.Run);
+
+		this.game.WaitFrames(1);
+
+		Mock
+			.Get(this.scheduler)
+			.Verify(b => b.Run(execution), Times.Exactly(2));
 	}
 
 	[Test]
@@ -92,122 +135,103 @@ public class TestInputController : GameTestCollection, IDisposable {
 			yield break;
 		}
 
-		var controller = this.controllerEntity.Get<MockController>();
-		var getTarget = this.getTargetEntity.Components.OfType<IGetTarget>().First();
-		var behavior = this.behaviorEntity.Components.OfType<IBehavior>().First();
 		(Func<IEnumerable<IWait>>, Action) execution = (run, () => { });
-		var calls = 0;
 
-		controller.input.getAction = (_) => calls++ == 0 ? InputAction.Chain : InputAction.None;
-
-		_ = Mock.Get(getTarget)
+		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())
 			.Returns(Maybe.Some<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
-		_ = Mock.Get(behavior)
+		_ = Mock.Get(this.behavior)
 			.Setup(c => c.GetCoroutine(new Vector3(1, 2, 3)))
 			.Returns(execution);
+		this.newActionFnTaskTokens[0].SetResult(InputAction.Chain);
 
-		this.game.WaitFrames(2);
+		this.game.WaitFrames(1);
 
 		Mock
-			.Get(this.schedulerEntity.Components.OfType<IScheduler>().First())
+			.Get(this.scheduler)
 			.Verify(b => b.Enqueue(execution), Times.Once);
 	}
 
 	[Test]
 	public void DoNotRunBehaviorWithNoTarget() {
-		var controller = this.controllerEntity.Get<MockController>();
-		var getTarget = this.getTargetEntity.Components.OfType<IGetTarget>().First();
-		var calls = 0;
-
-		controller.input.getAction = (_) => calls++ == 0 ? InputAction.Run : InputAction.None;
-
-		_ = Mock.Get(getTarget)
+		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())
 			.Returns(Maybe.None<U<Vector3, Entity>>());
+		this.newActionFnTaskTokens[0].SetResult(InputAction.Chain);
 
-		this.game.WaitFrames(2);
+		this.game.WaitFrames(1);
 
 		Mock
-			.Get(this.behaviorEntity.Components.OfType<IBehavior>().First())
+			.Get(this.behavior)
 			.Verify(b => b.GetCoroutine(It.IsAny<U<Vector3, Entity>>()), Times.Never);
 	}
 
 	[Test]
 	public void MissingGetTarget() {
-		var controller = this.controllerEntity.Get<MockController>();
-		_ = this.Scene.Entities.Remove(controller.Entity);
+		_ = this.Scene.Entities.Remove(this.controller.Entity);
 
-		controller.getTarget.Entity = null;
-		controller.input.getAction = (_) => InputAction.Run;
+		this.controller.getTarget.Entity = null;
 
-		controller.Start();
+		this.Scene.Entities.Add(this.controller.Entity);
 
-		Assert.Multiple(() => {
-			var error = Assert.Throws<MissingField>(controller.Update);
-			Assert.That(
-				error?.ToString(),
-				Does.Contain(new MissingField(controller, nameof(controller.getTarget)).ToString())
-			);
-		});
+		this.game.WaitFrames(2);
+
+		Mock
+			.Get(this.systemMessage)
+			.Verify(s => s.Log(new SystemStr(this.controller.MissingField(nameof(this.controller.getTarget)))), Times.Once);
 	}
 
 	[Test]
 	public void MissingBehavior() {
-		var controller = this.controllerEntity.Get<MockController>();
-		_ = this.Scene.Entities.Remove(controller.Entity);
+		_ = this.Scene.Entities.Remove(this.controller.Entity);
 
-		controller.behavior.Entity = null;
-		controller.input.getAction = (_) => InputAction.Run;
+		this.controller.behavior.Entity = null;
 
-		controller.Start();
+		this.Scene.Entities.Add(this.controller.Entity);
 
-		Assert.Multiple(() => {
-			var error = Assert.Throws<MissingField>(controller.Update);
-			Assert.That(
-				error?.ToString(),
-				Does.Contain(new MissingField(controller, nameof(controller.behavior)).ToString())
-			);
-		});
+		this.game.WaitFrames(2);
+
+		Mock
+			.Get(this.systemMessage)
+			.Verify(s => s.Log(new SystemStr(this.controller.MissingField(nameof(this.controller.behavior)))), Times.Once);
 	}
 
 	[Test]
 	public void MissingScheduler() {
-		var controller = this.controllerEntity.Get<MockController>();
-		_ = this.Scene.Entities.Remove(controller.Entity);
+		_ = this.Scene.Entities.Remove(this.controller.Entity);
 
-		controller.scheduler.Entity = null;
-		controller.input.getAction = (_) => InputAction.Run;
+		this.controller.scheduler.Entity = null;
 
-		controller.Start();
+		this.Scene.Entities.Add(this.controller.Entity);
 
-		Assert.Multiple(() => {
-			var error = Assert.Throws<MissingField>(controller.Update);
-			Assert.That(
-				error?.ToString(),
-				Does.Contain(new MissingField(controller, nameof(controller.scheduler)).ToString())
-			);
-		});
+		this.game.WaitFrames(2);
+
+		Mock
+			.Get(this.systemMessage)
+			.Verify(s => s.Log(new SystemStr(this.controller.MissingField(nameof(this.controller.scheduler)))), Times.Once);
 	}
 
 	[Test]
 	public void MissingGetTargetAndBehavior() {
-		var controller = this.controllerEntity.Get<MockController>();
-		_ = this.Scene.Entities.Remove(controller.Entity);
+		_ = this.Scene.Entities.Remove(this.controller.Entity);
 
-		controller.getTarget.Entity = null;
-		controller.behavior.Entity = null;
-		controller.input.getAction = (_) => InputAction.Run;
+		this.controller.getTarget.Entity = null;
+		this.controller.behavior.Entity = null;
+		this.controller.scheduler.Entity = null;
 
-		controller.Start();
+		this.Scene.Entities.Add(this.controller.Entity);
 
-		Assert.Multiple(() => {
-			var error = Assert.Throws<MissingField>(controller.Update);
-			Assert.That(
-				error?.ToString(),
-				Does.Contain(new MissingField(controller, nameof(controller.getTarget), nameof(controller.behavior)).ToString())
-			);
-		});
+		this.game.WaitFrames(2);
+
+		Mock
+			.Get(this.systemMessage)
+			.Verify(s => s.Log(new SystemStr(this.controller.MissingField(nameof(this.controller.getTarget)))), Times.Once);
+		Mock
+			.Get(this.systemMessage)
+			.Verify(s => s.Log(new SystemStr(this.controller.MissingField(nameof(this.controller.behavior)))), Times.Once);
+		Mock
+			.Get(this.systemMessage)
+			.Verify(s => s.Log(new SystemStr(this.controller.MissingField(nameof(this.controller.scheduler)))), Times.Once);
 	}
 
 	public void Dispose() {

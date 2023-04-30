@@ -70,7 +70,7 @@ public class GameTestCollection {
 
 	[TearDown]
 	public void RemoveEssentialServices() {
-		this.game.Services.RemoveService<IInputManagerWrapper>();
+		this.game.Services.RemoveService<IInputWrapper>();
 		this.game.Services.RemoveService<IAnimation>();
 		this.game.Services.RemoveService<ISystemMessage>();
 		this.game.Services.RemoveService<IPlayerMessage>();
