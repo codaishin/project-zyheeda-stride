@@ -9,12 +9,12 @@ using Stride.Core.Mathematics;
 using Stride.Engine;
 using Stride.Physics;
 
-public class TestProjectileController : GameTestCollection {
-	private class MockProjectileController : BaseProjectileController<IMove> {
-		public MockProjectileController() : base(Mock.Of<IMove>()) { }
+public class TestKineticController : GameTestCollection {
+	private class MockKineticController : BaseKineticController<IMove> {
+		public MockKineticController(IMove move) : base(move) { }
 	}
 
-	private MockProjectileController projectileController = new();
+	private MockKineticController kineticController = new(move: Mock.Of<IMove>());
 	private PhysicsComponent collider = new RigidbodyComponent();
 	private FGetCoroutine getCoroutine = Mock.Of<FGetCoroutine>();
 	private ISystemMessage systemMessage = Mock.Of<ISystemMessage>();
@@ -31,7 +31,7 @@ public class TestProjectileController : GameTestCollection {
 			IsKinematic = true,
 			ColliderShape = new SphereColliderShape(is2D: false, radiusParam: 1f)
 		};
-		this.projectileController = new() {
+		this.kineticController = new(move: Mock.Of<IMove>()) {
 			collider = this.collider,
 		};
 		this.getCoroutine = Mock.Of<FGetCoroutine>();
@@ -42,23 +42,23 @@ public class TestProjectileController : GameTestCollection {
 			.SetReturnsDefault<(Func<IEnumerable<IWait>>, Action)>(coroutine);
 
 		Mock
-			.Get(this.projectileController.move)
+			.Get(this.kineticController.move)
 			.SetReturnsDefault<FGetCoroutine>(this.getCoroutine);
 
 		this.Scene.Entities.Add(new Entity{
 			this.collider,
-			this.projectileController,
+			this.kineticController,
 		});
 		this.game.WaitFrames(1);
 	}
 
 	[Test]
 	public void PreparedCoroutineEntity() {
-		this.projectileController.Follow(new Vector3(1, 2, 3), new Vector3(1, 1, 1), 42f);
+		this.kineticController.Follow(new Vector3(1, 2, 3), new Vector3(1, 1, 1), 42f);
 
 		Mock
-			.Get(this.projectileController.move)
-			.Verify(m => m.PrepareCoroutineFor(this.projectileController.Entity, It.IsAny<FSpeedToDelta>()), Times.Once);
+			.Get(this.kineticController.move)
+			.Verify(m => m.PrepareCoroutineFor(this.kineticController.Entity, It.IsAny<FSpeedToDelta>()), Times.Once);
 	}
 
 	[Test]
@@ -66,17 +66,17 @@ public class TestProjectileController : GameTestCollection {
 		var speedToDelta = null as FSpeedToDelta;
 
 		_ = Mock
-			.Get(this.projectileController.move)
+			.Get(this.kineticController.move)
 			.Setup(m => m.PrepareCoroutineFor(It.IsAny<Entity>(), It.IsAny<FSpeedToDelta>()))
 			.Returns<Entity, FSpeedToDelta>((_, _speedToDelta) => {
 				speedToDelta = _speedToDelta;
 				return _ => (() => Array.Empty<IWait>(), Mock.Of<Action>());
 			});
 
-		this.projectileController.Follow(new Vector3(1, 2, 3), new Vector3(1, 1, 1), 42f);
+		this.kineticController.Follow(new Vector3(1, 2, 3), new Vector3(1, 1, 1), 42f);
 
 		var delta = (float)this.game.UpdateTime.Elapsed.TotalSeconds;
-		Assert.That(speedToDelta!(3), Is.EqualTo(delta * 3 * 42));
+		Assert.That(speedToDelta!(3), Is.EqualTo(delta * 3));
 	}
 
 	[Test]
@@ -84,47 +84,60 @@ public class TestProjectileController : GameTestCollection {
 		var speedToDelta = null as FSpeedToDelta;
 
 		_ = Mock
-			.Get(this.projectileController.move)
+			.Get(this.kineticController.move)
 			.Setup(m => m.PrepareCoroutineFor(It.IsAny<Entity>(), It.IsAny<FSpeedToDelta>()))
 			.Returns<Entity, FSpeedToDelta>((_, _speedToDelta) => {
 				speedToDelta = _speedToDelta;
 				return _ => (() => Array.Empty<IWait>(), Mock.Of<Action>());
 			});
 
-		this.projectileController.Follow(new Vector3(1, 2, 3), new Vector3(1, 1, 1), 42f);
+		this.kineticController.Follow(new Vector3(1, 2, 3), new Vector3(1, 1, 1), 42f);
 
 		this.game.WaitFrames(3);
 
 		var delta = (float)this.game.UpdateTime.Elapsed.TotalSeconds;
-		Assert.That(speedToDelta!(3), Is.EqualTo(delta * 3 * 42));
+		Assert.That(speedToDelta!(10), Is.EqualTo(delta * 10));
 	}
 
 	[Test]
 	public void SetStartingPosition() {
-		this.projectileController.Follow(new Vector3(1, 2, 3), new Vector3(3, 2, 1), 1f);
+		this.kineticController.Follow(new Vector3(1, 2, 3), new Vector3(3, 2, 1), 1f);
 
 		this.game.WaitFrames(1);
 
-		var entityPosition = this.projectileController.Entity.Transform.Position;
+		var entityPosition = this.kineticController.Entity.Transform.Position;
 		Assert.That(entityPosition, Is.EqualTo(new Vector3(1, 2, 3)));
 	}
 
 	[Test]
-	public void UseGetCoroutine() {
-		this.projectileController.Follow(new Vector3(1, 2, 3), new Vector3(3, 2, 1), 42f);
+	public void UseGetCoroutineWithAdjustedTarget() {
+		this.kineticController.baseRange = 10;
+		this.kineticController.Follow(new Vector3(1, 2, 3), new Vector3(2, 3, 4), 1);
 
 		this.game.WaitFrames(1);
 
 		Mock
 			.Get(this.getCoroutine)
-			.Verify(getCoroutine => getCoroutine(new Vector3(3, 2, 1)), Times.Once);
+			.Verify(getCoroutine => getCoroutine(new Vector3(1, 2, 3) + new Vector3(10, 10, 10)), Times.Once);
+	}
+
+	[Test]
+	public void UseGetCoroutineWithAdjustedTargetScaledByRangeMultiplier() {
+		this.kineticController.baseRange = 10;
+		this.kineticController.Follow(new Vector3(1, 2, 3), new Vector3(2, 3, 4), 5);
+
+		this.game.WaitFrames(1);
+
+		Mock
+			.Get(this.getCoroutine)
+			.Verify(getCoroutine => getCoroutine(new Vector3(1, 2, 3) + new Vector3(50, 50, 50)), Times.Once);
 	}
 
 	[Test]
 	public void UseCoroutine() {
 		IEnumerable<IWait> run() {
 			yield return new WaitFrame();
-			this.projectileController.Entity.Transform.Position = new Vector3(5, 3, 70);
+			this.kineticController.Entity.Transform.Position = new Vector3(5, 3, 70);
 		}
 
 		_ = Mock
@@ -132,15 +145,15 @@ public class TestProjectileController : GameTestCollection {
 			.Setup(getCoroutine => getCoroutine(It.IsAny<U<Vector3, Entity>>()))
 			.Returns((run, Mock.Of<Action>()));
 
-		this.projectileController.Follow(new Vector3(1, 2, 3), new Vector3(3, 2, 1), 42f);
+		this.kineticController.Follow(new Vector3(1, 2, 3), new Vector3(3, 2, 1), 42f);
 
 		this.game.WaitFrames(1);
 
-		Assert.That(this.projectileController.Entity.Transform.Position, Is.EqualTo(new Vector3(1, 2, 3)));
+		Assert.That(this.kineticController.Entity.Transform.Position, Is.EqualTo(new Vector3(1, 2, 3)));
 
 		this.game.WaitFrames(2);
 
-		Assert.That(this.projectileController.Entity.Transform.Position, Is.EqualTo(new Vector3(5, 3, 70)));
+		Assert.That(this.kineticController.Entity.Transform.Position, Is.EqualTo(new Vector3(5, 3, 70)));
 	}
 
 	[Test]
@@ -148,7 +161,7 @@ public class TestProjectileController : GameTestCollection {
 		IEnumerable<IWait> run() {
 			while (this.game.IsRunning) {
 				yield return new WaitFrame();
-				this.projectileController.Entity.Transform.Position.X += 1;
+				this.kineticController.Entity.Transform.Position.X += 1;
 			}
 		}
 
@@ -157,23 +170,23 @@ public class TestProjectileController : GameTestCollection {
 			.Setup(getCoroutine => getCoroutine(It.IsAny<U<Vector3, Entity>>()))
 			.Returns((run, Mock.Of<Action>()));
 
-		this.projectileController.Follow(new Vector3(1, 2, 3), new Vector3(3, 2, 1), 42f);
-		this.projectileController.Follow(new Vector3(100, 200, 300), new Vector3(3, 2, 1), 42f);
+		this.kineticController.Follow(new Vector3(1, 2, 3), new Vector3(3, 2, 1), 42f);
+		this.kineticController.Follow(new Vector3(100, 200, 300), new Vector3(3, 2, 1), 42f);
 
 		this.game.WaitFrames(1);
 
-		Assert.That(this.projectileController.Entity.Transform.Position, Is.EqualTo(new Vector3(100, 200, 300)));
+		Assert.That(this.kineticController.Entity.Transform.Position, Is.EqualTo(new Vector3(100, 200, 300)));
 
 		this.game.WaitFrames(4);
 
-		Assert.That(this.projectileController.Entity.Transform.Position, Is.EqualTo(new Vector3(104, 200, 300)));
+		Assert.That(this.kineticController.Entity.Transform.Position, Is.EqualTo(new Vector3(104, 200, 300)));
 	}
 
 	[Test]
 	public void StopCoroutineOnCollision() {
 		IEnumerable<IWait> run() {
 			for (var i = 0; i < 20; ++i) {
-				this.projectileController.Entity.Transform.Position.X += 0.5f;
+				this.kineticController.Entity.Transform.Position.X += 0.5f;
 				yield return new WaitFrame();
 			}
 		}
@@ -192,24 +205,24 @@ public class TestProjectileController : GameTestCollection {
 		this.Scene.Entities.Add(obstacle);
 		this.game.WaitFrames(1);
 
-		this.projectileController.Follow(new Vector3(0, 0, 0), obstacle, 42f);
+		this.kineticController.Follow(new Vector3(0, 0, 0), obstacle, 42f);
 		this.game.WaitFrames(11);
 
-		Assert.That(this.projectileController.Entity.Transform.Position.X, Is.InRange(2, 2.5));
+		Assert.That(this.kineticController.Entity.Transform.Position.X, Is.InRange(2, 2.5));
 
 		this.game.WaitFrames(1);
 
-		this.projectileController.Follow(new Vector3(0, 0, 0), obstacle, 42f);
+		this.kineticController.Follow(new Vector3(0, 0, 0), obstacle, 42f);
 		this.game.WaitFrames(11);
 
-		Assert.That(this.projectileController.Entity.Transform.Position.X, Is.InRange(2, 2.5));
+		Assert.That(this.kineticController.Entity.Transform.Position.X, Is.InRange(2, 2.5));
 	}
 
 	[Test]
 	public void CallOnHitAndCancelOnCollision() {
 		IEnumerable<IWait> run() {
 			for (var i = 0; i < 10; ++i) {
-				this.projectileController.Entity.Transform.Position.X += 1f;
+				this.kineticController.Entity.Transform.Position.X += 1f;
 				yield return new WaitFrame();
 			}
 		}
@@ -220,7 +233,7 @@ public class TestProjectileController : GameTestCollection {
 			.Returns((run, cancel));
 
 		var onHit = Mock.Of<Action<PhysicsComponent>>();
-		this.projectileController.OnHit += onHit;
+		this.kineticController.OnHit += onHit;
 
 		var obstacle = new Entity {
 			new StaticColliderComponent {
@@ -232,7 +245,7 @@ public class TestProjectileController : GameTestCollection {
 		this.Scene.Entities.Add(obstacle);
 		this.game.WaitFrames(1);
 
-		this.projectileController.Follow(new Vector3(0, 0, 0), obstacle, 42f);
+		this.kineticController.Follow(new Vector3(0, 0, 0), obstacle, 42f);
 		this.game.WaitFrames(11);
 
 		Mock
@@ -245,7 +258,7 @@ public class TestProjectileController : GameTestCollection {
 
 	[Test]
 	public void NoCollider() {
-		var controller = this.projectileController;
+		var controller = this.kineticController;
 		controller.collider = null;
 
 		_ = this.Scene.Entities.Remove(controller.Entity);
