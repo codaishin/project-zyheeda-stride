@@ -13,12 +13,13 @@ public class TestInputDispatcher {
 	[SetUp]
 	public void SetUp() {
 		this.stream = Mock.Of<IInputStream>();
-		this.dispatcher = new(new InputManager(), this.systemMessage = Mock.Of<ISystemMessage>());
+		this.systemMessage = Mock.Of<ISystemMessage>();
+		this.dispatcher = new(new InputManager(), this.systemMessage);
 	}
 
 	[Test]
 	public void DispatchKeyInput() {
-		this.dispatcher!.Streams.Add(this.stream);
+		this.dispatcher!.Add(this.stream);
 
 		this.dispatcher.ProcessEvent(new KeyEvent { Key = Keys.LeftShift, IsDown = false });
 		Mock
@@ -33,7 +34,7 @@ public class TestInputDispatcher {
 
 	[Test]
 	public void DispatchUnmappedKeyInput() {
-		this.dispatcher!.Streams.Add(this.stream);
+		this.dispatcher!.Add(this.stream);
 
 		this.dispatcher.ProcessEvent(new KeyEvent { Key = Keys.Home, IsDown = false });
 
@@ -44,7 +45,7 @@ public class TestInputDispatcher {
 
 	[Test]
 	public void DispatchMouseInput() {
-		this.dispatcher!.Streams.Add(this.stream);
+		this.dispatcher!.Add(this.stream);
 
 		this.dispatcher.ProcessEvent(new MouseButtonEvent { Button = MouseButton.Left, IsDown = false });
 		Mock
@@ -59,12 +60,37 @@ public class TestInputDispatcher {
 
 	[Test]
 	public void DispatchUnmappedMouseInput() {
-		this.dispatcher!.Streams.Add(this.stream);
+		this.dispatcher!.Add(this.stream);
 
 		this.dispatcher.ProcessEvent(new MouseButtonEvent { Button = MouseButton.Extended1, IsDown = false });
 
 		Mock
 			.Get(this.systemMessage)
 			.Verify(m => m.Log(new SystemStr($"{MouseButton.Extended1} is not mapped to InputKeys")));
+	}
+
+	[Test]
+	public void MultipleAddsAreProcessedJustOnce() {
+		this.dispatcher!.Add(this.stream);
+		this.dispatcher!.Add(this.stream);
+		this.dispatcher!.Add(this.stream);
+
+		this.dispatcher.ProcessEvent(new MouseButtonEvent { Button = MouseButton.Left, IsDown = false });
+
+		Mock
+			.Get(this.stream)
+			.Verify(s => s.ProcessEvent(InputKeys.MouseLeft, false), Times.Once);
+	}
+
+	[Test]
+	public void RemoveStream() {
+		this.dispatcher!.Add(this.stream);
+		this.dispatcher!.Remove(this.stream);
+
+		this.dispatcher.ProcessEvent(new MouseButtonEvent { Button = MouseButton.Left, IsDown = false });
+
+		Mock
+			.Get(this.stream)
+			.Verify(s => s.ProcessEvent(InputKeys.MouseLeft, false), Times.Never);
 	}
 }

@@ -6,6 +6,7 @@ using ProjectZyheeda;
 using Stride.Core;
 using Stride.Engine.Processors;
 using Stride.Games;
+using Stride.Input;
 
 public class TestEssentialServices {
 	private readonly IGame game = Mock.Of<IGame>();
@@ -23,6 +24,8 @@ public class TestEssentialServices {
 		service.AddService(Mock.Of<ISystemMessage>());
 		service.AddService(Mock.Of<IPlayerMessage>());
 		service.AddService(Mock.Of<IPrefabLoader>());
+		service.AddService(Mock.Of<IInputDispatcher>());
+		service.AddService(new InputManager());
 		service.AddService(new ScriptSystem(service));
 	}
 
@@ -36,6 +39,7 @@ public class TestEssentialServices {
 			Assert.That(essentialServices.systemMessage, Is.SameAs(this.game.Services.GetService<ISystemMessage>()));
 			Assert.That(essentialServices.playerMessage, Is.SameAs(this.game.Services.GetService<IPlayerMessage>()));
 			Assert.That(essentialServices.prefabLoader, Is.SameAs(this.game.Services.GetService<IPrefabLoader>()));
+			Assert.That(essentialServices.inputDispatcher, Is.SameAs(this.game.Services.GetService<IInputDispatcher>()));
 		});
 	}
 
@@ -86,6 +90,16 @@ public class TestEssentialServices {
 		Assert.Multiple(() => {
 			Assert.That(essentialServices.prefabLoader, Is.InstanceOf<IPrefabLoader>());
 			Assert.That(this.game.Services.GetSafeServiceAs<IPrefabLoader>, Is.SameAs(essentialServices.prefabLoader));
+		});
+	}
+
+	[Test]
+	public void MissingInputDispatcher() {
+		this.game.Services.RemoveService<IPrefabLoader>();
+		var essentialServices = new EssentialServices(this.game);
+		Assert.Multiple(() => {
+			Assert.That(essentialServices.inputDispatcher, Is.InstanceOf<IInputDispatcher>());
+			Assert.That(this.game.Services.GetSafeServiceAs<IInputDispatcher>, Is.SameAs(essentialServices.inputDispatcher));
 		});
 	}
 }

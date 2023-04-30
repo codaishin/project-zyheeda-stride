@@ -16,8 +16,7 @@ public class InputDispatcher :
 		{MouseButton.Right, InputKeys.MouseRight},
 	};
 
-	public List<IInputStream> Streams { get; } = new();
-
+	private readonly HashSet<IInputStream> streams = new();
 	private readonly ISystemMessage systemMessage;
 
 	public InputDispatcher(InputManager inputManager, ISystemMessage systemMessage) {
@@ -30,7 +29,7 @@ public class InputDispatcher :
 			this.systemMessage.Log(new SystemStr($"{inputEvent.Key} is not mapped to InputKeys"));
 			return;
 		}
-		foreach (var stream in this.Streams) {
+		foreach (var stream in this.streams) {
 			stream.ProcessEvent(key, inputEvent.IsDown);
 		}
 	}
@@ -40,8 +39,16 @@ public class InputDispatcher :
 			this.systemMessage.Log(new SystemStr($"{inputEvent.Button} is not mapped to InputKeys"));
 			return;
 		}
-		foreach (var stream in this.Streams) {
+		foreach (var stream in this.streams) {
 			stream.ProcessEvent(button, inputEvent.IsDown);
 		}
+	}
+
+	public void Add(IInputStream stream) {
+		_ = this.streams.Add(stream);
+	}
+
+	public void Remove(IInputStream stream) {
+		_ = this.streams.Remove(stream);
 	}
 }
