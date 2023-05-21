@@ -30,12 +30,12 @@ Hierarchy:
                             activationKey: MouseLeft
                             activation: OnPress
                             chainKey: ShiftLeft
-                        getTarget:
-                            Entity: ref!! 96a3fb43-e76c-456f-a87b-cb71a2b3bd33
-                        behavior:
-                            Entity: ref!! 2b3d03a5-6086-452d-af65-8a103c8713eb
-                        scheduler:
-                            Entity: ref!! 2f887163-c6c3-43ba-a199-ba751de9193c
+                        getTarget: !ProjectZyheeda.ReferenceGetMousePosition,project_zyheeda_stride
+                            target: ref!! 7d51016a-d614-4104-a392-31d63207bd35
+                        behavior: !ProjectZyheeda.ReferenceBehaviorController,project_zyheeda_stride
+                            target: ref!! cd6e3c0f-8bb1-4757-9dc1-f2f6c1143f2d
+                        scheduler: !ProjectZyheeda.ReferenceSchedularController,project_zyheeda_stride
+                            target: ref!! a585c668-e48f-42e3-ba34-c0e88883834e
         -   Entity:
                 Id: 2b3d03a5-6086-452d-af65-8a103c8713eb
                 Name: Move
@@ -54,10 +54,9 @@ Hierarchy:
                             animationKey: walk
                     74ca53bf10b979fccda28376174d91ea: !ProjectZyheeda.BehaviorController,project_zyheeda_stride
                         Id: cd6e3c0f-8bb1-4757-9dc1-f2f6c1143f2d
-                        equipment:
-                            Entity: ref!! 2b3d03a5-6086-452d-af65-8a103c8713eb
-                        agent:
-                            Entity: ref!! a70e6895-7fd3-4135-9869-1e5eb430a3c8
+                        equipment: !ProjectZyheeda.ReferenceMoveController,project_zyheeda_stride
+                            target: ref!! 93319efb-06d3-41db-8335-064b07dbeafb
+                        agent: ref!! a70e6895-7fd3-4135-9869-1e5eb430a3c8
         -   Entity:
                 Id: 2f887163-c6c3-43ba-a199-ba751de9193c
                 Name: Scheduler

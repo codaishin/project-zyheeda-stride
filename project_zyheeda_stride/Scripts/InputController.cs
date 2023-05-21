@@ -10,9 +10,9 @@ public abstract class BaseInputController<TInputStream> :
 		IInputStream {
 
 	public readonly TInputStream input;
-	public Reference<IGetTarget> getTarget = new();
-	public Reference<IBehavior> behavior = new();
-	public Reference<IScheduler> scheduler = new();
+	public IMaybe<IGetTarget>? getTarget;
+	public IMaybe<IBehavior>? behavior;
+	public IMaybe<IScheduler>? scheduler;
 
 	public BaseInputController(TInputStream input) {
 		this.input = input;
@@ -43,9 +43,9 @@ public abstract class BaseInputController<TInputStream> :
 			};
 
 		return runBehavior
-			.ApplyWeak(this.getTarget.MaybeToEither(this.MissingField(nameof(this.getTarget))))
-			.ApplyWeak(this.behavior.MaybeToEither(this.MissingField(nameof(this.behavior))))
-			.ApplyWeak(this.scheduler.MaybeToEither(this.MissingField(nameof(this.scheduler))))
+			.ApplyWeak(this.getTarget.ToMaybe().Flatten().MaybeToEither(this.MissingField(nameof(this.getTarget))))
+			.ApplyWeak(this.behavior.ToMaybe().Flatten().MaybeToEither(this.MissingField(nameof(this.behavior))))
+			.ApplyWeak(this.scheduler.ToMaybe().Flatten().MaybeToEither(this.MissingField(nameof(this.scheduler))))
 			.Switch<Action<InputAction>?>(
 				errors => {
 					this.LogErrors(errors);
