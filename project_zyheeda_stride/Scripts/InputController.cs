@@ -4,19 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-public abstract class BaseInputController<TInputStream> :
-	ProjectZyheedaAsyncScript
-	where TInputStream :
-		IInputStream {
+public class InputController : ProjectZyheedaAsyncScript {
 
-	public readonly TInputStream input;
+	public IInputStream? input;
 	public IMaybe<IGetTarget>? getTarget;
 	public IMaybe<IBehavior>? behavior;
 	public IMaybe<IScheduler>? scheduler;
-
-	public BaseInputController(TInputStream input) {
-		this.input = input;
-	}
 
 	private void LogErrors(IEnumerable<string> errors) {
 		foreach (var error in errors) {
@@ -24,29 +17,34 @@ public abstract class BaseInputController<TInputStream> :
 		}
 	}
 
-	private Action<InputAction>? GetRunBehavior() {
-		var runBehavior =
+	private static Action<InputAction> RunBehavior(IGetTarget getTarget, IBehavior behavior, IScheduler scheduler) {
+		return action => {
+			Action<(Func<Coroutine>, Cancel)> runOrEnqueue =
+				action is InputAction.Run
+					? scheduler.Run
+					: scheduler.Enqueue;
+			getTarget
+				.GetTarget()
+				.Switch(
+					target => runOrEnqueue(behavior.GetCoroutine(target)),
+					() => { }
+				);
+		};
+	}
+
+	private (IInputStream, Action<InputAction>)? GetInputAndRun() {
+		var getInputAndRun =
 			(IGetTarget getTarget) =>
 			(IBehavior behavior) =>
 			(IScheduler scheduler) =>
-			(InputAction action) => {
-				Action<(Func<Coroutine>, Cancel)> deploy =
-					action is InputAction.Run
-						? scheduler.Run
-						: scheduler.Enqueue;
-				getTarget
-					.GetTarget()
-					.Switch(
-						target => deploy(behavior.GetCoroutine(target)),
-						() => { }
-					);
-			};
+			(IInputStream input) => (input, InputController.RunBehavior(getTarget, behavior, scheduler));
 
-		return runBehavior
+		return getInputAndRun
 			.ApplyWeak(this.getTarget.ToMaybe().Flatten().MaybeToEither(this.MissingField(nameof(this.getTarget))))
 			.ApplyWeak(this.behavior.ToMaybe().Flatten().MaybeToEither(this.MissingField(nameof(this.behavior))))
 			.ApplyWeak(this.scheduler.ToMaybe().Flatten().MaybeToEither(this.MissingField(nameof(this.scheduler))))
-			.Switch<Action<InputAction>?>(
+			.ApplyWeak(this.input.ToEither(this.MissingField(nameof(this.input))))
+			.Switch<(IInputStream, Action<InputAction>)?>(
 				errors => {
 					this.LogErrors(errors);
 					return null;
@@ -56,24 +54,22 @@ public abstract class BaseInputController<TInputStream> :
 	}
 
 	public override async Task Execute() {
-		var runBehavior = this.GetRunBehavior();
-		if (runBehavior is null) {
+		var inputAndRun = this.GetInputAndRun();
+		if (inputAndRun is null) {
 			return;
 		}
 
-		this.EssentialServices.inputDispatcher.Add(this.input);
+		var (input, run) = inputAndRun.Value;
+
+		this.EssentialServices.inputDispatcher.Add(input);
 
 		_ = this.CancellationToken.Register(() => {
-			this.EssentialServices.inputDispatcher.Remove(this.input);
+			this.EssentialServices.inputDispatcher.Remove(input);
 		});
 
 		while (this.Game.IsRunning) {
-			var action = await this.input.NewAction();
-			runBehavior(action);
+			var action = await input.NewAction();
+			run(action);
 		}
 	}
-}
-
-public class InputController : BaseInputController<InputStream> {
-	public InputController() : base(new InputStream()) { }
 }
