@@ -71,4 +71,24 @@ public class ReferenceTest : GameTestCollection {
 			Assert.That(reference.Entity, Is.Null);
 		});
 	}
+
+	private class MockComponent : StartupScript, IMock { }
+
+	private class MockReference : Reference<MockComponent, IMock> { }
+
+	[Test]
+	public void None() {
+		var fallback = new MockComponent();
+		var reference = new MockReference();
+		Assert.That(reference.UnpackOr(fallback), Is.SameAs(fallback));
+	}
+
+	[Test]
+	public void Some() {
+		var fallback = new MockComponent();
+		var reference = new MockReference {
+			target = new(),
+		};
+		Assert.That(reference.UnpackOr(fallback), Is.SameAs(reference.target));
+	}
 }
