@@ -10,11 +10,9 @@ using Stride.Core.Mathematics;
 using Stride.Engine;
 
 public class TestInputController : GameTestCollection, IDisposable {
-	private class MockController : BaseInputController<IInputStream> {
-		public MockController() : base(Mock.Of<IInputStream>()) { }
-	}
 
-	private MockController controller = new();
+	private InputController controller = new();
+	private IInputStream inputStream = Mock.Of<IInputStream>();
 	private IBehavior behavior = Mock.Of<IBehavior>();
 	private IGetTarget getTarget = Mock.Of<IGetTarget>();
 	private IScheduler scheduler = Mock.Of<IScheduler>();
@@ -25,7 +23,8 @@ public class TestInputController : GameTestCollection, IDisposable {
 	public void Setup() {
 		var newActionCallCount = 0;
 		var dispatcher = Mock.Of<IInputDispatcher>();
-		this.controller = new MockController {
+		this.controller = new InputController {
+			input = this.inputStream = Mock.Of<IInputStream>(),
 			behavior = Maybe.Some(this.behavior = Mock.Of<IBehavior>()),
 			getTarget = Maybe.Some(this.getTarget = Mock.Of<IGetTarget>()),
 			scheduler = Maybe.Some(this.scheduler = Mock.Of<IScheduler>())
@@ -58,7 +57,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 	public void AddInputStreamToDispatcher() {
 		Mock
 			.Get(this.game.Services.GetService<IInputDispatcher>())
-			.Verify(d => d.Add(this.controller.input), Times.Once);
+			.Verify(d => d.Add(this.inputStream), Times.Once);
 	}
 
 	[Test]
@@ -77,7 +76,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		Mock
 			.Get(this.game.Services.GetService<IInputDispatcher>())
-			.Verify(d => d.Remove(this.controller.input), Times.Exactly(2));
+			.Verify(d => d.Remove(this.inputStream), Times.Exactly(2));
 	}
 
 	[Test]
@@ -209,10 +208,27 @@ public class TestInputController : GameTestCollection, IDisposable {
 			.Verify(s => s.Log(new SystemStr(this.controller.MissingField(nameof(this.controller.scheduler)))), Times.Once);
 	}
 
+
 	[Test]
-	public void MissingGetTargetAndBehavior() {
+	public void InputNotSet() {
 		_ = this.Scene.Entities.Remove(this.controller.Entity);
 
+		this.controller.input = null;
+
+		this.Scene.Entities.Add(this.controller.Entity);
+
+		this.game.WaitFrames(2);
+
+		Mock
+			.Get(this.systemMessage)
+			.Verify(s => s.Log(new SystemStr(this.controller.MissingField(nameof(this.controller.input)))), Times.Once);
+	}
+
+	[Test]
+	public void AllFieldsMissing() {
+		_ = this.Scene.Entities.Remove(this.controller.Entity);
+
+		this.controller.input = null;
 		this.controller.getTarget = Maybe.None<IGetTarget>();
 		this.controller.behavior = Maybe.None<IBehavior>();
 		this.controller.scheduler = Maybe.None<IScheduler>();
@@ -230,7 +246,11 @@ public class TestInputController : GameTestCollection, IDisposable {
 		Mock
 			.Get(this.systemMessage)
 			.Verify(s => s.Log(new SystemStr(this.controller.MissingField(nameof(this.controller.scheduler)))), Times.Once);
+		Mock
+			.Get(this.systemMessage)
+			.Verify(s => s.Log(new SystemStr(this.controller.MissingField(nameof(this.controller.input)))), Times.Once);
 	}
+
 
 	public void Dispose() {
 		GC.SuppressFinalize(this);
