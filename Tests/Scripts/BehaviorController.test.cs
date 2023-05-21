@@ -17,14 +17,6 @@ public class BehaviorControllerTest : GameTestCollection {
 	private IPlayerMessage playerMessage = Mock.Of<IPlayerMessage>();
 	private BehaviorController controller = new();
 
-	private static Either<IEnumerable<U<SystemStr, PlayerStr>>, FGetCoroutine> EitherWithSystemErrors(
-		params string[] errors
-	) {
-		return new Either<IEnumerable<U<SystemStr, PlayerStr>>, FGetCoroutine>(
-			errors.Select(e => (U<SystemStr, PlayerStr>)new SystemStr(e))
-		);
-	}
-
 	private static Either<IEnumerable<U<SystemStr, PlayerStr>>, FGetCoroutine> EitherWithPlayerErrors(
 		params string[] errors
 	) {
@@ -41,7 +33,6 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		this.game.Services.RemoveService<ISystemMessage>();
 		this.game.Services.RemoveService<IPlayerMessage>();
-
 		this.game.Services.AddService(this.systemMessage);
 		this.game.Services.AddService(this.playerMessage);
 
@@ -59,35 +50,37 @@ public class BehaviorControllerTest : GameTestCollection {
 	[Test]
 	public void PassAgentToGetBehaviorFor() {
 		var getCoroutine = Mock.Of<FGetCoroutine>();
-		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
+		var equipment = Mock.Of<IEquipment>();
 		var agent = new Entity();
 
-		_ = mEquipment
+		_ = Mock
+			.Get(equipment)
 			.Setup(e => e.PrepareCoroutineFor(agent))
 			.Returns(BehaviorControllerTest.EitherWithBehavior(getCoroutine));
 
-		this.controller.agent.Entity = agent;
-		this.controller.equipment.Entity = new Entity {
-			(EntityComponent)mEquipment.Object,
-		};
+		this.controller.agent = agent;
+		this.controller.equipment = Maybe.Some(equipment);
 
-		mEquipment.Verify(e => e.PrepareCoroutineFor(agent), Times.Once());
+		_ = this.controller.GetCoroutine(Vector3.Zero);
+
+		Mock
+			.Get(equipment)
+			.Verify(e => e.PrepareCoroutineFor(agent), Times.Once());
 	}
 
 	[Test]
 	public void OnRunExecute() {
 		var getCoroutine = Mock.Of<FGetCoroutine>();
-		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
+		var equipment = Mock.Of<IEquipment>();
 		var target = new Vector3(1, 2, 3);
 
-		_ = mEquipment
+		_ = Mock
+			.Get(equipment)
 			.Setup(e => e.PrepareCoroutineFor(It.IsAny<Entity>()))
 			.Returns(BehaviorControllerTest.EitherWithBehavior(getCoroutine));
 
-		this.controller.agent.Entity = new();
-		this.controller.equipment.Entity = new Entity {
-			(EntityComponent)mEquipment.Object,
-		};
+		this.controller.agent = new();
+		this.controller.equipment = Maybe.Some(equipment);
 
 		_ = this.controller.GetCoroutine(target);
 
@@ -95,96 +88,11 @@ public class BehaviorControllerTest : GameTestCollection {
 	}
 
 	[Test]
-	public void UpdateBehaviorOnStart() {
-		var getCoroutine = Mock.Of<FGetCoroutine>();
-		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
-		var targets = new U<Vector3, Entity>[] { new Vector3(1, 2, 3) }.ToAsyncEnumerable();
-		var agent = new Entity();
-
-		_ = mEquipment
-			.Setup(e => e.PrepareCoroutineFor(It.IsAny<Entity>()))
-			.Returns(BehaviorControllerTest.EitherWithBehavior(getCoroutine));
-
-		this.controller.agent.Entity = agent;
-		this.controller.equipment.Entity = new Entity {
-			(EntityComponent)mEquipment.Object,
-		};
-
-		this.controller.Start();
-
-		mEquipment.Verify(e => e.PrepareCoroutineFor(agent), Times.Exactly(2));
-	}
-
-	[Test]
-	public void NullBehaviorWhenAssigningInvalidAgent() {
-		var mGetExecution = new Mock<FGetCoroutine>();
-		var agent = new Entity();
-		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
-		var target = Vector3.UnitX;
-
-		_ = mEquipment
-			.Setup(e => e.PrepareCoroutineFor(agent))
-			.Returns(BehaviorControllerTest.EitherWithBehavior(mGetExecution.Object));
-		_ = mEquipment
-			.Setup(e => e.PrepareCoroutineFor(It.IsNotIn(agent)))
-			.Returns(BehaviorControllerTest.EitherWithSystemErrors(""));
-
-		this.controller.equipment.Entity = new Entity { (EntityComponent)mEquipment.Object };
-		this.controller.agent.Entity = agent;
-		this.controller.agent.Entity = new Entity();
-
-		_ = this.controller.GetCoroutine(target);
-
-		mGetExecution.Verify(func => func(target), Times.Never());
-	}
-
-	[Test]
-	public void NullBehaviorInvalidEquipment() {
-		var mGetExecution = new Mock<FGetCoroutine>();
-		var agent = new Entity();
-		var mValidEquipment = new Mock<EntityComponent>().As<IEquipment>();
-		var mInvalidEquipment = new Mock<EntityComponent>().As<IEquipment>();
-		var target = Vector3.UnitZ;
-
-		_ = mValidEquipment
-			.Setup(e => e.PrepareCoroutineFor(It.IsAny<Entity>()))
-			.Returns(BehaviorControllerTest.EitherWithBehavior(mGetExecution.Object));
-		_ = mInvalidEquipment
-			.Setup(e => e.PrepareCoroutineFor(It.IsAny<Entity>()))
-			.Returns(BehaviorControllerTest.EitherWithSystemErrors(""));
-
-		this.controller.agent.Entity = new Entity();
-		this.controller.equipment.Entity = new Entity {
-			(EntityComponent)mValidEquipment.Object,
-		};
-		this.controller.equipment.Entity = new Entity {
-			(EntityComponent)mInvalidEquipment.Object,
-		};
-
-		_ = this.controller.GetCoroutine(target);
-
-		mGetExecution.Verify(func => func(target), Times.Never());
-	}
-
-	[Test]
-	public void AgentMissingOnEquip() {
-		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
-
-		this.controller.equipment.Entity = new Entity {
-			(EntityComponent)mEquipment.Object,
-		};
-
-		Mock
-			.Get(this.systemMessage)
-			.Verify(m => m.Log(new SystemStr(this.controller.MissingField(nameof(this.controller.agent)))), Times.Exactly(2));  //twice from Start and Equip
-	}
-
-	[Test]
 	public void EquipmentMissingOnUse() {
-		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
+		var equipment = Mock.Of<IEquipment>();
 		var target = Vector3.UnitZ;
 
-		this.controller.agent.Entity = new Entity("Player");
+		this.controller.agent = new Entity("Player");
 
 		Mock
 			.Get(this.playerMessage)
@@ -202,7 +110,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 	[Test]
 	public void EquipmentMissingOnUseBeforeAnythingIsSet() {
-		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
+		var equipment = Mock.Of<IEquipment>();
 		var target = Vector3.UnitX;
 
 		Mock
@@ -220,18 +128,19 @@ public class BehaviorControllerTest : GameTestCollection {
 	}
 
 	[Test]
-	public void RequirementsMissingOnEquip() {
-		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
+	public void RequirementsMissing() {
+		var equipment = Mock.Of<IEquipment>();
 		var message = new PlayerStr("can't use gun");
 
-		_ = mEquipment
+		_ = Mock
+			.Get(equipment)
 			.Setup(e => e.PrepareCoroutineFor(It.IsAny<Entity>()))
 			.Returns(BehaviorControllerTest.EitherWithPlayerErrors(message.value));
 
-		this.controller.agent.Entity = new();
-		this.controller.equipment.Entity = new Entity {
-			(EntityComponent)mEquipment.Object,
-		};
+		this.controller.agent = new();
+		this.controller.equipment = Maybe.Some(equipment);
+
+		_ = this.controller.GetCoroutine(Vector3.Zero);
 
 		Mock
 			.Get(this.playerMessage)
@@ -241,14 +150,15 @@ public class BehaviorControllerTest : GameTestCollection {
 	[Test]
 	public void ReturnBehaviorExecution() {
 		var getCoroutine = Mock.Of<FGetCoroutine>();
-		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
+		var equipment = Mock.Of<IEquipment>();
 		var target = new Vector3(1, 2, 3);
 		(Func<IEnumerable<IWait>>, Action) execution = (
 			() => Array.Empty<IWait>(),
 			() => { }
 		);
 
-		_ = mEquipment
+		_ = Mock
+			.Get(equipment)
 			.Setup(e => e.PrepareCoroutineFor(It.IsAny<Entity>()))
 			.Returns(BehaviorControllerTest.EitherWithBehavior(getCoroutine));
 
@@ -256,10 +166,8 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Setup(func => func(It.IsAny<U<Vector3, Entity>>()))
 			.Returns(execution);
 
-		this.controller.agent.Entity = new();
-		this.controller.equipment.Entity = new Entity {
-			(EntityComponent)mEquipment.Object,
-		};
+		this.controller.agent = new();
+		this.controller.equipment = Maybe.Some(equipment);
 
 		Assert.That(this.controller.GetCoroutine(target), Is.EqualTo(execution));
 	}
@@ -270,14 +178,12 @@ public class BehaviorControllerNonGameTest {
 	[Test]
 	public void NoEquipmentAssignErrorWhenNotInRunningGame() {
 		var controller = new BehaviorController();
-		var mEquipment = new Mock<EntityComponent>().As<IEquipment>();
-		controller.agent.Entity = new Entity();
+		var equipment = Mock.Of<IEquipment>();
+		controller.agent = new Entity();
 
 		Assert.DoesNotThrow(
 			() => {
-				controller.equipment.Entity = new Entity {
-					(EntityComponent)mEquipment.Object,
-				};
+				controller.equipment = Maybe.Some(equipment);
 			}
 		);
 	}

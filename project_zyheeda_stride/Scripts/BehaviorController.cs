@@ -7,10 +7,10 @@ using Stride.Engine;
 
 public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 	private U<SystemStr, PlayerStr> NoAgentMessage => new SystemStr(this.MissingField(nameof(this.agent)));
-	private FGetCoroutine getCoroutine;
 
-	public readonly EventReference<Reference<IEquipment>, IEquipment> equipment;
-	public readonly EventReference<Reference<Entity>, Entity> agent;
+	public IMaybe<IEquipment>? equipment;
+
+	public Entity? agent;
 
 	private void LogMessage(U<SystemStr, PlayerStr> error) {
 		error.Switch(
@@ -23,7 +23,7 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 		get {
 			var getBehaviorAndEquipment =
 				(Entity agent) =>
-					this.equipment.Switch(
+					this.equipment.ToMaybe().Flatten().Switch(
 						equipment => equipment.PrepareCoroutineFor(agent),
 						() => (FGetCoroutine)this.NothingEquipped
 					);
@@ -40,44 +40,22 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 		return (run, cancel);
 	}
 
-	private void ResetBehavior(IEnumerable<U<SystemStr, PlayerStr>> errors) {
-		this.getCoroutine = this.NothingEquipped;
+	private void LogErrors(IEnumerable<U<SystemStr, PlayerStr>> errors) {
 		foreach (var error in errors) {
 			this.LogMessage(error);
 		}
 	}
 
-	private void SetNewBehavior(FGetCoroutine getCoroutine) {
-		this.getCoroutine = getCoroutine;
-	}
-
-	private void UpdateBehavior() {
-		if (this.Game == null) {
-			return;
-		}
-		this.GetBehavior
-			.ApplyWeak(this.agent.MaybeToEither(this.NoAgentMessage))
+	public (Func<Coroutine>, Cancel) GetCoroutine(U<Vector3, Entity> target) {
+		return this.GetBehavior
+			.ApplyWeak(this.agent.ToEither(this.NoAgentMessage))
 			.Flatten()
 			.Switch(
-				error: this.ResetBehavior,
-				value: this.SetNewBehavior
+				errors => {
+					this.LogErrors(errors);
+					return this.NothingEquipped(target);
+				},
+				value => value(target)
 			);
-	}
-
-	public override void Start() {
-		this.UpdateBehavior();
-	}
-
-	public BehaviorController() {
-		var equipment = new Reference<IEquipment>();
-		var agent = new Reference<Entity>();
-
-		this.equipment = new(equipment, this.UpdateBehavior);
-		this.agent = new(agent, this.UpdateBehavior);
-		this.getCoroutine = this.NothingEquipped;
-	}
-
-	public (Func<Coroutine>, Cancel) GetCoroutine(U<Vector3, Entity> target) {
-		return this.getCoroutine(target);
 	}
 }
