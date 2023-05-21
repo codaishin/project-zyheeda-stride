@@ -25,11 +25,12 @@ public class TestInputController : GameTestCollection, IDisposable {
 	public void Setup() {
 		var newActionCallCount = 0;
 		var dispatcher = Mock.Of<IInputDispatcher>();
-		this.controller = new MockController();
+		this.controller = new MockController {
+			behavior = Maybe.Some(this.behavior = Mock.Of<IBehavior>()),
+			getTarget = Maybe.Some(this.getTarget = Mock.Of<IGetTarget>()),
+			scheduler = Maybe.Some(this.scheduler = Mock.Of<IScheduler>())
+		};
 
-		this.behavior = new Mock<EntityComponent>().As<IBehavior>().Object;
-		this.getTarget = new Mock<EntityComponent>().As<IGetTarget>().Object;
-		this.scheduler = new Mock<EntityComponent>().As<IScheduler>().Object;
 		this.newActionFnTaskTokens = new List<TaskCompletionSource<InputAction>> {
 			new TaskCompletionSource<InputAction>(),
 			new TaskCompletionSource<InputAction>(),
@@ -49,9 +50,6 @@ public class TestInputController : GameTestCollection, IDisposable {
 		this.game.Services.AddService(dispatcher);
 
 		this.Scene.Entities.Add(new Entity { this.controller });
-		this.Scene.Entities.Add(this.controller.behavior.Entity = new Entity { (EntityComponent)this.behavior });
-		this.Scene.Entities.Add(this.controller.getTarget.Entity = new Entity { (EntityComponent)this.getTarget });
-		this.Scene.Entities.Add(this.controller.scheduler.Entity = new Entity { (EntityComponent)this.scheduler });
 
 		this.game.WaitFrames(2);
 	}
@@ -170,7 +168,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 	public void MissingGetTarget() {
 		_ = this.Scene.Entities.Remove(this.controller.Entity);
 
-		this.controller.getTarget.Entity = null;
+		this.controller.getTarget = Maybe.None<IGetTarget>();
 
 		this.Scene.Entities.Add(this.controller.Entity);
 
@@ -185,7 +183,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 	public void MissingBehavior() {
 		_ = this.Scene.Entities.Remove(this.controller.Entity);
 
-		this.controller.behavior.Entity = null;
+		this.controller.behavior = Maybe.None<IBehavior>();
 
 		this.Scene.Entities.Add(this.controller.Entity);
 
@@ -200,7 +198,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 	public void MissingScheduler() {
 		_ = this.Scene.Entities.Remove(this.controller.Entity);
 
-		this.controller.scheduler.Entity = null;
+		this.controller.scheduler = Maybe.None<IScheduler>();
 
 		this.Scene.Entities.Add(this.controller.Entity);
 
@@ -215,9 +213,9 @@ public class TestInputController : GameTestCollection, IDisposable {
 	public void MissingGetTargetAndBehavior() {
 		_ = this.Scene.Entities.Remove(this.controller.Entity);
 
-		this.controller.getTarget.Entity = null;
-		this.controller.behavior.Entity = null;
-		this.controller.scheduler.Entity = null;
+		this.controller.getTarget = Maybe.None<IGetTarget>();
+		this.controller.behavior = Maybe.None<IBehavior>();
+		this.controller.scheduler = Maybe.None<IScheduler>();
 
 		this.Scene.Entities.Add(this.controller.Entity);
 
