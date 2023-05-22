@@ -48,7 +48,7 @@ Hierarchy:
                         Children: {}
                     d2c26f9ab9074385e6c9d981d5b57bdf: !ProjectZyheeda.MoveController,project_zyheeda_stride
                         Id: 93319efb-06d3-41db-8335-064b07dbeafb
-                        move:
+                        move: !ProjectZyheeda.AnimatedStraightMove,project_zyheeda_stride
                             move:
                                 speed: 2.0
                             animationKey: walk
