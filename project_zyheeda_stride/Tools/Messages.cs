@@ -8,4 +8,8 @@ public static class Messages {
 		var type = component.GetType().Name;
 		return $"{name} ({type}): '{fieldName}' not assigned";
 	}
+
+	public static string MissingField(this object obj, string fieldName) {
+		return $"{obj}: '{fieldName}' not assigned";
+	}
 }

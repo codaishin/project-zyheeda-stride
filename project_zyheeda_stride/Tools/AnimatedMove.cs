@@ -5,27 +5,28 @@ using Stride.Core;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 
-public static class AnimatedMove {
-	public static readonly string fallbackAnimationKey = "default";
-}
-
 [DataContract]
-public abstract class AnimatedMove<TMove> :
-	IAnimatedMove
-	where TMove :
-		IMove {
+public class AnimatedMove : IAnimatedMove {
+	public static readonly string fallbackAnimationKey = "default";
 
-	public readonly TMove move;
+	public IMove? move;
 	public string animationKey = "";
 
-	protected AnimatedMove(TMove move) {
-		this.move = move;
-	}
+	public Either<Errors, FGetCoroutine> PrepareCoroutineFor(
+		Entity agent,
+		FSpeedToDelta delta,
+		Action<string> playAnimation
+	) {
+		if (this.move is null) {
+			return new Either<Errors, FGetCoroutine>(new[] {
+				(U<SystemStr, PlayerStr>)new SystemStr(this.MissingField(nameof(this.move)))
+			});
+		}
 
-	public FGetCoroutine PrepareCoroutineFor(Entity agent, FSpeedToDelta delta, Action<string> playAnimation) {
-		var getCoroutine = this.move.PrepareCoroutineFor(agent, delta);
-		return (U<Vector3, Entity> target) => {
-			var (runMove, cancelMove) = getCoroutine(target);
+		var innerGetCoroutine = this.move.PrepareCoroutineFor(agent, delta);
+
+		(Func<Coroutine>, Cancel) GetCoroutine(U<Vector3, Entity> target) {
+			var (runMove, cancelMove) = innerGetCoroutine(target);
 
 			Coroutine run() {
 				playAnimation(this.animationKey);
@@ -41,11 +42,7 @@ public abstract class AnimatedMove<TMove> :
 			};
 
 			return (run, cancel);
-		};
+		}
+		return new Either<Errors, FGetCoroutine>(GetCoroutine);
 	}
-}
-
-[DataContract]
-public class AnimatedStraightMove : AnimatedMove<StraightMove> {
-	public AnimatedStraightMove() : base(new StraightMove()) { }
 }

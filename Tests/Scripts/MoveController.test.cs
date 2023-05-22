@@ -10,21 +10,8 @@ using Stride.Engine;
 
 public class TestMoveController : GameTestCollection, System.IDisposable {
 	private Entity agent = new();
-	private MockMoveController moveController = new();
-
-	private class MockMove : IAnimatedMove {
-		public Func<Entity, FSpeedToDelta, Action<string>, FGetCoroutine> prepareCoroutineFor;
-
-		public MockMove() {
-			this.prepareCoroutineFor = (_, __, ___) => Mock.Of<FGetCoroutine>();
-		}
-
-		public FGetCoroutine PrepareCoroutineFor(Entity agent, FSpeedToDelta delta, Action<string> playAnimation) {
-			return this.prepareCoroutineFor(agent, delta, playAnimation);
-		}
-	}
-
-	private class MockMoveController : BaseMoveController<MockMove> { }
+	private MoveController moveController = new();
+	private IAnimatedMove move = Mock.Of<IAnimatedMove>();
 
 	private static string ErrorsToString(IEnumerable<U<SystemStr, PlayerStr>> errors) {
 		var errorsUnpacked = errors.Select(error => error.Switch(
@@ -49,7 +36,8 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 		this.agent = new Entity();
 		this.agent.AddChild(new Entity { new AnimationComponent() });
-		this.moveController = new MockMoveController();
+		this.move = Mock.Of<IAnimatedMove>();
+		this.moveController = new() { move = this.move };
 
 		this.Scene.Entities.Add(new Entity { this.moveController });
 		this.Scene.Entities.Add(this.agent);
@@ -60,13 +48,11 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 	[Test]
 	public void ReturnMoveResult() {
 		var mockGetCoroutine = Mock.Of<FGetCoroutine>();
-		var prepareCoroutineFor = Mock.Of<Func<Entity, FSpeedToDelta, Action<string>, FGetCoroutine>>();
-		this.moveController.move.prepareCoroutineFor = prepareCoroutineFor;
 
 		_ = Mock
-			.Get(prepareCoroutineFor)
-			.Setup(func => func(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Action<string>>()))
-			.Returns(mockGetCoroutine);
+			.Get(this.move)
+			.Setup(m => m.PrepareCoroutineFor(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Action<string>>()))
+			.Returns(new Either<IEnumerable<U<SystemStr, PlayerStr>>, FGetCoroutine>(mockGetCoroutine));
 
 		var getCoroutine = this.moveController
 			.PrepareCoroutineFor(this.agent)
@@ -75,7 +61,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 				getCoroutine => getCoroutine
 			);
 
-		Assert.That(getCoroutine, Is.SameAs(mockGetCoroutine));
+		Assert.That(getCoroutine, Is.EqualTo(mockGetCoroutine));
 	}
 
 	[Test]
@@ -85,10 +71,13 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		var animation = this.game.Services.GetService<IAnimation>();
 		var animator = this.agent.GetChild(0).Get<AnimationComponent>();
 
-		this.moveController.move.prepareCoroutineFor = (_, __, play) => {
-			runPlay = play;
-			return Mock.Of<FGetCoroutine>();
-		};
+		_ = Mock
+			.Get(this.move)
+			.Setup(m => m.PrepareCoroutineFor(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Action<string>>()))
+			.Returns((Entity _, FSpeedToDelta _, Action<string> play) => {
+				runPlay = play;
+				return Mock.Of<FGetCoroutine>();
+			});
 
 		_ = this.moveController.PrepareCoroutineFor(this.agent);
 
@@ -106,10 +95,13 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		var animation = this.game.Services.GetService<IAnimation>();
 		var animator = this.agent.GetChild(0).Get<AnimationComponent>();
 
-		this.moveController.move.prepareCoroutineFor = (_, __, play) => {
-			runPlay = play;
-			return Mock.Of<FGetCoroutine>();
-		};
+		_ = Mock
+			.Get(this.move)
+			.Setup(m => m.PrepareCoroutineFor(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Action<string>>()))
+			.Returns((Entity _, FSpeedToDelta _, Action<string> play) => {
+				runPlay = play;
+				return Mock.Of<FGetCoroutine>();
+			});
 
 		_ = this.moveController.PrepareCoroutineFor(this.agent);
 
@@ -132,10 +124,13 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		var runDelta = null as FSpeedToDelta;
 		var prepareCoroutineFor = Mock.Of<Func<Entity, FSpeedToDelta, Action<string>, FGetCoroutine>>();
 
-		this.moveController.move.prepareCoroutineFor = (_, delta, __) => {
-			runDelta = delta;
-			return Mock.Of<FGetCoroutine>();
-		};
+		_ = Mock
+			.Get(this.move)
+			.Setup(m => m.PrepareCoroutineFor(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Action<string>>()))
+			.Returns((Entity _, FSpeedToDelta delta, Action<string> _) => {
+				runDelta = delta;
+				return Mock.Of<FGetCoroutine>();
+			});
 
 		_ = this.moveController.PrepareCoroutineFor(this.agent);
 
@@ -153,6 +148,17 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 			.Switch(TestMoveController.ErrorsToString, _ => "no error, got actual behavior");
 
 		Assert.That(error, Is.EqualTo($"Missing AnimationComponent on Agent ({nameof(SystemStr)})"));
+	}
+
+	[Test]
+	public void MissingMoveComponent() {
+		this.moveController.move = null;
+		var error = this.moveController
+			.PrepareCoroutineFor(this.agent)
+			.Switch(TestMoveController.ErrorsToString, _ => "no error, got actual behavior");
+
+		var missingMove = this.moveController.MissingField(nameof(this.moveController.move));
+		Assert.That(error, Is.EqualTo($"{missingMove} ({nameof(SystemStr)})"));
 	}
 
 	public void Dispose() {
