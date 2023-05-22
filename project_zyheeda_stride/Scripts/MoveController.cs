@@ -23,18 +23,20 @@ public class MoveController : ProjectZyheedaStartupScript, IEquipment {
 	}
 
 	public Either<IEnumerable<U<SystemStr, PlayerStr>>, FGetCoroutine> PrepareCoroutineFor(Entity agent) {
-		var prepareCoroutine = (IAnimatedMove move) => (AnimationComponent agentAnimator) =>
-			move.PrepareCoroutineFor(
-				agent,
-				speedPerSecond => (float)this.Game.UpdateTime.Elapsed.TotalSeconds * speedPerSecond,
-				key => this.Play(key, agentAnimator)
-			);
-
+		var prepareCoroutine =
+			(IAnimatedMove move) =>
+			(AnimationComponent agentAnimator) =>
+				move.PrepareCoroutineFor(
+					agent,
+					speedPerSecond => (float)this.Game.UpdateTime.Elapsed.TotalSeconds * speedPerSecond,
+					key => this.Play(key, agentAnimator)
+				);
 
 		var agentAnimatorOrError = MoveController.AnimatorOnChildOf(agent);
 		return prepareCoroutine
 			.ApplyWeak(this.EitherMoveOrError())
-			.ApplyWeak(agentAnimatorOrError);
+			.ApplyWeak(agentAnimatorOrError)
+			.Flatten();
 	}
 
 	private void Play(string animationKey, AnimationComponent agentAnimator) {

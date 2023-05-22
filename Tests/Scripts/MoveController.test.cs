@@ -52,7 +52,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		_ = Mock
 			.Get(this.move)
 			.Setup(m => m.PrepareCoroutineFor(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Action<string>>()))
-			.Returns(mockGetCoroutine);
+			.Returns(new Either<IEnumerable<U<SystemStr, PlayerStr>>, FGetCoroutine>(mockGetCoroutine));
 
 		var getCoroutine = this.moveController
 			.PrepareCoroutineFor(this.agent)
@@ -61,7 +61,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 				getCoroutine => getCoroutine
 			);
 
-		Assert.That(getCoroutine, Is.SameAs(mockGetCoroutine));
+		Assert.That(getCoroutine, Is.EqualTo(mockGetCoroutine));
 	}
 
 	[Test]
