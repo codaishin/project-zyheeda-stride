@@ -1,5 +1,6 @@
 namespace Tests;
 
+using System.Linq;
 using NUnit.Framework;
 using ProjectZyheeda;
 
@@ -153,7 +154,7 @@ public class MaybeTest : GameTestCollection {
 	[Test]
 	public void SomeToValue() {
 		var some = Maybe.Some(42);
-		var value = some.MaybeToEither("ERROR");
+		var value = some.ToOkOrSystemError("ERROR");
 
 		Assert.That(value.UnpackOr(-1), Is.EqualTo(42));
 	}
@@ -161,9 +162,16 @@ public class MaybeTest : GameTestCollection {
 	[Test]
 	public void NoneToError() {
 		var some = Maybe.None<int>();
-		var value = some.MaybeToEither("ERROR");
+		var value = some.ToOkOrSystemError("ERROR");
 
-		Assert.That(value.UnpackErrorOr("OKAY"), Is.EqualTo("ERROR"));
+		var error = value.Switch(
+			errors => errors.First().Switch(
+				e => (string)e,
+				e => (string)e
+			),
+			_ => "OKAY"
+		);
+		Assert.That(error, Is.EqualTo("ERROR"));
 	}
 
 	[Test]

@@ -52,7 +52,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		_ = Mock
 			.Get(this.move)
 			.Setup(m => m.PrepareCoroutineFor(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Action<string>>()))
-			.Returns(new Either<IEnumerable<U<SystemStr, PlayerStr>>, FGetCoroutine>(mockGetCoroutine));
+			.Returns(Result.Ok(mockGetCoroutine));
 
 		var getCoroutine = this.moveController
 			.PrepareCoroutineFor(this.agent)
@@ -76,7 +76,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 			.Setup(m => m.PrepareCoroutineFor(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Action<string>>()))
 			.Returns((Entity _, FSpeedToDelta _, Action<string> play) => {
 				runPlay = play;
-				return Mock.Of<FGetCoroutine>();
+				return Result.Ok(Mock.Of<FGetCoroutine>());
 			});
 
 		_ = this.moveController.PrepareCoroutineFor(this.agent);
@@ -100,7 +100,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 			.Setup(m => m.PrepareCoroutineFor(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Action<string>>()))
 			.Returns((Entity _, FSpeedToDelta _, Action<string> play) => {
 				runPlay = play;
-				return Mock.Of<FGetCoroutine>();
+				return Result.Ok(Mock.Of<FGetCoroutine>());
 			});
 
 		_ = this.moveController.PrepareCoroutineFor(this.agent);
@@ -129,7 +129,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 			.Setup(m => m.PrepareCoroutineFor(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Action<string>>()))
 			.Returns((Entity _, FSpeedToDelta delta, Action<string> _) => {
 				runDelta = delta;
-				return Mock.Of<FGetCoroutine>();
+				return Result.Ok(Mock.Of<FGetCoroutine>());
 			});
 
 		_ = this.moveController.PrepareCoroutineFor(this.agent);

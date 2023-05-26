@@ -1,6 +1,5 @@
 namespace ProjectZyheeda;
 
-using System;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 using Stride.Physics;
@@ -10,15 +9,17 @@ using GetTargetFn = System.Func<
 		Stride.Engine.CameraComponent,
 		System.Func<
 			IInputWrapper,
-			IMaybe<U<Stride.Core.Mathematics.Vector3, Stride.Engine.Entity>>
+			Result<U<Stride.Core.Mathematics.Vector3, Stride.Engine.Entity>>
 		>
 	>
 >;
 
 public class GetMousePosition : ProjectZyheedaStartupScript, IGetTarget {
+	public static readonly string invalidTarget = "Invalid target";
+
 	public CameraComponent? camera;
 
-	private IMaybe<Simulation> simulation = Maybe.None<Simulation>();
+	private Result<Simulation> simulation = Result.SystemError("NOT STARTED");
 
 	private static readonly GetTargetFn getTarget =
 		(Simulation simulation) =>
@@ -38,33 +39,21 @@ public class GetMousePosition : ProjectZyheedaStartupScript, IGetTarget {
 			var hit = simulation.Raycast(nearVector.XYZ(), farVector.XYZ());
 
 			return hit.Succeeded
-				? Maybe.Some((U<Vector3, Entity>)hit.Point)
-				: Maybe.None<U<Vector3, Entity>>();
+				? Result.Ok<U<Vector3, Entity>>(hit.Point)
+				: Result.PlayerError("Invalid target");
 		};
 
 	public override void Start() {
 		this.simulation = this
 			.GetSimulation()
-			.ToMaybe();
+			.OkOrSystemError(this.MissingService<Simulation>());
 	}
 
-	public IMaybe<U<Vector3, Entity>> GetTarget() {
+	public Result<U<Vector3, Entity>> GetTarget() {
 		return GetMousePosition.getTarget
-			.Apply(this.simulation.MaybeToEither(this.NoService<Simulation>()))
-			.Apply(this.camera.ToEither(this.NoField(nameof(this.camera))))
-			.Switch(
-				error => throw error,
-				func => func(this.EssentialServices.inputWrapper)
-			);
-	}
-
-	private Exception NoField(string fieldName) {
-		return new MissingField(this, fieldName);
-	}
-
-	private Exception NoService<T>() {
-		return new MissingService<T>(
-			$"{typeof(T)} service missing. Needed by: {this.Entity.Name} ({this.GetType().Name})"
-		);
+			.Apply(this.simulation)
+			.Apply(this.camera.OkOrSystemError(this.MissingField(nameof(this.camera))))
+			.Map(func => func(this.EssentialServices.inputWrapper))
+			.Flatten();
 	}
 }

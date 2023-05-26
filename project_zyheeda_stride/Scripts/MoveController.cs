@@ -1,6 +1,5 @@
 ﻿namespace ProjectZyheeda;
 
-using System.Collections.Generic;
 using System.Linq;
 using Stride.Engine;
 
@@ -8,21 +7,21 @@ using Stride.Engine;
 public class MoveController : ProjectZyheedaStartupScript, IEquipment {
 	public IAnimatedMove? move;
 
-	private static Either<U<SystemStr, PlayerStr>, AnimationComponent> AnimatorOnChildOf(Entity agent) {
+	private static Result<AnimationComponent> AnimatorOnChildOf(Entity agent) {
 		return agent
 			.GetChildren()
 			.Select(c => c.Get<AnimationComponent>())
 			.FirstOrDefault()
-			.ToEither(new U<SystemStr, PlayerStr>(new SystemStr($"Missing AnimationComponent on {agent.Name}")));
+			.OkOrSystemError($"Missing AnimationComponent on {agent.Name}");
 	}
 
-	private Either<U<SystemStr, PlayerStr>, IAnimatedMove> EitherMoveOrError() {
+	private Result<IAnimatedMove> EitherMoveOrError() {
 		return this.move is null
-			? new Either<U<SystemStr, PlayerStr>, IAnimatedMove>(new SystemStr(this.MissingField(nameof(this.move))))
-			: new Either<U<SystemStr, PlayerStr>, IAnimatedMove>(this.move);
+			? Result.SystemError(this.MissingField(nameof(this.move)))
+			: Result.Ok(this.move);
 	}
 
-	public Either<IEnumerable<U<SystemStr, PlayerStr>>, FGetCoroutine> PrepareCoroutineFor(Entity agent) {
+	public Result<FGetCoroutine> PrepareCoroutineFor(Entity agent) {
 		var prepareCoroutine =
 			(IAnimatedMove move) =>
 			(AnimationComponent agentAnimator) =>

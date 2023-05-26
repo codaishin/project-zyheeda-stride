@@ -6,8 +6,6 @@ using Stride.Core.Mathematics;
 using Stride.Engine;
 
 public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
-	private U<SystemStr, PlayerStr> NoAgentMessage => new SystemStr(this.MissingField(nameof(this.agent)));
-
 	public IMaybe<IEquipment>? equipment;
 
 	public Entity? agent;
@@ -19,13 +17,13 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 		);
 	}
 
-	private Either<Errors, Func<Entity, Either<Errors, FGetCoroutine>>> GetBehavior {
+	private Func<Entity, Result<FGetCoroutine>> GetBehavior {
 		get {
 			var getBehaviorAndEquipment =
 				(Entity agent) =>
 					this.equipment.ToMaybe().Flatten().Switch(
 						equipment => equipment.PrepareCoroutineFor(agent),
-						() => (FGetCoroutine)this.NothingEquipped
+						() => Result.Ok<FGetCoroutine>(this.NothingEquipped)
 					);
 			return getBehaviorAndEquipment;
 		}
@@ -48,7 +46,7 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 
 	public (Func<Coroutine>, Cancel) GetCoroutine(U<Vector3, Entity> target) {
 		return this.GetBehavior
-			.ApplyWeak(this.agent.ToEither(this.NoAgentMessage))
+			.ApplyWeak(this.agent.OkOrSystemError(this.MissingField(nameof(this.agent))))
 			.Flatten()
 			.Switch(
 				errors => {

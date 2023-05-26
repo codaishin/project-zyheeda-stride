@@ -89,7 +89,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())
-			.Returns(Maybe.Some<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
+			.Returns(Result.Ok<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
 		_ = Mock.Get(this.behavior)
 			.Setup(c => c.GetCoroutine(new Vector3(1, 2, 3)))
 			.Returns(execution);
@@ -112,7 +112,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())
-			.Returns(Maybe.Some<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
+			.Returns(Result.Ok<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
 		_ = Mock.Get(this.behavior)
 			.Setup(c => c.GetCoroutine(new Vector3(1, 2, 3)))
 			.Returns(execution);
@@ -136,7 +136,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())
-			.Returns(Maybe.Some<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
+			.Returns(Result.Ok<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
 		_ = Mock.Get(this.behavior)
 			.Setup(c => c.GetCoroutine(new Vector3(1, 2, 3)))
 			.Returns(execution);
@@ -153,7 +153,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 	public void DoNotRunBehaviorWithNoTarget() {
 		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())
-			.Returns(Maybe.None<U<Vector3, Entity>>());
+			.Returns(Result.SystemError("ERROR"));
 		this.newActionFnTaskTokens[0].SetResult(InputAction.Chain);
 
 		this.game.WaitFrames(1);
@@ -161,6 +161,20 @@ public class TestInputController : GameTestCollection, IDisposable {
 		Mock
 			.Get(this.behavior)
 			.Verify(b => b.GetCoroutine(It.IsAny<U<Vector3, Entity>>()), Times.Never);
+	}
+
+	[Test]
+	public void LogGetTargetError() {
+		_ = Mock.Get(this.getTarget)
+			.Setup(c => c.GetTarget())
+			.Returns(Result.SystemError("ERROR"));
+		this.newActionFnTaskTokens[0].SetResult(InputAction.Chain);
+
+		this.game.WaitFrames(1);
+
+		Mock
+			.Get(this.systemMessage)
+			.Verify(m => m.Log((SystemStr)"ERROR"), Times.Once);
 	}
 
 	[Test]

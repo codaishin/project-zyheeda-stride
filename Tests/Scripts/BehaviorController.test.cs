@@ -2,7 +2,6 @@ namespace Tests;
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
@@ -16,14 +15,6 @@ public class BehaviorControllerTest : GameTestCollection {
 	private ISystemMessage systemMessage = Mock.Of<ISystemMessage>();
 	private IPlayerMessage playerMessage = Mock.Of<IPlayerMessage>();
 	private BehaviorController controller = new();
-
-	private static Either<IEnumerable<U<SystemStr, PlayerStr>>, FGetCoroutine> EitherWithPlayerErrors(
-		params string[] errors
-	) {
-		return new Either<IEnumerable<U<SystemStr, PlayerStr>>, FGetCoroutine>(
-			errors.Select(e => (U<SystemStr, PlayerStr>)new PlayerStr(e))
-		);
-	}
 
 	[SetUp]
 	public void Setup() {
@@ -41,12 +32,6 @@ public class BehaviorControllerTest : GameTestCollection {
 		this.game.WaitFrames(2);
 	}
 
-	private static Either<IEnumerable<U<SystemStr, PlayerStr>>, FGetCoroutine> EitherWithBehavior(
-		FGetCoroutine getCoroutine
-	) {
-		return new Either<IEnumerable<U<SystemStr, PlayerStr>>, FGetCoroutine>(getCoroutine);
-	}
-
 	[Test]
 	public void PassAgentToGetBehaviorFor() {
 		var getCoroutine = Mock.Of<FGetCoroutine>();
@@ -56,7 +41,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		_ = Mock
 			.Get(equipment)
 			.Setup(e => e.PrepareCoroutineFor(agent))
-			.Returns(BehaviorControllerTest.EitherWithBehavior(getCoroutine));
+			.Returns(Result.Ok(getCoroutine));
 
 		this.controller.agent = agent;
 		this.controller.equipment = Maybe.Some(equipment);
@@ -77,7 +62,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		_ = Mock
 			.Get(equipment)
 			.Setup(e => e.PrepareCoroutineFor(It.IsAny<Entity>()))
-			.Returns(BehaviorControllerTest.EitherWithBehavior(getCoroutine));
+			.Returns(Result.Ok(getCoroutine));
 
 		this.controller.agent = new();
 		this.controller.equipment = Maybe.Some(equipment);
@@ -135,7 +120,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		_ = Mock
 			.Get(equipment)
 			.Setup(e => e.PrepareCoroutineFor(It.IsAny<Entity>()))
-			.Returns(BehaviorControllerTest.EitherWithPlayerErrors(message.value));
+			.Returns(Result.Error(message));
 
 		this.controller.agent = new();
 		this.controller.equipment = Maybe.Some(equipment);
@@ -160,7 +145,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		_ = Mock
 			.Get(equipment)
 			.Setup(e => e.PrepareCoroutineFor(It.IsAny<Entity>()))
-			.Returns(BehaviorControllerTest.EitherWithBehavior(getCoroutine));
+			.Returns(Result.Ok(getCoroutine));
 
 		_ = Mock.Get(getCoroutine)
 			.Setup(func => func(It.IsAny<U<Vector3, Entity>>()))

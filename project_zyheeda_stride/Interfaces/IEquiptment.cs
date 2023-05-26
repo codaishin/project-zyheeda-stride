@@ -4,5 +4,5 @@ using Stride.Engine;
 
 
 public interface IEquipment {
-	Either<Errors, FGetCoroutine> PrepareCoroutineFor(Entity agent);
+	Result<FGetCoroutine> PrepareCoroutineFor(Entity agent);
 }

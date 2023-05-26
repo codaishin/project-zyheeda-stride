@@ -1,6 +1,7 @@
 namespace Tests;
 
 using System;
+using System.Linq;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
@@ -102,11 +103,11 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 		this.getMousePosition
 			.GetTarget()
 			.Switch(
-				some: target => Assert.That(
+				errors => Assert.Fail(string.Join(", ", errors)),
+				target => Assert.That(
 					target,
 					Is.EqualTo((U<Vector3, Entity>)new Vector3(0, 0, -7.5f))
-				),
-				none: () => Assert.Fail("Nothing was hit")
+				)
 			);
 	}
 
@@ -121,11 +122,11 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 		this.getMousePosition
 			.GetTarget()
 			.Switch(
-				some: target => Assert.That(
+				errors => Assert.Fail(string.Join(", ", errors)),
+				target => Assert.That(
 					target.Switch(v => v, _ => Vector3.Zero),
 					Is.EqualTo(new Vector3(-2, 2, -7.5f)).Using(new VectorTolerance(0.0001f))
-				),
-				none: () => Assert.Fail("Nothing was hit")
+				)
 			);
 	}
 
@@ -140,8 +141,8 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 		this.getMousePosition
 			.GetTarget()
 			.Switch(
-				some: target => Assert.Fail($"Should not have hit something, but hit {target}"),
-				none: () => Assert.Pass()
+				errors => Assert.That(errors, Is.EqualTo(new U<SystemStr, PlayerStr>[] { (PlayerStr)GetMousePosition.invalidTarget })),
+				target => Assert.Fail($"Should not have hit something, but hit {target}")
 			);
 	}
 
@@ -151,12 +152,15 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 
 		this.game.WaitFrames(2);
 
-		var error = Assert.Throws<MissingField>(
-			() => this.getMousePosition.GetTarget()
+		var result = this.getMousePosition.GetTarget();
+
+		var error = result.Switch(
+			errors => errors.First().Switch<string>(
+				e => (string)e,
+				e => "wrong error"
+			),
+			_ => "no error"
 		);
-		Assert.That(
-			error?.ToString(),
-			Does.Contain(new MissingField(this.getMousePosition, nameof(this.getMousePosition.camera)).ToString())
-		);
+		Assert.That(error, Is.EqualTo(this.getMousePosition.MissingField(nameof(this.getMousePosition.camera))));
 	}
 }
