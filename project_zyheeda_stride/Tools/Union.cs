@@ -2,7 +2,7 @@ namespace ProjectZyheeda;
 
 using System;
 
-public readonly struct U<T1, T2> {
+public readonly struct U<T1, T2> : IUnion<T1, T2> {
 	private interface IU {
 		TOut Switch<TOut>(Func<T1, TOut> fst, Func<T2, TOut> snd);
 	}
@@ -37,22 +37,6 @@ public readonly struct U<T1, T2> {
 		return this.fstOrSnd.Switch(fst, snd);
 	}
 
-	public void Switch(Action<T1> fst, Action<T2> snd) {
-		var action = this.fstOrSnd.Switch<Action>(
-			v => () => fst(v),
-			v => () => snd(v)
-		);
-		action();
-	}
-
-	public override string? ToString() {
-		var value = this.Switch(
-			a => $"{typeof(T1).Name}: {a?.ToString()}",
-			b => $"{typeof(T2).Name}: {b?.ToString()}"
-		);
-		return $"U<{typeof(T1).Name}, {typeof(T2).Name}>({value})";
-	}
-
 	public static implicit operator U<T1, T2>(T1 value) {
 		return new(value);
 	}
@@ -66,7 +50,7 @@ public readonly struct U<T1, T2> {
 	}
 }
 
-public readonly struct U<T1, T2, T3> {
+public readonly struct U<T1, T2, T3> : IUnion<T1, T2, T3> {
 	private readonly U<T1, U<T2, T3>> fstSndOrTrd;
 
 	public U(T1 value) {
@@ -83,24 +67,6 @@ public readonly struct U<T1, T2, T3> {
 
 	public TOut Switch<TOut>(Func<T1, TOut> fst, Func<T2, TOut> snd, Func<T3, TOut> trd) {
 		return this.fstSndOrTrd.Switch(fst, sndOrTrd => sndOrTrd.Switch(snd, trd));
-	}
-
-	public void Switch(Action<T1> fst, Action<T2> snd, Action<T3> trd) {
-		var action = this.Switch<Action>(
-			v => () => fst(v),
-			v => () => snd(v),
-			v => () => trd(v)
-		);
-		action();
-	}
-
-	public override string? ToString() {
-		var value = this.Switch(
-			a => $"{typeof(T1).Name}: {a?.ToString()}",
-			b => $"{typeof(T2).Name}: {b?.ToString()}",
-			c => $"{typeof(T3).Name}: {c?.ToString()}"
-		);
-		return $"U<{typeof(T1).Name}, {typeof(T2).Name}, {typeof(T3).Name}>({value})";
 	}
 
 	public static implicit operator U<T1, T2, T3>(T1 value) {
