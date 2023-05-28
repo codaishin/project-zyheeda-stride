@@ -38,111 +38,36 @@ public readonly struct Result {
 	}
 }
 
-public readonly struct Result<T> : IUnion<(SystemErrors system, PlayerErrors player), T> {
-	private readonly U<(SystemErrors system, PlayerErrors player), T> errorsOrValue;
+public readonly struct Result<T> : IResult<(SystemErrors system, PlayerErrors player), T> {
+	private struct Value : IResult<(SystemErrors system, PlayerErrors player), T> {
+		public T value;
+		public TOut Switch<TOut>(Func<(SystemErrors system, PlayerErrors player), TOut> fst, Func<T, TOut> snd) {
+			return snd(this.value);
+		}
+	}
+
+	private struct Errors : IResult<(SystemErrors system, PlayerErrors player), T> {
+		public (SystemErrors system, PlayerErrors player) errors;
+		public TOut Switch<TOut>(Func<(SystemErrors system, PlayerErrors player), TOut> fst, Func<T, TOut> snd) {
+			return fst(this.errors);
+		}
+	}
+
+	private readonly IResult<(SystemErrors system, PlayerErrors player), T> errorsOrValue;
 
 	public Result(T value) {
-		this.errorsOrValue = value;
+		this.errorsOrValue = new Result<T>.Value { value = value };
 	}
 
 	public Result((SystemErrors system, PlayerErrors player) errors) {
-		this.errorsOrValue = errors;
+		this.errorsOrValue = new Result<T>.Errors { errors = errors };
 	}
 
-	public TOut Switch<TOut>(Func<(SystemErrors system, PlayerErrors player), TOut> errors, Func<T, TOut> value) {
-		return this.errorsOrValue.Switch(errors, value);
+	public TOut Switch<TOut>(Func<(SystemErrors system, PlayerErrors player), TOut> error, Func<T, TOut> value) {
+		return this.errorsOrValue.Switch(error, value);
 	}
 
 	public static implicit operator Result<T>(Result result) {
 		return new Result<T>(result.errors);
-	}
-}
-
-public static class ResultExtensions {
-	public static Result<TOut> Map<T, TOut>(this Result<T> result, Func<T, TOut> map) {
-		return result.Switch(
-			errors => Result.Errors(errors),
-			value => Result.Ok(map(value))
-		);
-	}
-
-	public static Result<TOut> FlatMap<T, TOut>(this Result<T> result, Func<T, Result<TOut>> map) {
-		return result.Switch(
-			errors => Result.Errors(errors),
-			value => map(value)
-		);
-	}
-
-	public static Result<T> Flatten<T>(this Result<Result<T>> result) {
-		return result.FlatMap(v => v);
-	}
-
-	public static T UnpackOr<T>(this Result<T> result, T fallback) {
-		return result.Switch(
-			_ => fallback,
-			value => value
-		);
-	}
-
-	public static Result<TOut> Apply<TIn, TOut>(this Result<Func<TIn, TOut>> apply, Result<TIn> result) {
-		return apply.FlatMap(func => result.Map(v => func(v)));
-	}
-
-	public static Result<TOut> Apply<TIn, TOut>(this Func<TIn, TOut> apply, Result<TIn> result) {
-		return result.Switch(
-			error => Result.Errors(error),
-			value => Result.Ok(apply(value))
-		);
-	}
-
-	public static Result<TOut> ApplyWeak<TIn, TOut>(this Result<Func<TIn, TOut>> apply, Result<TIn> result) {
-		return apply.Switch(
-			errors => result.Switch(
-				newErrors => Result.Errors((errors.Item1.Concat(newErrors.Item1), errors.Item2.Concat(newErrors.Item2))),
-				value => Result.Errors(errors)
-			),
-			func => result.Switch<Result<TOut>>(
-				newErrors => Result.Errors(newErrors),
-				value => Result.Ok(func(value))
-			)
-		);
-	}
-
-	public static Result<TOut> ApplyWeak<TIn, TOut>(this Func<TIn, TOut> apply, Result<TIn> result) {
-		return result.Switch<Result<TOut>>(
-			errors => Result.Errors(errors),
-			value => Result.Ok(apply(value))
-		);
-	}
-
-	public static IMaybe<T> ToMaybe<T>(this Result<T> result) {
-		return result.Switch(
-			_ => Maybe.None<T>(),
-			value => Maybe.Some(value)
-		);
-	}
-
-	public static Result<T> OkOrPlayerError<T>(this T? value, string error) where T : class {
-		return value is null
-			? Result.PlayerError(error)
-			: Result.Ok(value);
-	}
-
-	public static Result<T> OkOrPlayerError<T>(this T? value, string error) where T : struct {
-		return value is null
-			? Result.PlayerError(error)
-			: Result.Ok(value.Value);
-	}
-
-	public static Result<T> OkOrSystemError<T>(this T? value, string error) where T : class {
-		return value is null
-			? Result.SystemError(error)
-			: Result.Ok(value);
-	}
-
-	public static Result<T> OkOrSystemError<T>(this T? value, string error) where T : struct {
-		return value is null
-			? Result.SystemError(error)
-			: Result.Ok(value.Value);
 	}
 }
