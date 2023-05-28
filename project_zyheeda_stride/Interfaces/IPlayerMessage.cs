@@ -17,5 +17,5 @@ public readonly struct PlayerError {
 }
 
 public interface IPlayerMessage {
-	void Log(PlayerError message);
+	void Log(params PlayerError[] errors);
 }

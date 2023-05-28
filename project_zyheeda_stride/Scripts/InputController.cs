@@ -1,6 +1,7 @@
 namespace ProjectZyheeda;
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 public class InputController : ProjectZyheedaAsyncScript {
@@ -9,15 +10,6 @@ public class InputController : ProjectZyheedaAsyncScript {
 	public IMaybe<IGetTarget>? getTarget;
 	public IMaybe<IBehavior>? behavior;
 	public IMaybe<IScheduler>? scheduler;
-
-	private void LogErrors((SystemErrors system, PlayerErrors player) errors) {
-		foreach (var error in errors.system) {
-			this.EssentialServices.systemMessage.Log(error);
-		}
-		foreach (var error in errors.player) {
-			this.EssentialServices.playerMessage.Log(error);
-		}
-	}
 
 	private Action<InputAction> RunBehavior(IGetTarget getTarget, IBehavior behavior, IScheduler scheduler) {
 		return action => {
@@ -28,7 +20,10 @@ public class InputController : ProjectZyheedaAsyncScript {
 			getTarget
 				.GetTarget()
 				.Switch(
-					errors => { this.LogErrors(errors); },
+					errors => {
+						this.EssentialServices.systemMessage.Log(errors.system.ToArray());
+						this.EssentialServices.playerMessage.Log(errors.player.ToArray());
+					},
 					getTarget => runOrEnqueue(behavior.GetCoroutine(getTarget))
 				);
 		};
@@ -48,7 +43,7 @@ public class InputController : ProjectZyheedaAsyncScript {
 			.ApplyWeak(this.input.ToMaybe().ToOkOrSystemError(this.MissingField(nameof(this.input))))
 			.Switch<(IInputStream, Action<InputAction>)?>(
 				errors => {
-					this.LogErrors(errors);
+					this.EssentialServices.systemMessage.Log(errors.system.ToArray());
 					return null;
 				},
 				run => run

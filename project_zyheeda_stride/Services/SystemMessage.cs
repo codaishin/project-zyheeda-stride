@@ -9,7 +9,9 @@ public class SystemMessage : ISystemMessage {
 		this.logger
 			??= GlobalLogger.GetLogger(this.GetType().Name);
 
-	public void Log(SystemError message) {
-		this.Logger.Error(message.value);
+	public void Log(params SystemError[] errors) {
+		foreach (var error in errors) {
+			this.Logger.Error(error.value);
+		}
 	}
 }

@@ -18,6 +18,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 	private IScheduler scheduler = Mock.Of<IScheduler>();
 	private List<TaskCompletionSource<InputAction>> newActionFnTaskTokens = new();
 	private ISystemMessage systemMessage = Mock.Of<ISystemMessage>();
+	private IPlayerMessage playerMessage = Mock.Of<IPlayerMessage>();
 
 	[SetUp]
 	public void Setup() {
@@ -45,6 +46,8 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		this.game.Services.RemoveService<ISystemMessage>();
 		this.game.Services.AddService(this.systemMessage = Mock.Of<ISystemMessage>());
+		this.game.Services.RemoveService<IPlayerMessage>();
+		this.game.Services.AddService(this.playerMessage = Mock.Of<IPlayerMessage>());
 		this.game.Services.RemoveService<IInputDispatcher>();
 		this.game.Services.AddService(dispatcher);
 
@@ -167,7 +170,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 	}
 
 	[Test]
-	public void LogGetTargetError() {
+	public void LogGetTargetSystemError() {
 		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())
 			.Returns(Result.SystemError("ERROR"));
@@ -177,7 +180,21 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		Mock
 			.Get(this.systemMessage)
-			.Verify(m => m.Log((SystemError)"ERROR"), Times.Once);
+			.Verify(m => m.Log("ERROR"), Times.Once);
+	}
+
+	[Test]
+	public void LogGetTargetPlayerError() {
+		_ = Mock.Get(this.getTarget)
+			.Setup(c => c.GetTarget())
+			.Returns(Result.PlayerError("ERROR"));
+		this.newActionFnTaskTokens[0].SetResult(InputAction.Chain);
+
+		this.game.WaitFrames(1);
+
+		Mock
+			.Get(this.playerMessage)
+			.Verify(m => m.Log("ERROR"), Times.Once);
 	}
 
 	[Test]
@@ -192,7 +209,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		Mock
 			.Get(this.systemMessage)
-			.Verify(s => s.Log(new SystemError(this.controller.MissingField(nameof(this.controller.getTarget)))), Times.Once);
+			.Verify(s => s.Log(this.controller.MissingField(nameof(this.controller.getTarget))), Times.Once);
 	}
 
 	[Test]
@@ -207,7 +224,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		Mock
 			.Get(this.systemMessage)
-			.Verify(s => s.Log(new SystemError(this.controller.MissingField(nameof(this.controller.behavior)))), Times.Once);
+			.Verify(s => s.Log(this.controller.MissingField(nameof(this.controller.behavior))), Times.Once);
 	}
 
 	[Test]
@@ -222,7 +239,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		Mock
 			.Get(this.systemMessage)
-			.Verify(s => s.Log(new SystemError(this.controller.MissingField(nameof(this.controller.scheduler)))), Times.Once);
+			.Verify(s => s.Log(this.controller.MissingField(nameof(this.controller.scheduler))), Times.Once);
 	}
 
 
@@ -238,7 +255,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		Mock
 			.Get(this.systemMessage)
-			.Verify(s => s.Log(new SystemError(this.controller.MissingField(nameof(this.controller.input)))), Times.Once);
+			.Verify(s => s.Log(this.controller.MissingField(nameof(this.controller.input))), Times.Once);
 	}
 
 	[Test]
@@ -256,18 +273,13 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		Mock
 			.Get(this.systemMessage)
-			.Verify(s => s.Log(new SystemError(this.controller.MissingField(nameof(this.controller.getTarget)))), Times.Once);
-		Mock
-			.Get(this.systemMessage)
-			.Verify(s => s.Log(new SystemError(this.controller.MissingField(nameof(this.controller.behavior)))), Times.Once);
-		Mock
-			.Get(this.systemMessage)
-			.Verify(s => s.Log(new SystemError(this.controller.MissingField(nameof(this.controller.scheduler)))), Times.Once);
-		Mock
-			.Get(this.systemMessage)
-			.Verify(s => s.Log(new SystemError(this.controller.MissingField(nameof(this.controller.input)))), Times.Once);
+			.Verify(s => s.Log(
+				this.controller.MissingField(nameof(this.controller.getTarget)),
+				this.controller.MissingField(nameof(this.controller.behavior)),
+				this.controller.MissingField(nameof(this.controller.scheduler)),
+				this.controller.MissingField(nameof(this.controller.input))
+			), Times.Once);
 	}
-
 
 	public void Dispose() {
 		GC.SuppressFinalize(this);

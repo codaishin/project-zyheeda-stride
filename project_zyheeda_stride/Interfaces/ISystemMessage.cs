@@ -17,5 +17,5 @@ public readonly struct SystemError {
 }
 
 public interface ISystemMessage {
-	void Log(SystemError message);
+	void Log(params SystemError[] errors);
 }

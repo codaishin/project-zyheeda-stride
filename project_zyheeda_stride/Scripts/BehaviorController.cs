@@ -1,6 +1,7 @@
 ﻿namespace ProjectZyheeda;
 
 using System;
+using System.Linq;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 
@@ -30,22 +31,14 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 		return (run, cancel);
 	}
 
-	private void LogErrors((SystemErrors system, PlayerErrors player) errors) {
-		foreach (var error in errors.system) {
-			this.EssentialServices.systemMessage.Log(error);
-		}
-		foreach (var error in errors.player) {
-			this.EssentialServices.playerMessage.Log(error);
-		}
-	}
-
 	public (Func<Coroutine>, Cancel) GetCoroutine(Func<Vector3> getTarget) {
 		return this.GetBehavior
 			.ApplyWeak(this.agent.OkOrSystemError(this.MissingField(nameof(this.agent))))
 			.Flatten()
 			.Switch(
 				errors => {
-					this.LogErrors(errors);
+					this.EssentialServices.systemMessage.Log(errors.system.ToArray());
+					this.EssentialServices.playerMessage.Log(errors.player.ToArray());
 					return this.NothingEquipped(getTarget);
 				},
 				value => value(getTarget)

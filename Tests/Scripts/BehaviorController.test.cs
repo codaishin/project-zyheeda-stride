@@ -100,7 +100,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		Mock
 			.Get(this.playerMessage)
-			.Verify(m => m.Log(new PlayerError("nothing equipped")), Times.Once);
+			.Verify(m => m.Log("nothing equipped"), Times.Once);
 	}
 
 	[Test]
@@ -139,6 +139,21 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		Mock
 			.Get(this.playerMessage)
+			.Verify(m => m.Log(message), Times.Once);
+	}
+
+	[Test]
+	public void AgentMissing() {
+		var equipment = Mock.Of<IEquipment>();
+		var message = new SystemError(this.controller.MissingField(nameof(this.controller.agent)));
+
+		this.controller.agent = null;
+		this.controller.equipment = Maybe.Some(equipment);
+
+		_ = this.controller.GetCoroutine(() => Vector3.Zero);
+
+		Mock
+			.Get(this.systemMessage)
 			.Verify(m => m.Log(message), Times.Once);
 	}
 
