@@ -18,6 +18,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 	private IScheduler scheduler = Mock.Of<IScheduler>();
 	private List<TaskCompletionSource<InputAction>> newActionFnTaskTokens = new();
 	private ISystemMessage systemMessage = Mock.Of<ISystemMessage>();
+	private IPlayerMessage playerMessage = Mock.Of<IPlayerMessage>();
 
 	[SetUp]
 	public void Setup() {
@@ -45,6 +46,8 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		this.game.Services.RemoveService<ISystemMessage>();
 		this.game.Services.AddService(this.systemMessage = Mock.Of<ISystemMessage>());
+		this.game.Services.RemoveService<IPlayerMessage>();
+		this.game.Services.AddService(this.playerMessage = Mock.Of<IPlayerMessage>());
 		this.game.Services.RemoveService<IInputDispatcher>();
 		this.game.Services.AddService(dispatcher);
 
@@ -89,17 +92,20 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())
-			.Returns(Maybe.Some<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
+			.Returns(Result.Ok(() => new Vector3(1, 2, 3)));
 		_ = Mock.Get(this.behavior)
-			.Setup(c => c.GetCoroutine(new Vector3(1, 2, 3)))
-			.Returns(execution);
+			.Setup(c => c.GetCoroutine(It.IsAny<Func<Vector3>>()))
+			.Returns((Func<Vector3> getTarget) => {
+				Assert.That(getTarget(), Is.EqualTo(new Vector3(1, 2, 3)));
+				return execution;
+			});
 		this.newActionFnTaskTokens[0].SetResult(InputAction.Run);
 
 		this.game.WaitFrames(1);
 
 		Mock
-			.Get(this.scheduler)
-			.Verify(b => b.Run(execution), Times.Once);
+			.Get(this.behavior)
+			.Verify(b => b.GetCoroutine(It.IsAny<Func<Vector3>>()), Times.Once);
 	}
 
 	[Test]
@@ -112,9 +118,9 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())
-			.Returns(Maybe.Some<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
+			.Returns(Result.Ok(() => new Vector3(1, 2, 3)));
 		_ = Mock.Get(this.behavior)
-			.Setup(c => c.GetCoroutine(new Vector3(1, 2, 3)))
+			.Setup(c => c.GetCoroutine(It.IsAny<Func<Vector3>>()))
 			.Returns(execution);
 		this.newActionFnTaskTokens[0].SetResult(InputAction.Run);
 		this.newActionFnTaskTokens[1].SetResult(InputAction.Run);
@@ -127,7 +133,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 	}
 
 	[Test]
-	public void EnqueueBehaviorWithTarget() {
+	public void EnqueueBehavior() {
 		static IEnumerable<IWait> run() {
 			yield break;
 		}
@@ -136,9 +142,9 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())
-			.Returns(Maybe.Some<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
+			.Returns(Result.Ok(() => new Vector3(1, 2, 3)));
 		_ = Mock.Get(this.behavior)
-			.Setup(c => c.GetCoroutine(new Vector3(1, 2, 3)))
+			.Setup(c => c.GetCoroutine(It.IsAny<Func<Vector3>>()))
 			.Returns(execution);
 		this.newActionFnTaskTokens[0].SetResult(InputAction.Chain);
 
@@ -153,14 +159,42 @@ public class TestInputController : GameTestCollection, IDisposable {
 	public void DoNotRunBehaviorWithNoTarget() {
 		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())
-			.Returns(Maybe.None<U<Vector3, Entity>>());
+			.Returns(Result.SystemError("ERROR"));
 		this.newActionFnTaskTokens[0].SetResult(InputAction.Chain);
 
 		this.game.WaitFrames(1);
 
 		Mock
 			.Get(this.behavior)
-			.Verify(b => b.GetCoroutine(It.IsAny<U<Vector3, Entity>>()), Times.Never);
+			.Verify(b => b.GetCoroutine(It.IsAny<Func<Vector3>>()), Times.Never);
+	}
+
+	[Test]
+	public void LogGetTargetSystemError() {
+		_ = Mock.Get(this.getTarget)
+			.Setup(c => c.GetTarget())
+			.Returns(Result.SystemError("ERROR"));
+		this.newActionFnTaskTokens[0].SetResult(InputAction.Chain);
+
+		this.game.WaitFrames(1);
+
+		Mock
+			.Get(this.systemMessage)
+			.Verify(m => m.Log("ERROR"), Times.Once);
+	}
+
+	[Test]
+	public void LogGetTargetPlayerError() {
+		_ = Mock.Get(this.getTarget)
+			.Setup(c => c.GetTarget())
+			.Returns(Result.PlayerError("ERROR"));
+		this.newActionFnTaskTokens[0].SetResult(InputAction.Chain);
+
+		this.game.WaitFrames(1);
+
+		Mock
+			.Get(this.playerMessage)
+			.Verify(m => m.Log("ERROR"), Times.Once);
 	}
 
 	[Test]
@@ -175,7 +209,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		Mock
 			.Get(this.systemMessage)
-			.Verify(s => s.Log(new SystemStr(this.controller.MissingField(nameof(this.controller.getTarget)))), Times.Once);
+			.Verify(s => s.Log(this.controller.MissingField(nameof(this.controller.getTarget))), Times.Once);
 	}
 
 	[Test]
@@ -190,7 +224,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		Mock
 			.Get(this.systemMessage)
-			.Verify(s => s.Log(new SystemStr(this.controller.MissingField(nameof(this.controller.behavior)))), Times.Once);
+			.Verify(s => s.Log(this.controller.MissingField(nameof(this.controller.behavior))), Times.Once);
 	}
 
 	[Test]
@@ -205,7 +239,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		Mock
 			.Get(this.systemMessage)
-			.Verify(s => s.Log(new SystemStr(this.controller.MissingField(nameof(this.controller.scheduler)))), Times.Once);
+			.Verify(s => s.Log(this.controller.MissingField(nameof(this.controller.scheduler))), Times.Once);
 	}
 
 
@@ -221,7 +255,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		Mock
 			.Get(this.systemMessage)
-			.Verify(s => s.Log(new SystemStr(this.controller.MissingField(nameof(this.controller.input)))), Times.Once);
+			.Verify(s => s.Log(this.controller.MissingField(nameof(this.controller.input))), Times.Once);
 	}
 
 	[Test]
@@ -239,18 +273,13 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		Mock
 			.Get(this.systemMessage)
-			.Verify(s => s.Log(new SystemStr(this.controller.MissingField(nameof(this.controller.getTarget)))), Times.Once);
-		Mock
-			.Get(this.systemMessage)
-			.Verify(s => s.Log(new SystemStr(this.controller.MissingField(nameof(this.controller.behavior)))), Times.Once);
-		Mock
-			.Get(this.systemMessage)
-			.Verify(s => s.Log(new SystemStr(this.controller.MissingField(nameof(this.controller.scheduler)))), Times.Once);
-		Mock
-			.Get(this.systemMessage)
-			.Verify(s => s.Log(new SystemStr(this.controller.MissingField(nameof(this.controller.input)))), Times.Once);
+			.Verify(s => s.Log(
+				this.controller.MissingField(nameof(this.controller.getTarget)),
+				this.controller.MissingField(nameof(this.controller.behavior)),
+				this.controller.MissingField(nameof(this.controller.scheduler)),
+				this.controller.MissingField(nameof(this.controller.input))
+			), Times.Once);
 	}
-
 
 	public void Dispose() {
 		GC.SuppressFinalize(this);

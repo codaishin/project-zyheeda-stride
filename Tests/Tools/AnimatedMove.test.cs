@@ -48,7 +48,10 @@ public class TestAnimatedMove {
 		var agent = new Entity();
 		var delta = Mock.Of<FSpeedToDelta>();
 		var getCoroutine = this.animatedMove.PrepareCoroutineFor(agent, delta, _ => { }).Switch(
-			error => throw new AssertionException(string.Join(", ", error)),
+			errors => throw new AssertionException((
+				string.Join(", ", errors.player),
+				string.Join(", ", errors.system)
+			).ToString()),
 			value => value
 		);
 
@@ -56,11 +59,11 @@ public class TestAnimatedMove {
 			.Get(this.move)
 			.Verify(m => m.PrepareCoroutineFor(agent, delta), Times.Once);
 
-		var (run, cancel) = getCoroutine(new Vector3(1, 2, 3));
+		var (run, cancel) = getCoroutine(() => new Vector3(1, 2, 3));
 
 		Mock
 			.Get(this.getCoroutine)
-			.Verify(getCoroutine => getCoroutine(new Vector3(1, 2, 3)), Times.Once);
+			.Verify(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()), Times.Once);
 
 		Assert.That(run(), Is.All.InstanceOf<MockWait>());
 
@@ -79,7 +82,7 @@ public class TestAnimatedMove {
 			error => throw new AssertionException(string.Join(", ", error)),
 			value => value
 		);
-		var (run, _) = getCoroutine(target);
+		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
 		this.animatedMove.animationKey = "walk";
@@ -97,7 +100,7 @@ public class TestAnimatedMove {
 			error => throw new AssertionException(string.Join(", ", error)),
 			value => value
 		);
-		var (run, _) = getCoroutine(new Vector3(1, 0, 0));
+		var (run, _) = getCoroutine(() => new Vector3(1, 0, 0));
 		var runner = run().GetEnumerator();
 
 		this.animatedMove.animationKey = "run";
@@ -116,7 +119,7 @@ public class TestAnimatedMove {
 			error => throw new AssertionException(string.Join(", ", error)),
 			value => value
 		);
-		var (run, _) = getCoroutine(target);
+		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
 		while (runner.MoveNext()) { }
@@ -134,7 +137,7 @@ public class TestAnimatedMove {
 			error => throw new AssertionException(string.Join(", ", error)),
 			value => value
 		);
-		var (run, cancel) = getCoroutine(target);
+		var (run, cancel) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
 		_ = runner.MoveNext();
@@ -149,14 +152,14 @@ public class TestAnimatedMove {
 	public void NoMoveSet() {
 		this.animatedMove.move = null;
 		var play = Mock.Of<Action<string>>();
-		var errors = this.animatedMove.PrepareCoroutineFor(new Entity(), _ => 0, play).Switch(
+		var (system, _) = this.animatedMove.PrepareCoroutineFor(new Entity(), _ => 0, play).Switch(
 			error => error,
 			value => throw new AssertionException("had a value, but shouldn't have had one")
 		);
 
 		Assert.That(
-			errors,
-			Contains.Item((U<SystemStr, PlayerStr>)new SystemStr(this.animatedMove.MissingField(nameof(this.animatedMove.move))))
+			system,
+			Contains.Item((SystemError)this.animatedMove.MissingField(nameof(this.animatedMove.move)))
 		);
 	}
 }

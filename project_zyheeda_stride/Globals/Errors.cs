@@ -1,6 +1,2 @@
-global using Errors = System.Collections.Generic.IEnumerable<
-	ProjectZyheeda.U<
-		ProjectZyheeda.SystemStr,
-		ProjectZyheeda.PlayerStr
-	>
->;
+global using PlayerErrors = System.Collections.Generic.IEnumerable<ProjectZyheeda.PlayerError>;
+global using SystemErrors = System.Collections.Generic.IEnumerable<ProjectZyheeda.SystemError>;

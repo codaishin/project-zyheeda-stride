@@ -1,61 +1,47 @@
 ﻿namespace ProjectZyheeda;
 
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 
 public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
-	private U<SystemStr, PlayerStr> NoAgentMessage => new SystemStr(this.MissingField(nameof(this.agent)));
-
 	public IMaybe<IEquipment>? equipment;
 
 	public Entity? agent;
 
-	private void LogMessage(U<SystemStr, PlayerStr> error) {
-		error.Switch(
-			this.EssentialServices.systemMessage.Log,
-			this.EssentialServices.playerMessage.Log
-		);
-	}
-
-	private Either<Errors, Func<Entity, Either<Errors, FGetCoroutine>>> GetBehavior {
+	private Func<Entity, Result<FGetCoroutine>> GetBehavior {
 		get {
 			var getBehaviorAndEquipment =
 				(Entity agent) =>
 					this.equipment.ToMaybe().Flatten().Switch(
 						equipment => equipment.PrepareCoroutineFor(agent),
-						() => (FGetCoroutine)this.NothingEquipped
+						() => Result.Ok<FGetCoroutine>(this.NothingEquipped)
 					);
 			return getBehaviorAndEquipment;
 		}
 	}
 
-	private (Func<Coroutine>, Cancel) NothingEquipped(U<Vector3, Entity> target) {
+	private (Func<Coroutine>, Cancel) NothingEquipped(Func<Vector3> _) {
 		Coroutine run() {
-			this.LogMessage(new PlayerStr("nothing equipped"));
+			this.EssentialServices.playerMessage.Log("nothing equipped");
 			yield break;
 		}
 		void cancel() { }
 		return (run, cancel);
 	}
 
-	private void LogErrors(IEnumerable<U<SystemStr, PlayerStr>> errors) {
-		foreach (var error in errors) {
-			this.LogMessage(error);
-		}
-	}
-
-	public (Func<Coroutine>, Cancel) GetCoroutine(U<Vector3, Entity> target) {
+	public (Func<Coroutine>, Cancel) GetCoroutine(Func<Vector3> getTarget) {
 		return this.GetBehavior
-			.ApplyWeak(this.agent.ToEither(this.NoAgentMessage))
+			.ApplyWeak(this.agent.OkOrSystemError(this.MissingField(nameof(this.agent))))
 			.Flatten()
 			.Switch(
 				errors => {
-					this.LogErrors(errors);
-					return this.NothingEquipped(target);
+					this.EssentialServices.systemMessage.Log(errors.system.ToArray());
+					this.EssentialServices.playerMessage.Log(errors.player.ToArray());
+					return this.NothingEquipped(getTarget);
 				},
-				value => value(target)
+				value => value(getTarget)
 			);
 	}
 }

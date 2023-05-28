@@ -1,7 +1,7 @@
 namespace ProjectZyheeda;
 
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 public class InputController : ProjectZyheedaAsyncScript {
@@ -11,13 +11,7 @@ public class InputController : ProjectZyheedaAsyncScript {
 	public IMaybe<IBehavior>? behavior;
 	public IMaybe<IScheduler>? scheduler;
 
-	private void LogErrors(IEnumerable<string> errors) {
-		foreach (var error in errors) {
-			this.EssentialServices.systemMessage.Log(new SystemStr(error));
-		}
-	}
-
-	private static Action<InputAction> RunBehavior(IGetTarget getTarget, IBehavior behavior, IScheduler scheduler) {
+	private Action<InputAction> RunBehavior(IGetTarget getTarget, IBehavior behavior, IScheduler scheduler) {
 		return action => {
 			Action<(Func<Coroutine>, Cancel)> runOrEnqueue =
 				action is InputAction.Run
@@ -26,8 +20,11 @@ public class InputController : ProjectZyheedaAsyncScript {
 			getTarget
 				.GetTarget()
 				.Switch(
-					target => runOrEnqueue(behavior.GetCoroutine(target)),
-					() => { }
+					errors => {
+						this.EssentialServices.systemMessage.Log(errors.system.ToArray());
+						this.EssentialServices.playerMessage.Log(errors.player.ToArray());
+					},
+					getTarget => runOrEnqueue(behavior.GetCoroutine(getTarget))
 				);
 		};
 	}
@@ -37,16 +34,16 @@ public class InputController : ProjectZyheedaAsyncScript {
 			(IGetTarget getTarget) =>
 			(IBehavior behavior) =>
 			(IScheduler scheduler) =>
-			(IInputStream input) => (input, InputController.RunBehavior(getTarget, behavior, scheduler));
+			(IInputStream input) => (input, this.RunBehavior(getTarget, behavior, scheduler));
 
 		return getInputAndRun
-			.ApplyWeak(this.getTarget.ToMaybe().Flatten().MaybeToEither(this.MissingField(nameof(this.getTarget))))
-			.ApplyWeak(this.behavior.ToMaybe().Flatten().MaybeToEither(this.MissingField(nameof(this.behavior))))
-			.ApplyWeak(this.scheduler.ToMaybe().Flatten().MaybeToEither(this.MissingField(nameof(this.scheduler))))
-			.ApplyWeak(this.input.ToEither(this.MissingField(nameof(this.input))))
+			.ApplyWeak(this.getTarget.ToMaybe().Flatten().ToOkOrSystemError(this.MissingField(nameof(this.getTarget))))
+			.ApplyWeak(this.behavior.ToMaybe().Flatten().ToOkOrSystemError(this.MissingField(nameof(this.behavior))))
+			.ApplyWeak(this.scheduler.ToMaybe().Flatten().ToOkOrSystemError(this.MissingField(nameof(this.scheduler))))
+			.ApplyWeak(this.input.ToMaybe().ToOkOrSystemError(this.MissingField(nameof(this.input))))
 			.Switch<(IInputStream, Action<InputAction>)?>(
 				errors => {
-					this.LogErrors(errors);
+					this.EssentialServices.systemMessage.Log(errors.system.ToArray());
 					return null;
 				},
 				run => run

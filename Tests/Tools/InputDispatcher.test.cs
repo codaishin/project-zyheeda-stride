@@ -40,7 +40,7 @@ public class TestInputDispatcher {
 
 		Mock
 			.Get(this.systemMessage)
-			.Verify(m => m.Log(new SystemStr($"{Keys.Home} is not mapped to InputKeys")));
+			.Verify(m => m.Log(new SystemError($"{Keys.Home} is not mapped to InputKeys")));
 	}
 
 	[Test]
@@ -66,7 +66,7 @@ public class TestInputDispatcher {
 
 		Mock
 			.Get(this.systemMessage)
-			.Verify(m => m.Log(new SystemStr($"{MouseButton.Extended1} is not mapped to InputKeys")));
+			.Verify(m => m.Log(new SystemError($"{MouseButton.Extended1} is not mapped to InputKeys")));
 	}
 
 	[Test]

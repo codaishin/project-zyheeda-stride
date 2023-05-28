@@ -12,21 +12,19 @@ public class AnimatedMove : IAnimatedMove {
 	public IMove? move;
 	public string animationKey = "";
 
-	public Either<Errors, FGetCoroutine> PrepareCoroutineFor(
+	public Result<FGetCoroutine> PrepareCoroutineFor(
 		Entity agent,
 		FSpeedToDelta delta,
 		Action<string> playAnimation
 	) {
 		if (this.move is null) {
-			return new Either<Errors, FGetCoroutine>(new[] {
-				(U<SystemStr, PlayerStr>)new SystemStr(this.MissingField(nameof(this.move)))
-			});
+			return Result.SystemError(this.MissingField(nameof(this.move)));
 		}
 
 		var innerGetCoroutine = this.move.PrepareCoroutineFor(agent, delta);
 
-		(Func<Coroutine>, Cancel) GetCoroutine(U<Vector3, Entity> target) {
-			var (runMove, cancelMove) = innerGetCoroutine(target);
+		(Func<Coroutine>, Cancel) GetCoroutine(Func<Vector3> getTarget) {
+			var (runMove, cancelMove) = innerGetCoroutine(getTarget);
 
 			Coroutine run() {
 				playAnimation(this.animationKey);
@@ -43,6 +41,6 @@ public class AnimatedMove : IAnimatedMove {
 
 			return (run, cancel);
 		}
-		return new Either<Errors, FGetCoroutine>(GetCoroutine);
+		return Result.Ok<FGetCoroutine>(GetCoroutine);
 	}
 }
