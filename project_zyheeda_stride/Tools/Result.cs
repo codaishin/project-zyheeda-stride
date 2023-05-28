@@ -70,4 +70,16 @@ public readonly struct Result<T> : IResult<(SystemErrors system, PlayerErrors pl
 	public static implicit operator Result<T>(Result result) {
 		return new Result<T>(result.errors);
 	}
+
+	public static implicit operator Result<T>(T value) {
+		return new Result<T>(value);
+	}
+
+	public static implicit operator Result<T>(SystemError error) {
+		return new Result<T>((new SystemError[] { error }, Enumerable.Empty<PlayerError>()));
+	}
+
+	public static implicit operator Result<T>(PlayerError error) {
+		return new Result<T>((Enumerable.Empty<SystemError>(), new PlayerError[] { error }));
+	}
 }

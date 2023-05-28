@@ -44,4 +44,31 @@ public class TestResult : GameTestCollection {
 		);
 		Assert.That(result, Is.EqualTo(errors));
 	}
+
+	[Test]
+	public void ImplicitCastOk() {
+		Result<int> result = 42;
+		result.Switch(
+			errors => Assert.Fail(result.UnpackToString()),
+			value => Assert.That(value, Is.EqualTo(42))
+		);
+	}
+
+	[Test]
+	public void ImplicitSystemError() {
+		Result<int> result = new SystemError("OUCHIE");
+		result.Switch(
+			errors => Assert.That(errors.system.First(), Is.EqualTo((SystemError)"OUCHIE")),
+			value => Assert.That(value, Is.EqualTo(42))
+		);
+	}
+
+	[Test]
+	public void ImplicitPlayerError() {
+		Result<int> result = new PlayerError("OUCHIE");
+		result.Switch(
+			errors => Assert.That(errors.player.First(), Is.EqualTo((PlayerError)"OUCHIE")),
+			value => Assert.That(value, Is.EqualTo(42))
+		);
+	}
 }
