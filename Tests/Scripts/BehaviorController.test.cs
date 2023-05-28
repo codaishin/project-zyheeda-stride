@@ -81,7 +81,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		Mock
 			.Get(this.playerMessage)
-			.Verify(m => m.Log(new PlayerStr("nothing equipped")), Times.Never);
+			.Verify(m => m.Log(new PlayerError("nothing equipped")), Times.Never);
 
 		var (run, _) = this.controller.GetCoroutine(target);
 		var coroutine = run().GetEnumerator();
@@ -90,7 +90,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		Mock
 			.Get(this.playerMessage)
-			.Verify(m => m.Log(new PlayerStr("nothing equipped")), Times.Once);
+			.Verify(m => m.Log(new PlayerError("nothing equipped")), Times.Once);
 	}
 
 	[Test]
@@ -100,7 +100,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		Mock
 			.Get(this.playerMessage)
-			.Verify(m => m.Log(new PlayerStr("nothing equipped")), Times.Never);
+			.Verify(m => m.Log(new PlayerError("nothing equipped")), Times.Never);
 
 		var (run, _) = this.controller.GetCoroutine(target);
 		var coroutine = run().GetEnumerator();
@@ -109,13 +109,13 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		Mock
 			.Get(this.playerMessage)
-			.Verify(m => m.Log(new PlayerStr("nothing equipped")), Times.Once);
+			.Verify(m => m.Log(new PlayerError("nothing equipped")), Times.Once);
 	}
 
 	[Test]
 	public void RequirementsMissing() {
 		var equipment = Mock.Of<IEquipment>();
-		var message = new PlayerStr("can't use gun");
+		var message = new PlayerError("can't use gun");
 
 		_ = Mock
 			.Get(equipment)

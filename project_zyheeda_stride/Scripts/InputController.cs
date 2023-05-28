@@ -1,7 +1,6 @@
 namespace ProjectZyheeda;
 
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 public class InputController : ProjectZyheedaAsyncScript {
@@ -11,12 +10,12 @@ public class InputController : ProjectZyheedaAsyncScript {
 	public IMaybe<IBehavior>? behavior;
 	public IMaybe<IScheduler>? scheduler;
 
-	private void LogErrors(IEnumerable<U<SystemStr, PlayerStr>> errors) {
-		foreach (var error in errors) {
-			error.Switch(
-				e => this.EssentialServices.systemMessage.Log(e),
-				e => this.EssentialServices.playerMessage.Log(e)
-			);
+	private void LogErrors((SystemErrors system, PlayerErrors player) errors) {
+		foreach (var error in errors.system) {
+			this.EssentialServices.systemMessage.Log(error);
+		}
+		foreach (var error in errors.player) {
+			this.EssentialServices.playerMessage.Log(error);
 		}
 	}
 

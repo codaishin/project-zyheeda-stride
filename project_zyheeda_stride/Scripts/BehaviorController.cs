@@ -1,7 +1,6 @@
 ﻿namespace ProjectZyheeda;
 
 using System;
-using System.Collections.Generic;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 
@@ -10,7 +9,7 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 
 	public Entity? agent;
 
-	private void LogMessage(U<SystemStr, PlayerStr> error) {
+	private void LogMessage(U<SystemError, PlayerError> error) {
 		error.Switch(
 			this.EssentialServices.systemMessage.Log,
 			this.EssentialServices.playerMessage.Log
@@ -31,16 +30,19 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 
 	private (Func<Coroutine>, Cancel) NothingEquipped(U<Vector3, Entity> target) {
 		Coroutine run() {
-			this.LogMessage(new PlayerStr("nothing equipped"));
+			this.LogMessage(new PlayerError("nothing equipped"));
 			yield break;
 		}
 		void cancel() { }
 		return (run, cancel);
 	}
 
-	private void LogErrors(IEnumerable<U<SystemStr, PlayerStr>> errors) {
-		foreach (var error in errors) {
-			this.LogMessage(error);
+	private void LogErrors((SystemErrors system, PlayerErrors player) errors) {
+		foreach (var error in errors.system) {
+			this.EssentialServices.systemMessage.Log(error);
+		}
+		foreach (var error in errors.player) {
+			this.EssentialServices.playerMessage.Log(error);
 		}
 	}
 

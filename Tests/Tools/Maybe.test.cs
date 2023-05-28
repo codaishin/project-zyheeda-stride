@@ -164,12 +164,9 @@ public class MaybeTest : GameTestCollection {
 		var some = Maybe.None<int>();
 		var value = some.ToOkOrSystemError("ERROR");
 
-		var error = value.Switch(
-			errors => errors.First().Switch(
-				e => (string)e,
-				e => (string)e
-			),
-			_ => "OKAY"
+		var error = value.Switch<string>(
+			errors => errors.system.First(),
+			_ => "OKAY OR WRONG ERROR"
 		);
 		Assert.That(error, Is.EqualTo("ERROR"));
 	}

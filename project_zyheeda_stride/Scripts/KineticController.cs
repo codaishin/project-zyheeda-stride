@@ -25,7 +25,7 @@ public abstract class BaseKineticController<TMove> :
 	}
 
 	private void SystemLog(string message) {
-		this.EssentialServices.systemMessage.Log(new SystemStr(message));
+		this.EssentialServices.systemMessage.Log(new SystemError(message));
 	}
 
 	public override async Task Execute() {

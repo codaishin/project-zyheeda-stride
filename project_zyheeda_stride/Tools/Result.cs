@@ -1,17 +1,13 @@
 namespace ProjectZyheeda;
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
+
 public readonly struct Result {
-	public readonly IEnumerable<U<SystemStr, PlayerStr>> errors;
+	public readonly (SystemErrors system, PlayerErrors player) errors;
 
-	private Result(U<SystemStr, PlayerStr> error) {
-		this.errors = new[] { error };
-	}
-
-	private Result(IEnumerable<U<SystemStr, PlayerStr>> errors) {
+	private Result((SystemErrors system, PlayerErrors player) errors) {
 		this.errors = errors;
 	}
 
@@ -20,38 +16,40 @@ public readonly struct Result {
 	}
 
 	public static Result PlayerError(string error) {
-		return new Result((PlayerStr)error);
+		return Result.Error((PlayerError)error);
 	}
 
 	public static Result SystemError(string error) {
-		return new Result((SystemStr)error);
+		return Result.Error((SystemError)error);
 	}
 
-	public static Result Error(U<SystemStr, PlayerStr> error) {
-		return new Result(error);
+	public static Result Error(PlayerError error) {
+		var errors = (Enumerable.Empty<SystemError>(), new PlayerError[] { error });
+		return new Result(errors);
 	}
 
-	public static Result Errors(IEnumerable<U<SystemStr, PlayerStr>> errors) {
+	public static Result Error(SystemError error) {
+		var errors = (new SystemError[] { error }, Enumerable.Empty<PlayerError>());
+		return new Result(errors);
+	}
+
+	public static Result Errors((SystemErrors system, PlayerErrors player) errors) {
 		return new Result(errors);
 	}
 }
 
-public readonly struct Result<T> : IUnion<IEnumerable<U<SystemStr, PlayerStr>>, T> {
-	private readonly U<IEnumerable<U<SystemStr, PlayerStr>>, T> errorsOrValue;
+public readonly struct Result<T> : IUnion<(SystemErrors system, PlayerErrors player), T> {
+	private readonly U<(SystemErrors system, PlayerErrors player), T> errorsOrValue;
 
 	public Result(T value) {
 		this.errorsOrValue = value;
 	}
 
-	public Result(U<SystemStr, PlayerStr> error) {
-		this.errorsOrValue = new U<IEnumerable<U<SystemStr, PlayerStr>>, T>(new[] { error });
+	public Result((SystemErrors system, PlayerErrors player) errors) {
+		this.errorsOrValue = errors;
 	}
 
-	public Result(IEnumerable<U<SystemStr, PlayerStr>> errors) {
-		this.errorsOrValue = new U<IEnumerable<U<SystemStr, PlayerStr>>, T>(errors);
-	}
-
-	public TOut Switch<TOut>(Func<IEnumerable<U<SystemStr, PlayerStr>>, TOut> errors, Func<T, TOut> value) {
+	public TOut Switch<TOut>(Func<(SystemErrors system, PlayerErrors player), TOut> errors, Func<T, TOut> value) {
 		return this.errorsOrValue.Switch(errors, value);
 	}
 
@@ -100,7 +98,7 @@ public static class ResultExtensions {
 	public static Result<TOut> ApplyWeak<TIn, TOut>(this Result<Func<TIn, TOut>> apply, Result<TIn> result) {
 		return apply.Switch(
 			errors => result.Switch(
-				newErrors => Result.Errors(errors.Concat(newErrors)),
+				newErrors => Result.Errors((errors.Item1.Concat(newErrors.Item1), errors.Item2.Concat(newErrors.Item2))),
 				value => Result.Errors(errors)
 			),
 			func => result.Switch<Result<TOut>>(

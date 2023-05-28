@@ -20,7 +20,7 @@ public class PlayerMessage : IPlayerMessage {
 		this.script = game.Services.GetSafeServiceAs<ScriptSystem>();
 	}
 
-	public void Log(PlayerStr message) {
+	public void Log(PlayerError message) {
 		_ = this.script.AddTask(async () => {
 			var start = this.game.UpdateTime.Total;
 			do {

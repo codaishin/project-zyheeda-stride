@@ -267,6 +267,6 @@ public class TestKineticController : GameTestCollection {
 
 		Mock
 			.Get(this.systemMessage)
-			.Verify(m => m.Log(new SystemStr(controller.MissingField(nameof(controller.collider)))), Times.Once);
+			.Verify(m => m.Log(new SystemError(controller.MissingField(nameof(controller.collider)))), Times.Once);
 	}
 }

@@ -149,14 +149,14 @@ public class TestAnimatedMove {
 	public void NoMoveSet() {
 		this.animatedMove.move = null;
 		var play = Mock.Of<Action<string>>();
-		var errors = this.animatedMove.PrepareCoroutineFor(new Entity(), _ => 0, play).Switch(
+		var (system, _) = this.animatedMove.PrepareCoroutineFor(new Entity(), _ => 0, play).Switch(
 			error => error,
 			value => throw new AssertionException("had a value, but shouldn't have had one")
 		);
 
 		Assert.That(
-			errors,
-			Contains.Item((U<SystemStr, PlayerStr>)new SystemStr(this.animatedMove.MissingField(nameof(this.animatedMove.move))))
+			system,
+			Contains.Item((SystemError)this.animatedMove.MissingField(nameof(this.animatedMove.move)))
 		);
 	}
 }

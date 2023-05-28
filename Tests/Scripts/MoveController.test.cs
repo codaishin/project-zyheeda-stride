@@ -1,7 +1,6 @@
 namespace Tests;
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Moq;
 using NUnit.Framework;
@@ -12,14 +11,6 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 	private Entity agent = new();
 	private MoveController moveController = new();
 	private IAnimatedMove move = Mock.Of<IAnimatedMove>();
-
-	private static string ErrorsToString(IEnumerable<U<SystemStr, PlayerStr>> errors) {
-		var errorsUnpacked = errors.Select(error => error.Switch(
-			v => $"{v.value} ({v.GetType().Name})",
-			v => $"{v.value} ({v.GetType().Name})"
-		));
-		return string.Join(", ", errorsUnpacked);
-	}
 
 	[SetUp]
 	public void SetUp() {
@@ -145,9 +136,9 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 		var error = this.moveController
 			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.ErrorsToString, _ => "no error, got actual behavior");
+			.Switch<string>(errors => errors.system.First(), _ => "no error, got actual behavior");
 
-		Assert.That(error, Is.EqualTo($"Missing AnimationComponent on Agent ({nameof(SystemStr)})"));
+		Assert.That(error, Is.EqualTo($"Missing AnimationComponent on Agent"));
 	}
 
 	[Test]
@@ -155,10 +146,10 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 		this.moveController.move = null;
 		var error = this.moveController
 			.PrepareCoroutineFor(this.agent)
-			.Switch(TestMoveController.ErrorsToString, _ => "no error, got actual behavior");
+			.Switch<string>(errors => errors.system.First(), _ => "no error, got actual behavior");
 
 		var missingMove = this.moveController.MissingField(nameof(this.moveController.move));
-		Assert.That(error, Is.EqualTo($"{missingMove} ({nameof(SystemStr)})"));
+		Assert.That(error, Is.EqualTo(missingMove));
 	}
 
 	public void Dispose() {

@@ -26,7 +26,7 @@ public class InputDispatcher :
 
 	public void ProcessEvent(KeyEvent inputEvent) {
 		if (!InputDispatcher.keysMap.TryGetValue(inputEvent.Key, out var key)) {
-			this.systemMessage.Log(new SystemStr($"{inputEvent.Key} is not mapped to InputKeys"));
+			this.systemMessage.Log(new SystemError($"{inputEvent.Key} is not mapped to InputKeys"));
 			return;
 		}
 		foreach (var stream in this.streams) {
@@ -36,7 +36,7 @@ public class InputDispatcher :
 
 	public void ProcessEvent(MouseButtonEvent inputEvent) {
 		if (!InputDispatcher.mouseButtonsMap.TryGetValue(inputEvent.Button, out var button)) {
-			this.systemMessage.Log(new SystemStr($"{inputEvent.Button} is not mapped to InputKeys"));
+			this.systemMessage.Log(new SystemError($"{inputEvent.Button} is not mapped to InputKeys"));
 			return;
 		}
 		foreach (var stream in this.streams) {

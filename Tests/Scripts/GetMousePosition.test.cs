@@ -141,7 +141,7 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 		this.getMousePosition
 			.GetTarget()
 			.Switch(
-				errors => Assert.That(errors, Is.EqualTo(new U<SystemStr, PlayerStr>[] { (PlayerStr)GetMousePosition.invalidTarget })),
+				errors => Assert.That(errors, Is.EqualTo((Enumerable.Empty<SystemError>(), new PlayerError[] { GetMousePosition.invalidTarget }))),
 				target => Assert.Fail($"Should not have hit something, but hit {target}")
 			);
 	}
@@ -155,11 +155,8 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 		var result = this.getMousePosition.GetTarget();
 
 		var error = result.Switch(
-			errors => errors.First().Switch<string>(
-				e => (string)e,
-				e => "wrong error"
-			),
-			_ => "no error"
+			errors => (string)errors.system.First(),
+			_ => "okay"
 		);
 		Assert.That(error, Is.EqualTo(this.getMousePosition.MissingField(nameof(this.getMousePosition.camera))));
 	}

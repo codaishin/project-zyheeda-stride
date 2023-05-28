@@ -1,6 +1,7 @@
 namespace Tests;
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using ProjectZyheeda;
@@ -18,8 +19,8 @@ public class TestResult : GameTestCollection {
 
 	[Test]
 	public void SwitchPlayerError() {
-		var result = new Result<string>((PlayerStr)"AAA").Switch(
-			errors => errors.First().Switch(v => (string)v, v => (string)v),
+		var result = new Result<string>((Array.Empty<SystemError>(), new PlayerError[] { "AAA" })).Switch<string>(
+			errors => errors.player.First(),
 			_ => "BBB"
 		);
 		Assert.That(result, Is.EqualTo("AAA"));
@@ -27,8 +28,8 @@ public class TestResult : GameTestCollection {
 
 	[Test]
 	public void SwitchSystemError() {
-		var result = new Result<string>((SystemStr)"AAA").Switch(
-			errors => errors.First().Switch(v => (string)v, v => (string)v),
+		var result = new Result<string>((new SystemError[] { "AAA" }, Array.Empty<PlayerError>())).Switch<string>(
+			errors => errors.system.First(),
 			_ => "BBB"
 		);
 		Assert.That(result, Is.EqualTo("AAA"));
@@ -36,12 +37,12 @@ public class TestResult : GameTestCollection {
 
 	[Test]
 	public void SwitchErrors() {
-		var errors = new U<SystemStr, PlayerStr>[] { (SystemStr)"AAA", (PlayerStr)"BBB" };
+		(IEnumerable<SystemError>, IEnumerable<PlayerError>) errors = (new SystemError[] { "AAA" }, new PlayerError[] { "BBB" });
 		var result = new Result<string>(errors).Switch(
 			errors => errors,
-			_ => Array.Empty<U<SystemStr, PlayerStr>>()
+			_ => (Array.Empty<SystemError>(), Array.Empty<PlayerError>())
 		);
-		Assert.That(result, Is.SameAs(errors));
+		Assert.That(result, Is.EqualTo(errors));
 	}
 }
 
@@ -75,11 +76,11 @@ public class TestResultExtensions : GameTestCollection {
 	[Test]
 	public void FlatMapEitherWithValueAndMapErrorToError() {
 		var errorMsg = "non divisible by the answer to the universe and everything";
-		var inverse = (int v) => new Result<float>((PlayerStr)errorMsg);
+		var inverse = (int v) => new Result<float>((Array.Empty<SystemError>(), new PlayerError[] { errorMsg }));
 		var result = new Result<int>(42).FlatMap(inverse);
 
-		var value = result.Switch(
-			errors => errors.First().Switch(v => (string)v, v => (string)v),
+		var value = result.Switch<string>(
+			errors => errors.player.First(),
 			_ => "OKAY"
 		);
 
@@ -89,10 +90,10 @@ public class TestResultExtensions : GameTestCollection {
 	[Test]
 	public void FlatMapEitherWithErrorToError() {
 		var inverse = (int v) => new Result<float>((float)1 / v);
-		var result = new Result<int>((SystemStr)"ERROR").FlatMap(inverse);
+		var result = new Result<int>((new SystemError[] { "ERROR" }, Array.Empty<PlayerError>())).FlatMap(inverse);
 
-		var value = result.Switch(
-			errors => errors.First().Switch(v => (string)v, v => (string)v),
+		var value = result.Switch<string>(
+			errors => errors.system.First(),
 			value: _ => "OKAY"
 		);
 
@@ -109,7 +110,7 @@ public class TestResultExtensions : GameTestCollection {
 
 	[Test]
 	public void UnpackFallbackWhenError() {
-		var error = new Result<float>((PlayerStr)"ERROR");
+		var error = new Result<float>((Array.Empty<SystemError>(), new PlayerError[] { "ERROR" }));
 		Assert.That(error.UnpackOr(-4.2f), Is.EqualTo(-4.2f));
 	}
 
@@ -140,7 +141,7 @@ public class TestResultExtensions : GameTestCollection {
 	[Test]
 	public void ApplyMultipleElementsError() {
 		var fst = new Result<int>(4);
-		var snd = new Result<int>((PlayerStr)"ERROR");
+		var snd = new Result<int>((Array.Empty<SystemError>(), new PlayerError[] { "ERROR" }));
 		var trd = new Result<int>(23);
 
 		var sum = new Result<Func<int, Func<int, Func<int, int>>>>(
@@ -152,12 +153,9 @@ public class TestResultExtensions : GameTestCollection {
 			.Apply(snd)
 			.Apply(trd);
 
-		var firstError = result.Switch(
-			e => e.First().Switch(
-				e => (string)e,
-				e => (string)e
-			),
-			_ => "NO ERROR"
+		var firstError = result.Switch<string>(
+			error => error.player.First(),
+			_ => "WRONG OR NO ERROR"
 		);
 		Assert.That(firstError, Is.EqualTo("ERROR"));
 	}
@@ -165,8 +163,8 @@ public class TestResultExtensions : GameTestCollection {
 	[Test]
 	public void ApplyMultipleElementsErrorConcatElementErrors() {
 		var fst = new Result<int>(4);
-		var snd = new Result<int>((PlayerStr)"ERROR 2");
-		var trd = new Result<int>((SystemStr)"ERROR 3");
+		var snd = new Result<int>((Array.Empty<SystemError>(), new PlayerError[] { "ERROR 2" }));
+		var trd = new Result<int>((new SystemError[] { "ERROR 3" }, Array.Empty<PlayerError>()));
 
 		var sum = new Result<Func<int, Func<int, Func<int, int>>>>(
 			(int a) => (int b) => (int c) => a + b + c
@@ -177,10 +175,13 @@ public class TestResultExtensions : GameTestCollection {
 			.ApplyWeak(snd)
 			.ApplyWeak(trd);
 
-		var errors = result.Switch(e => e, v => Array.Empty<U<SystemStr, PlayerStr>>());
+		var errors = result.Switch(
+			errors => errors,
+			v => (Array.Empty<SystemError>(), Array.Empty<PlayerError>())
+		);
 		Assert.That(
 			errors,
-			Is.EquivalentTo(new U<SystemStr, PlayerStr>[] { (PlayerStr)"ERROR 2", (SystemStr)"ERROR 3" })
+			Is.EqualTo((new SystemError[] { "ERROR 3" }, new PlayerError[] { "ERROR 2" }))
 		);
 	}
 
@@ -201,7 +202,7 @@ public class TestResultExtensions : GameTestCollection {
 
 	[Test]
 	public void ApplyOnFuncError() {
-		var fst = new Result<int>((PlayerStr)"error");
+		var fst = new Result<int>((Array.Empty<SystemError>(), new PlayerError[] { "error" }));
 		var snd = new Result<int>(10);
 		var trd = new Result<int>(11);
 
@@ -211,12 +212,9 @@ public class TestResultExtensions : GameTestCollection {
 			.Apply(snd)
 			.Apply(trd);
 
-		var firstError = result.Switch(
-			e => e.First().Switch(
-				e => (string)e,
-				e => (string)e
-			),
-			_ => "NO ERROR"
+		var firstError = result.Switch<string>(
+			errors => errors.player.First(),
+			_ => "WRONG OR NO ERROR"
 		);
 		Assert.That(firstError, Is.EqualTo("error"));
 	}
@@ -238,9 +236,9 @@ public class TestResultExtensions : GameTestCollection {
 
 	[Test]
 	public void ApplyWeakOnFuncErrors() {
-		var fst = new Result<int>((PlayerStr)"error fst");
+		var fst = new Result<int>((Array.Empty<SystemError>(), new PlayerError[] { "error fst" }));
 		var snd = new Result<int>(10);
-		var trd = new Result<int>((SystemStr)"error trd");
+		var trd = new Result<int>((new SystemError[] { "error trd" }, Array.Empty<PlayerError>()));
 
 		var sum = (int a) => (int b) => (int c) => a + b + c;
 		var result = sum
@@ -248,10 +246,13 @@ public class TestResultExtensions : GameTestCollection {
 			.ApplyWeak(snd)
 			.ApplyWeak(trd);
 
-		var errors = result.Switch(e => e, v => Array.Empty<U<SystemStr, PlayerStr>>());
+		var errors = result.Switch(
+			errors => errors,
+			v => (Array.Empty<SystemError>(), Array.Empty<PlayerError>())
+		);
 		Assert.That(
 			errors,
-			Is.EquivalentTo(new U<SystemStr, PlayerStr>[] { (PlayerStr)"error fst", (SystemStr)"error trd" })
+			Is.EqualTo((new SystemError[] { "error trd" }, new PlayerError[] { "error fst" }))
 		);
 	}
 
@@ -265,7 +266,7 @@ public class TestResultExtensions : GameTestCollection {
 
 	[Test]
 	public void PlayerErrorToNone() {
-		var value = new Result<int>((PlayerStr)"Error");
+		var value = new Result<int>((Array.Empty<SystemError>(), Array.Empty<PlayerError>()));
 		var some = value.ToMaybe();
 
 		Assert.That(some.UnpackOr(-1), Is.EqualTo(-1));
@@ -273,7 +274,7 @@ public class TestResultExtensions : GameTestCollection {
 
 	[Test]
 	public void SystemErrorToNone() {
-		var value = new Result<int>((SystemStr)"Error");
+		var value = new Result<int>((Array.Empty<SystemError>(), Array.Empty<PlayerError>()));
 		var some = value.ToMaybe();
 
 		Assert.That(some.UnpackOr(-1), Is.EqualTo(-1));
@@ -301,7 +302,7 @@ public class TestResultExtensions : GameTestCollection {
 	public void OkOrPlayerErrorOptionalRefType() {
 		var value = null as string;
 		value.OkOrPlayerError("error").Switch(
-			e => Assert.That(e.First().Switch<PlayerStr>(_ => "", v => v), Is.EqualTo((PlayerStr)"error")),
+			e => Assert.That((string)e.player.First(), Is.EqualTo("error")),
 			v => Assert.Fail($"Was {v ?? "null"}, but should have been error")
 		);
 	}
@@ -310,7 +311,7 @@ public class TestResultExtensions : GameTestCollection {
 	public void OkOrPlayerErrorOptionalValueType() {
 		int? value = null;
 		value.OkOrPlayerError("error").Switch(
-			e => Assert.That(e.First().Switch<PlayerStr>(_ => "", v => v), Is.EqualTo((PlayerStr)"error")),
+			e => Assert.That((string)e.player.First(), Is.EqualTo("error")),
 			v => Assert.Fail($"Was {v}, but should have been no number")
 		);
 	}
@@ -337,7 +338,7 @@ public class TestResultExtensions : GameTestCollection {
 	public void OkOrSystemErrorOptionalRefType() {
 		var value = null as string;
 		value.OkOrSystemError("error").Switch(
-			e => Assert.That(e.First().Switch<SystemStr>(v => v, _ => ""), Is.EqualTo((SystemStr)"error")),
+			e => Assert.That((string)e.system.First(), Is.EqualTo("error")),
 			v => Assert.Fail($"Was {v ?? "null"}, but should have been error")
 		);
 	}
@@ -346,7 +347,7 @@ public class TestResultExtensions : GameTestCollection {
 	public void OkOrSystemErrorOptionalValueType() {
 		int? value = null;
 		value.OkOrSystemError("error").Switch(
-			e => Assert.That(e.First().Switch<SystemStr>(v => v, _ => ""), Is.EqualTo((SystemStr)"error")),
+			e => Assert.That((string)e.system.First(), Is.EqualTo("error")),
 			v => Assert.Fail($"Was {v}, but should have been no number")
 		);
 	}
@@ -364,11 +365,8 @@ public class TestResultInstantiateMethods {
 	public void PlayerError() {
 		Result<int> result = Result.PlayerError("error");
 
-		var error = result.Switch(
-			errors => errors.First().Switch<string>(
-				_ => "wrong error",
-				p => (string)p
-			),
+		var error = result.Switch<string>(
+			errors => errors.player.First(),
 			_ => "no error"
 		);
 		Assert.That(error, Is.EqualTo("error"));
@@ -378,11 +376,8 @@ public class TestResultInstantiateMethods {
 	public void SystemError() {
 		Result<int> result = Result.SystemError("error");
 
-		var error = result.Switch(
-			errors => errors.First().Switch<string>(
-				s => (string)s,
-				_ => "wrong error"
-			),
+		var error = result.Switch<string>(
+			errors => errors.system.First(),
 			_ => "no error"
 		);
 		Assert.That(error, Is.EqualTo("error"));
@@ -390,13 +385,10 @@ public class TestResultInstantiateMethods {
 
 	[Test]
 	public void Error() {
-		Result<int> result = Result.Error((SystemStr)"error");
+		Result<int> result = Result.Error((SystemError)"error");
 
-		var error = result.Switch(
-			errors => errors.First().Switch<string>(
-				s => (string)s,
-				_ => "wrong error"
-			),
+		var error = result.Switch<string>(
+			errors => errors.system.First(),
 			_ => "no error"
 		);
 		Assert.That(error, Is.EqualTo("error"));
@@ -404,16 +396,13 @@ public class TestResultInstantiateMethods {
 
 	[Test]
 	public void SystemErrors() {
-		var errors = new U<SystemStr, PlayerStr>[] {
-			(SystemStr)"sError",
-			(PlayerStr)"pError"
-		};
+		var errors = (new SystemError[] { "sError" }, new PlayerError[] { "pError" });
 		Result<int> result = Result.Errors(errors);
 
 		var rErrors = result.Switch(
 			errors => errors,
-			_ => Array.Empty<U<SystemStr, PlayerStr>>()
+			_ => (Array.Empty<SystemError>(), Array.Empty<PlayerError>())
 		);
-		Assert.That(rErrors, Is.EquivalentTo(errors));
+		Assert.That(rErrors, Is.EqualTo(errors));
 	}
 }

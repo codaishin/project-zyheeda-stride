@@ -1,21 +1,21 @@
 namespace ProjectZyheeda;
 
-public readonly struct PlayerStr {
+public readonly struct PlayerError {
 	public readonly string value;
 
-	public PlayerStr(string value) {
+	public PlayerError(string value) {
 		this.value = value;
 	}
 
-	public static implicit operator PlayerStr(string value) {
-		return new PlayerStr(value);
+	public static implicit operator PlayerError(string value) {
+		return new PlayerError(value);
 	}
 
-	public static explicit operator string(PlayerStr value) {
+	public static implicit operator string(PlayerError value) {
 		return value.value;
 	}
 }
 
 public interface IPlayerMessage {
-	void Log(PlayerStr message);
+	void Log(PlayerError message);
 }
