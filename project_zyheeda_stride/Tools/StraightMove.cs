@@ -1,5 +1,6 @@
 namespace ProjectZyheeda;
 
+using System;
 using Stride.Core;
 using Stride.Core.Mathematics;
 using Stride.Engine;
@@ -8,24 +9,24 @@ using Stride.Engine;
 public class StraightMove : IMove {
 	public float speed;
 
-	private Coroutine MoveTowards(TransformComponent agent, U<Vector3, Entity> target, FSpeedToDelta delta) {
-		var direction = target.Position() - agent.Position;
+	private Coroutine MoveTowards(TransformComponent agent, Func<Vector3> getTarget, FSpeedToDelta delta) {
+		var direction = getTarget() - agent.Position;
 
 		if (direction != Vector3.Zero) {
 			direction.Normalize();
 			agent.Rotation = Quaternion.LookRotation(direction, Vector3.UnitY);
 		}
 
-		while (agent.Position != target.Position()) {
-			agent.Position = agent.Position.MoveTowards(target.Position(), delta(this.speed));
+		while (agent.Position != getTarget()) {
+			agent.Position = agent.Position.MoveTowards(getTarget(), delta(this.speed));
 			yield return new WaitFrame();
 		}
 	}
 
 	public FGetCoroutine PrepareCoroutineFor(Entity agent, FSpeedToDelta delta) {
-		return (U<Vector3, Entity> target) => {
+		return (Func<Vector3> getTarget) => {
 			Coroutine run() {
-				foreach (var wait in this.MoveTowards(agent.Transform, target, delta)) {
+				foreach (var wait in this.MoveTowards(agent.Transform, getTarget, delta)) {
 					yield return wait;
 				}
 			};

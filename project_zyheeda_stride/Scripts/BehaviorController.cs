@@ -9,13 +9,6 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 
 	public Entity? agent;
 
-	private void LogMessage(U<SystemError, PlayerError> error) {
-		error.Switch(
-			this.EssentialServices.systemMessage.Log,
-			this.EssentialServices.playerMessage.Log
-		);
-	}
-
 	private Func<Entity, Result<FGetCoroutine>> GetBehavior {
 		get {
 			var getBehaviorAndEquipment =
@@ -28,9 +21,9 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 		}
 	}
 
-	private (Func<Coroutine>, Cancel) NothingEquipped(U<Vector3, Entity> target) {
+	private (Func<Coroutine>, Cancel) NothingEquipped(Func<Vector3> _) {
 		Coroutine run() {
-			this.LogMessage(new PlayerError("nothing equipped"));
+			this.EssentialServices.playerMessage.Log("nothing equipped");
 			yield break;
 		}
 		void cancel() { }
@@ -46,16 +39,16 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 		}
 	}
 
-	public (Func<Coroutine>, Cancel) GetCoroutine(U<Vector3, Entity> target) {
+	public (Func<Coroutine>, Cancel) GetCoroutine(Func<Vector3> getTarget) {
 		return this.GetBehavior
 			.ApplyWeak(this.agent.OkOrSystemError(this.MissingField(nameof(this.agent))))
 			.Flatten()
 			.Switch(
 				errors => {
 					this.LogErrors(errors);
-					return this.NothingEquipped(target);
+					return this.NothingEquipped(getTarget);
 				},
-				value => value(target)
+				value => value(getTarget)
 			);
 	}
 }

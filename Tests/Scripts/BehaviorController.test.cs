@@ -46,7 +46,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		this.controller.agent = agent;
 		this.controller.equipment = Maybe.Some(equipment);
 
-		_ = this.controller.GetCoroutine(Vector3.Zero);
+		_ = this.controller.GetCoroutine(() => Vector3.Zero);
 
 		Mock
 			.Get(equipment)
@@ -64,12 +64,22 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Setup(e => e.PrepareCoroutineFor(It.IsAny<Entity>()))
 			.Returns(Result.Ok(getCoroutine));
 
+		_ = Mock
+			.Get(getCoroutine)
+			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
+			.Returns((Func<Vector3> getTarget) => {
+				Assert.That(getTarget(), Is.EqualTo(target));
+				return (() => Array.Empty<IWait>(), () => { });
+			});
+
 		this.controller.agent = new();
 		this.controller.equipment = Maybe.Some(equipment);
 
-		_ = this.controller.GetCoroutine(target);
+		_ = this.controller.GetCoroutine(() => target);
 
-		Mock.Get(getCoroutine).Verify(func => func(target), Times.Once());
+		Mock
+			.Get(getCoroutine)
+			.Verify(func => func(It.IsAny<Func<Vector3>>()), Times.Once());
 	}
 
 	[Test]
@@ -83,7 +93,7 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Get(this.playerMessage)
 			.Verify(m => m.Log(new PlayerError("nothing equipped")), Times.Never);
 
-		var (run, _) = this.controller.GetCoroutine(target);
+		var (run, _) = this.controller.GetCoroutine(() => target);
 		var coroutine = run().GetEnumerator();
 
 		_ = coroutine.MoveNext();
@@ -102,7 +112,7 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Get(this.playerMessage)
 			.Verify(m => m.Log(new PlayerError("nothing equipped")), Times.Never);
 
-		var (run, _) = this.controller.GetCoroutine(target);
+		var (run, _) = this.controller.GetCoroutine(() => target);
 		var coroutine = run().GetEnumerator();
 
 		_ = coroutine.MoveNext();
@@ -125,7 +135,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		this.controller.agent = new();
 		this.controller.equipment = Maybe.Some(equipment);
 
-		_ = this.controller.GetCoroutine(Vector3.Zero);
+		_ = this.controller.GetCoroutine(() => Vector3.Zero);
 
 		Mock
 			.Get(this.playerMessage)
@@ -148,13 +158,13 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Returns(Result.Ok(getCoroutine));
 
 		_ = Mock.Get(getCoroutine)
-			.Setup(func => func(It.IsAny<U<Vector3, Entity>>()))
+			.Setup(func => func(It.IsAny<Func<Vector3>>()))
 			.Returns(execution);
 
 		this.controller.agent = new();
 		this.controller.equipment = Maybe.Some(equipment);
 
-		Assert.That(this.controller.GetCoroutine(target), Is.EqualTo(execution));
+		Assert.That(this.controller.GetCoroutine(() => target), Is.EqualTo(execution));
 	}
 }
 

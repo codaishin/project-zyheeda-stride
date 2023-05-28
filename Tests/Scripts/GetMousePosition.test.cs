@@ -104,9 +104,9 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 			.GetTarget()
 			.Switch(
 				errors => Assert.Fail(string.Join(", ", errors)),
-				target => Assert.That(
-					target,
-					Is.EqualTo((U<Vector3, Entity>)new Vector3(0, 0, -7.5f))
+				getTarget => Assert.That(
+					getTarget(),
+					Is.EqualTo(new Vector3(0, 0, -7.5f))
 				)
 			);
 	}
@@ -123,8 +123,8 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 			.GetTarget()
 			.Switch(
 				errors => Assert.Fail(string.Join(", ", errors)),
-				target => Assert.That(
-					target.Switch(v => v, _ => Vector3.Zero),
+				getTarget => Assert.That(
+					getTarget(),
 					Is.EqualTo(new Vector3(-2, 2, -7.5f)).Using(new VectorTolerance(0.0001f))
 				)
 			);

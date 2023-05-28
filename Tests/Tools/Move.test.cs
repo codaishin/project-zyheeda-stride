@@ -1,12 +1,13 @@
 namespace Tests;
 
+using System;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 
-public class TestMove {
+public class TestMove : System.IDisposable {
 	private readonly VectorTolerance tolerance = new(0.001f);
 	private Entity agent = new();
 	private StraightMove move = new();
@@ -21,7 +22,7 @@ public class TestMove {
 	public void MoveTowardsTarget() {
 		var target = new Vector3(1, 0, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.1f);
-		var (run, _) = getCoroutine(target);
+		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
 		_ = runner.MoveNext();
@@ -31,25 +32,11 @@ public class TestMove {
 		Assert.That(this.agent.Transform.Position, Is.EqualTo(new Vector3(0.3f, 0, 0)));
 	}
 
-	[Test]
-	public void MoveTowardsTargetEntity() {
-		var target = new Entity();
-		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.2f);
-		var (run, _) = getCoroutine(target);
-		var runner = run().GetEnumerator();
-
-		target.Transform.Position = new Vector3(1, 0, 0);
-		_ = runner.MoveNext();
-		_ = runner.MoveNext();
-
-		Assert.That(this.agent.Transform.Position, Is.EqualTo(new Vector3(0.4f, 0, 0)));
-	}
-
 	[Test, Timeout(1000)]
 	public void YieldsWaitFrames() {
 		var target = new Vector3(1, 0, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.1f);
-		var (run, _) = getCoroutine(target);
+		var (run, _) = getCoroutine(() => target);
 
 		Assert.That(run(), Is.All.InstanceOf<WaitFrame>());
 	}
@@ -59,7 +46,7 @@ public class TestMove {
 		var target = new Vector3(1, 0, 0);
 		var delta = Mock.Of<FSpeedToDelta>();
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, delta);
-		var (run, _) = getCoroutine(target);
+		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
 		_ = Mock
@@ -85,7 +72,7 @@ public class TestMove {
 		var target = new Vector3(1, 0, 0);
 		var delta = Mock.Of<FSpeedToDelta>();
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, delta);
-		var (run, _) = getCoroutine(target);
+		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
 		_ = Mock
@@ -118,7 +105,7 @@ public class TestMove {
 	public void MoveTowardsTargetEntityAfterChangingTargetPosition() {
 		var target = new Entity();
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.1f);
-		var (run, _) = getCoroutine(target);
+		var (run, _) = getCoroutine(() => target.Transform.Position);
 		var runner = run().GetEnumerator();
 
 		target.Transform.Position = new Vector3(1, 0, 0);
@@ -140,7 +127,7 @@ public class TestMove {
 		var target = new Vector3(1, 0, 0);
 		var delta = Mock.Of<FSpeedToDelta>();
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, delta);
-		var (run, _) = getCoroutine(target);
+		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
 		_ = Mock
@@ -167,7 +154,7 @@ public class TestMove {
 	public void MoveTowardsTarget0Neg10() {
 		var target = new Vector3(0, -1, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.2f);
-		var (run, _) = getCoroutine(target);
+		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
 		_ = runner.MoveNext();
@@ -182,7 +169,7 @@ public class TestMove {
 	public void MoveTowardsTargetFromOffsetPosition() {
 		var target = new Vector3(1, 1, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.3f);
-		var (run, _) = getCoroutine(target);
+		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
 		this.agent.Transform.Position = new Vector3(1, 0, 0);
@@ -197,7 +184,7 @@ public class TestMove {
 	public void MoveTowardsTargetWithNotNormalizedInitialDistance() {
 		var target = new Vector3(1, 1, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.3f);
-		var (run, _) = getCoroutine(target);
+		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
 		_ = runner.MoveNext();
@@ -215,7 +202,7 @@ public class TestMove {
 	public void DoNotOvershoot() {
 		var target = new Vector3(1, 0, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.8f);
-		var (run, _) = getCoroutine(target);
+		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
 		_ = runner.MoveNext();
@@ -229,7 +216,7 @@ public class TestMove {
 	public void LookAtTarget() {
 		var target = new Vector3(1, 0, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0f);
-		var (run, _) = getCoroutine(target);
+		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
 		_ = runner.MoveNext();
@@ -244,7 +231,7 @@ public class TestMove {
 	public void LookAtTargetFromOffset() {
 		var target = new Vector3(1, 0, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0f);
-		var (run, _) = getCoroutine(target);
+		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
 		this.agent.Transform.Position = new Vector3(3, 0, 0);
@@ -260,7 +247,7 @@ public class TestMove {
 	public void NoRotationChangeWhenTargetIsCurrentPosition() {
 		var target = new Vector3(1, 0, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0f);
-		var (run, _) = getCoroutine(target);
+		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 		var expectedRotation = this.agent.Transform.Rotation;
 
@@ -268,5 +255,9 @@ public class TestMove {
 		_ = runner.MoveNext();
 
 		Assert.That(this.agent.Transform.Rotation, Is.EqualTo(expectedRotation));
+	}
+
+	public void Dispose() {
+		GC.SuppressFinalize(this);
 	}
 }

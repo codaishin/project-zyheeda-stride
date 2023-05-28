@@ -1,5 +1,6 @@
 namespace ProjectZyheeda;
 
+using System;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 using Stride.Physics;
@@ -9,7 +10,7 @@ using GetTargetFn = System.Func<
 		Stride.Engine.CameraComponent,
 		System.Func<
 			IInputWrapper,
-			Result<U<Stride.Core.Mathematics.Vector3, Stride.Engine.Entity>>
+			Result<System.Func<Stride.Core.Mathematics.Vector3>>
 		>
 	>
 >;
@@ -39,7 +40,7 @@ public class GetMousePosition : ProjectZyheedaStartupScript, IGetTarget {
 			var hit = simulation.Raycast(nearVector.XYZ(), farVector.XYZ());
 
 			return hit.Succeeded
-				? Result.Ok<U<Vector3, Entity>>(hit.Point)
+				? Result.Ok(() => hit.Point)
 				: Result.PlayerError("Invalid target");
 		};
 
@@ -49,7 +50,7 @@ public class GetMousePosition : ProjectZyheedaStartupScript, IGetTarget {
 			.OkOrSystemError(this.MissingService<Simulation>());
 	}
 
-	public Result<U<Vector3, Entity>> GetTarget() {
+	public Result<Func<Vector3>> GetTarget() {
 		return GetMousePosition.getTarget
 			.Apply(this.simulation)
 			.Apply(this.camera.OkOrSystemError(this.MissingField(nameof(this.camera))))

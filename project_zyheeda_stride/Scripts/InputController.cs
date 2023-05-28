@@ -29,7 +29,7 @@ public class InputController : ProjectZyheedaAsyncScript {
 				.GetTarget()
 				.Switch(
 					errors => { this.LogErrors(errors); },
-					target => runOrEnqueue(behavior.GetCoroutine(target))
+					getTarget => runOrEnqueue(behavior.GetCoroutine(getTarget))
 				);
 		};
 	}

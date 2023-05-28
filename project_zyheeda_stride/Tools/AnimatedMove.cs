@@ -23,8 +23,8 @@ public class AnimatedMove : IAnimatedMove {
 
 		var innerGetCoroutine = this.move.PrepareCoroutineFor(agent, delta);
 
-		(Func<Coroutine>, Cancel) GetCoroutine(U<Vector3, Entity> target) {
-			var (runMove, cancelMove) = innerGetCoroutine(target);
+		(Func<Coroutine>, Cancel) GetCoroutine(Func<Vector3> getTarget) {
+			var (runMove, cancelMove) = innerGetCoroutine(getTarget);
 
 			Coroutine run() {
 				playAnimation(this.animationKey);

@@ -48,10 +48,10 @@ public abstract class BaseKineticController<TMove> :
 		return (float)this.Game.UpdateTime.Elapsed.TotalSeconds * speed;
 	}
 
-	public void Follow(Vector3 start, U<Vector3, Entity> target, float rangeMultiplier) {
+	public void Follow(Vector3 start, Func<Vector3> getTarget, float rangeMultiplier) {
 		var getCoroutine = this.move.PrepareCoroutineFor(this.Entity, this.Delta);
-		var scaledDirection = (target.Position() - start) * this.baseRange * rangeMultiplier;
-		(var run, this.cancel) = getCoroutine(start + scaledDirection);
+		var scaledDirection = (getTarget() - start) * this.baseRange * rangeMultiplier;
+		(var run, this.cancel) = getCoroutine(() => start + scaledDirection);
 
 		this.thread?.Cancel();
 		this.thread = this.Script.AddTask(async () => {

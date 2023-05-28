@@ -89,17 +89,20 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())
-			.Returns(Result.Ok<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
+			.Returns(Result.Ok(() => new Vector3(1, 2, 3)));
 		_ = Mock.Get(this.behavior)
-			.Setup(c => c.GetCoroutine(new Vector3(1, 2, 3)))
-			.Returns(execution);
+			.Setup(c => c.GetCoroutine(It.IsAny<Func<Vector3>>()))
+			.Returns((Func<Vector3> getTarget) => {
+				Assert.That(getTarget(), Is.EqualTo(new Vector3(1, 2, 3)));
+				return execution;
+			});
 		this.newActionFnTaskTokens[0].SetResult(InputAction.Run);
 
 		this.game.WaitFrames(1);
 
 		Mock
-			.Get(this.scheduler)
-			.Verify(b => b.Run(execution), Times.Once);
+			.Get(this.behavior)
+			.Verify(b => b.GetCoroutine(It.IsAny<Func<Vector3>>()), Times.Once);
 	}
 
 	[Test]
@@ -112,9 +115,9 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())
-			.Returns(Result.Ok<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
+			.Returns(Result.Ok(() => new Vector3(1, 2, 3)));
 		_ = Mock.Get(this.behavior)
-			.Setup(c => c.GetCoroutine(new Vector3(1, 2, 3)))
+			.Setup(c => c.GetCoroutine(It.IsAny<Func<Vector3>>()))
 			.Returns(execution);
 		this.newActionFnTaskTokens[0].SetResult(InputAction.Run);
 		this.newActionFnTaskTokens[1].SetResult(InputAction.Run);
@@ -127,7 +130,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 	}
 
 	[Test]
-	public void EnqueueBehaviorWithTarget() {
+	public void EnqueueBehavior() {
 		static IEnumerable<IWait> run() {
 			yield break;
 		}
@@ -136,9 +139,9 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())
-			.Returns(Result.Ok<U<Vector3, Entity>>(new Vector3(1, 2, 3)));
+			.Returns(Result.Ok(() => new Vector3(1, 2, 3)));
 		_ = Mock.Get(this.behavior)
-			.Setup(c => c.GetCoroutine(new Vector3(1, 2, 3)))
+			.Setup(c => c.GetCoroutine(It.IsAny<Func<Vector3>>()))
 			.Returns(execution);
 		this.newActionFnTaskTokens[0].SetResult(InputAction.Chain);
 
@@ -160,7 +163,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 		Mock
 			.Get(this.behavior)
-			.Verify(b => b.GetCoroutine(It.IsAny<U<Vector3, Entity>>()), Times.Never);
+			.Verify(b => b.GetCoroutine(It.IsAny<Func<Vector3>>()), Times.Never);
 	}
 
 	[Test]
