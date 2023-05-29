@@ -2,7 +2,8 @@ namespace ProjectZyheeda;
 
 using Stride.Core;
 
-[DataContract]
+[DataContract(Inherited = true)]
+[Display(Expand = ExpandRule.Always)]
 public abstract class Reference<TTarget, TInterface> :
 	IMaybe<TInterface>
 	where TTarget :

@@ -1,5 +1,6 @@
 namespace ProjectZyheeda;
 
-using Stride.Core;
+using Stride.Core.Serialization;
 
-[DataContract] public class ReferenceMoveController : Reference<MoveController, IEquipment> { }
+[DataSerializer(typeof(ReferenceSerializer<ReferenceMoveController, MoveController, IEquipment>))]
+public class ReferenceMoveController : Reference<MoveController, IEquipment> { }

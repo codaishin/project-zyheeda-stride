@@ -1,5 +1,6 @@
 namespace ProjectZyheeda;
 
-using Stride.Core;
+using Stride.Core.Serialization;
 
-[DataContract] public class ReferenceGetMousePosition : Reference<GetMousePosition, IGetTarget> { }
+[DataSerializer(typeof(ReferenceSerializer<ReferenceGetMousePosition, GetMousePosition, IGetTarget>))]
+public class ReferenceGetMousePosition : Reference<GetMousePosition, IGetTarget> { }

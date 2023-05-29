@@ -1,5 +1,6 @@
 namespace ProjectZyheeda;
 
-using Stride.Core;
+using Stride.Core.Serialization;
 
-[DataContract] public class ReferenceSchedularController : Reference<SchedulerController, IScheduler> { }
+[DataSerializer(typeof(ReferenceSerializer<ReferenceSchedularController, SchedulerController, IScheduler>))]
+public class ReferenceSchedularController : Reference<SchedulerController, IScheduler> { }

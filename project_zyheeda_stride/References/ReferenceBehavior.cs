@@ -1,5 +1,6 @@
 namespace ProjectZyheeda;
 
-using Stride.Core;
+using Stride.Core.Serialization;
 
-[DataContract] public class ReferenceBehaviorController : Reference<BehaviorController, IBehavior> { }
+[DataSerializer(typeof(ReferenceSerializer<ReferenceBehaviorController, BehaviorController, IBehavior>))]
+public class ReferenceBehaviorController : Reference<BehaviorController, IBehavior> { }
