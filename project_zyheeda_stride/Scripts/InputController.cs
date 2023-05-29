@@ -3,13 +3,14 @@ namespace ProjectZyheeda;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Stride.Core.Annotations;
 
 public class InputController : ProjectZyheedaAsyncScript {
 
 	public IInputStream? input;
-	public IMaybe<IGetTarget>? getTarget;
-	public IMaybe<IBehavior>? behavior;
-	public IMaybe<IScheduler>? scheduler;
+	[NotNull] public IMaybe<IGetTarget> getTarget = new NoGetTarget();
+	[NotNull] public IMaybe<IBehavior> behavior = new NoBehavior();
+	[NotNull] public IMaybe<IScheduler> scheduler = new NoScheduler();
 
 	private Action<InputAction> RunBehavior(IGetTarget getTarget, IBehavior behavior, IScheduler scheduler) {
 		return action => {

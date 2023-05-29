@@ -1,5 +1,6 @@
 namespace ProjectZyheeda;
 
+using System;
 using Stride.Core;
 
 [DataContract(Inherited = true)]
@@ -11,7 +12,14 @@ public abstract class Reference<TTarget, TInterface> :
 
 	public TTarget? target;
 
-	public TReturn Switch<TReturn>(System.Func<TInterface, TReturn> some, System.Func<TReturn> none) {
+	public TReturn Switch<TReturn>(Func<TInterface, TReturn> some, Func<TReturn> none) {
 		return this.target is not null ? some(this.target) : none();
+	}
+}
+
+[DataContract(Inherited = true)]
+public abstract class ReferenceNone<TInterface> : IMaybe<TInterface> {
+	public TReturn Switch<TReturn>(Func<TInterface, TReturn> some, Func<TReturn> none) {
+		return none();
 	}
 }

@@ -2,12 +2,12 @@
 
 using System;
 using System.Linq;
+using Stride.Core.Annotations;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 
 public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
-	public IMaybe<IEquipment>? equipment;
-
+	[NotNull] public IMaybe<IEquipment> equipment = new NoEquipment();
 	public Entity? agent;
 
 	private Func<Entity, Result<FGetCoroutine>> GetBehavior {
