@@ -14,9 +14,9 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 		get {
 			var getBehaviorAndEquipment =
 				(Entity agent) =>
-					this.equipment.ToMaybe().Flatten().Switch(
+					this.equipment.Switch(
 						equipment => equipment.PrepareCoroutineFor(agent),
-						() => Result.Ok<FGetCoroutine>(this.NothingEquipped)
+						() => (FGetCoroutine)this.NothingEquipped
 					);
 			return getBehaviorAndEquipment;
 		}

@@ -38,9 +38,9 @@ public class InputController : ProjectZyheedaAsyncScript {
 			(IInputStream input) => (input, this.RunBehavior(getTarget, behavior, scheduler));
 
 		return getInputAndRun
-			.ApplyWeak(this.getTarget.ToMaybe().Flatten().ToOkOrSystemError(this.MissingField(nameof(this.getTarget))))
-			.ApplyWeak(this.behavior.ToMaybe().Flatten().ToOkOrSystemError(this.MissingField(nameof(this.behavior))))
-			.ApplyWeak(this.scheduler.ToMaybe().Flatten().ToOkOrSystemError(this.MissingField(nameof(this.scheduler))))
+			.ApplyWeak(this.getTarget.ToOkOrSystemError(this.MissingField(nameof(this.getTarget))))
+			.ApplyWeak(this.behavior.ToOkOrSystemError(this.MissingField(nameof(this.behavior))))
+			.ApplyWeak(this.scheduler.ToOkOrSystemError(this.MissingField(nameof(this.scheduler))))
 			.ApplyWeak(this.input.ToMaybe().ToOkOrSystemError(this.MissingField(nameof(this.input))))
 			.Switch<(IInputStream, Action<InputAction>)?>(
 				errors => {
