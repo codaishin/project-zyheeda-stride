@@ -38,7 +38,7 @@ public static class Maybe {
 		return apply.FlatMap(func => maybe.Map(func));
 	}
 
-	public static Result<T> ToOkOrSystemError<T>(this IMaybe<T> maybe, string error) {
+	public static Result<T> OkOrSystemError<T>(this IMaybe<T> maybe, string error) {
 		return maybe.Switch(
 			some: v => Result.Ok(v),
 			none: () => Result.SystemError(error)

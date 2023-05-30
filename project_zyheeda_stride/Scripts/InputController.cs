@@ -38,10 +38,10 @@ public class InputController : ProjectZyheedaAsyncScript {
 			(IInputStream input) => (input, this.RunBehavior(getTarget, behavior, scheduler));
 
 		return getInputAndRun
-			.ApplyWeak(this.getTarget.ToOkOrSystemError(this.MissingField(nameof(this.getTarget))))
-			.ApplyWeak(this.behavior.ToOkOrSystemError(this.MissingField(nameof(this.behavior))))
-			.ApplyWeak(this.scheduler.ToOkOrSystemError(this.MissingField(nameof(this.scheduler))))
-			.ApplyWeak(this.input.ToMaybe().ToOkOrSystemError(this.MissingField(nameof(this.input))))
+			.ApplyWeak(this.getTarget.OkOrSystemError(this.MissingField(nameof(this.getTarget))))
+			.ApplyWeak(this.behavior.OkOrSystemError(this.MissingField(nameof(this.behavior))))
+			.ApplyWeak(this.scheduler.OkOrSystemError(this.MissingField(nameof(this.scheduler))))
+			.ApplyWeak(this.input.ToMaybe().OkOrSystemError(this.MissingField(nameof(this.input))))
 			.Switch<(IInputStream, Action<InputAction>)?>(
 				errors => {
 					this.EssentialServices.systemMessage.Log(errors.system.ToArray());
