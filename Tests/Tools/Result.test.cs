@@ -6,7 +6,22 @@ using System.Linq;
 using NUnit.Framework;
 using ProjectZyheeda;
 
-public class TestResult : GameTestCollection {
+public class TestResult {
+	[Test]
+	public void SwitchOk() {
+		var msg = Result.Ok().Switch(_ => "errors", () => "ok");
+		Assert.That(msg, Is.EqualTo("ok"));
+	}
+
+	[Test]
+	public void SwitchError() {
+		Result result = Result.PlayerError("error");
+		var msg = result.Switch(errors => (string)errors.player.First(), () => "ok");
+		Assert.That(msg, Is.EqualTo("error"));
+	}
+}
+
+public class TestGenericResult {
 	[Test]
 	public void SwitchValue() {
 		var either = new Result<string>("42");

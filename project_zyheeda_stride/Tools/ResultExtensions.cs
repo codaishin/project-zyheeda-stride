@@ -4,15 +4,36 @@ using System;
 using System.Linq;
 
 public static class ResultExtensions {
-	public static void Switch<TError, T>(this IResult<TError, T> union, Action<TError> fst, Action<T> snd) {
-		_ = union.Switch<byte>(
-			v => { fst(v); return default; },
-			v => { snd(v); return default; }
+	public static void Switch<TError>(this IResult<TError> result, Action<TError> error, Action ok) {
+		_ = result.Switch<byte>(
+			v => { error(v); return default; },
+			() => { ok(); return default; }
 		);
 	}
 
-	public static string UnpackToString<T>(this Result<T> union) {
-		var inner = union.Switch(
+	public static string UnpackToString(this Result result) {
+		var inner = result.Switch(
+			errors => {
+				var systemErrors = errors.system.Select(e => (string)e);
+				var playerErrors = errors.player.Select(e => (string)e);
+				return $"SystemErrors({string.Join(", ", systemErrors)}), PlayerErrors({string.Join(", ", playerErrors)})";
+			},
+			() => "Ok"
+		);
+		return $"{nameof(Result)}({inner})";
+	}
+}
+
+public static class GenericResultExtensions {
+	public static void Switch<TError, T>(this IResult<TError, T> result, Action<TError> error, Action<T> ok) {
+		_ = result.Switch<byte>(
+			v => { error(v); return default; },
+			v => { ok(v); return default; }
+		);
+	}
+
+	public static string UnpackToString<T>(this Result<T> result) {
+		var inner = result.Switch(
 			errors => {
 				var systemErrors = errors.system.Select(e => (string)e);
 				var playerErrors = errors.player.Select(e => (string)e);
@@ -37,7 +58,18 @@ public static class ResultExtensions {
 		);
 	}
 
+	public static Result FlatMap<T>(this Result<T> result, Func<T, Result> map) {
+		return result.Switch(
+			errors => Result.Errors(errors),
+			value => map(value)
+		);
+	}
+
 	public static Result<T> Flatten<T>(this Result<Result<T>> result) {
+		return result.FlatMap(v => v);
+	}
+
+	public static Result Flatten(this Result<Result> result) {
 		return result.FlatMap(v => v);
 	}
 
