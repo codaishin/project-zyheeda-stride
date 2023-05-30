@@ -7,35 +7,83 @@ using NUnit.Framework;
 using ProjectZyheeda;
 
 public class TestResultExtensions {
+	private struct FakeError : IResult<string> {
+		public TOut Switch<TOut>(Func<string, TOut> fst, Func<TOut> snd) {
+			return fst("42");
+		}
+	}
+
+	private struct FakeOk : IResult<string> {
+		public TOut Switch<TOut>(Func<string, TOut> fst, Func<TOut> snd) {
+			return snd();
+		}
+	}
+
+	[Test]
+	public void SwitchActionError() {
+		var result = new TestResultExtensions.FakeError();
+		var callback = Mock.Of<Action<string>>();
+
+		result.Switch(callback, () => { });
+		Mock
+			.Get(callback)
+			.Verify(c => c.Invoke("42"), Times.Once);
+	}
+
+	[Test]
+	public void SwitchActionOk() {
+		var result = new TestResultExtensions.FakeOk();
+		var callback = Mock.Of<Action>();
+
+		result.Switch(_ => { }, callback);
+		Mock
+			.Get(callback)
+			.Verify(c => c.Invoke(), Times.Once);
+	}
+
+	[Test]
+	public void ErrorAsString() {
+		Result result = Result.Errors((new SystemError[] { "A", "B", "C" }, new PlayerError[] { "a", "b", "c" }));
+		Assert.That(result.UnpackToString(), Is.EqualTo("Result(SystemErrors(A, B, C), PlayerErrors(a, b, c))"));
+	}
+
+	[Test]
+	public void OkAsString() {
+		var result = Result.Ok();
+		Assert.That(result.UnpackToString(), Is.EqualTo("Result(Ok)"));
+	}
+}
+
+public class TestGenericResultExtensions {
 	private struct FakeError : IResult<int, string> {
 		public TOut Switch<TOut>(Func<int, TOut> fst, Func<string, TOut> snd) {
 			return fst(42);
 		}
 	}
 
-	private struct FakeResult : IResult<int, string> {
+	private struct FakeOk : IResult<int, string> {
 		public TOut Switch<TOut>(Func<int, TOut> fst, Func<string, TOut> snd) {
 			return snd("42");
 		}
 	}
 
 	[Test]
-	public void SwitchActionFirst() {
-		var union = new TestResultExtensions.FakeError();
+	public void SwitchActionError() {
+		var result = new TestGenericResultExtensions.FakeError();
 		var callback = Mock.Of<Action<int>>();
 
-		union.Switch(callback, _ => { });
+		result.Switch(callback, _ => { });
 		Mock
 			.Get(callback)
 			.Verify(c => c.Invoke(42), Times.Once);
 	}
 
 	[Test]
-	public void SwitchActionSecond() {
-		var union = new TestResultExtensions.FakeResult();
+	public void SwitchActionOk() {
+		var result = new TestGenericResultExtensions.FakeOk();
 		var callback = Mock.Of<Action<string>>();
 
-		union.Switch(_ => { }, callback);
+		result.Switch(_ => { }, callback);
 		Mock
 			.Get(callback)
 			.Verify(c => c.Invoke("42"), Times.Once);
@@ -43,14 +91,14 @@ public class TestResultExtensions {
 
 	[Test]
 	public void ErrorAsString() {
-		var union = new Result<int>((new SystemError[] { "A", "B", "C" }, new PlayerError[] { "a", "b", "c" }));
-		Assert.That(union.UnpackToString(), Is.EqualTo("Result<Int32>(SystemErrors(A, B, C), PlayerErrors(a, b, c))"));
+		var result = new Result<int>((new SystemError[] { "A", "B", "C" }, new PlayerError[] { "a", "b", "c" }));
+		Assert.That(result.UnpackToString(), Is.EqualTo("Result<Int32>(SystemErrors(A, B, C), PlayerErrors(a, b, c))"));
 	}
 
 	[Test]
 	public void ValueAsString() {
-		var union = new Result<int>(42);
-		Assert.That(union.UnpackToString(), Is.EqualTo("Result<Int32>(42)"));
+		var result = new Result<int>(42);
+		Assert.That(result.UnpackToString(), Is.EqualTo("Result<Int32>(42)"));
 	}
 
 	[Test]
@@ -67,7 +115,7 @@ public class TestResultExtensions {
 	}
 
 	[Test]
-	public void FlatMapEitherWithValueAndMapOkayToValue() {
+	public void FlatMapResultWithValueAndMapOkayToValue() {
 		var invert = (int v) => new Result<float>((float)1 / v);
 		var result = new Result<int>(42).FlatMap(invert);
 
@@ -80,10 +128,23 @@ public class TestResultExtensions {
 	}
 
 	[Test]
-	public void FlatMapEitherWithValueAndMapErrorToError() {
+	public void FlatMapResultWithValueAndMapOkayNonGenericResultOk() {
+		var okayFunk = (int v) => Result.Ok();
+		var result = new Result<int>(42).FlatMap(okayFunk);
+
+		var ok = result.Switch(
+			_ => false,
+			() => true
+		);
+
+		Assert.That(ok, Is.True);
+	}
+
+	[Test]
+	public void FlatMapResultWithValueAndMapErrorToError() {
 		var errorMsg = "non divisible by the answer to the universe and everything";
-		var inverse = (int v) => new Result<float>((Array.Empty<SystemError>(), new PlayerError[] { errorMsg }));
-		var result = new Result<int>(42).FlatMap(inverse);
+		var func = (int v) => new Result<float>((Array.Empty<SystemError>(), new PlayerError[] { errorMsg }));
+		var result = new Result<int>(42).FlatMap(func);
 
 		var value = result.Switch<string>(
 			errors => errors.player.First(),
@@ -94,9 +155,23 @@ public class TestResultExtensions {
 	}
 
 	[Test]
-	public void FlatMapEitherWithErrorToError() {
-		var inverse = (int v) => new Result<float>((float)1 / v);
-		var result = new Result<int>((new SystemError[] { "ERROR" }, Array.Empty<PlayerError>())).FlatMap(inverse);
+	public void FlatMapResultWithValueAndMapErrorToNonGenericResultError() {
+		var errorMsg = "non divisible by the answer to the universe and everything";
+		var func = (int v) => (Result)Result.PlayerError(errorMsg);
+		var result = new Result<int>(42).FlatMap(func);
+
+		var value = result.Switch<string>(
+			errors => errors.player.First(),
+			() => "OKAY"
+		);
+
+		Assert.That(value, Is.EqualTo(errorMsg));
+	}
+
+	[Test]
+	public void FlatMapResultWithErrorToError() {
+		var func = (int v) => new Result<float>((float)1 / v);
+		var result = new Result<int>((new SystemError[] { "ERROR" }, Array.Empty<PlayerError>())).FlatMap(func);
 
 		var value = result.Switch<string>(
 			errors => errors.system.First(),
@@ -107,11 +182,33 @@ public class TestResultExtensions {
 	}
 
 	[Test]
-	public void FlatMapSelf() {
+	public void FlatMapResultWithErrorToNonGenericResultError() {
+		var func = (int v) => Result.Ok();
+		var result = new Result<int>((new SystemError[] { "ERROR" }, Array.Empty<PlayerError>())).FlatMap(func);
+
+		var value = result.Switch<string>(
+			errors => errors.system.First(),
+			() => "OKAY"
+		);
+
+		Assert.That(value, Is.EqualTo("ERROR"));
+	}
+
+	[Test]
+	public void Flatten() {
 		var value = new Result<int>(42);
 		var nested = new Result<Result<int>>(value);
 
 		Assert.That(nested.Flatten().UnpackOr(-1), Is.EqualTo(42));
+	}
+
+	[Test]
+	public void FlattenWithNonGenericError() {
+		var value = Result.Ok();
+		var nested = new Result<Result>(value);
+		var ok = nested.Flatten().Switch(_ => false, () => true);
+
+		Assert.That(ok, Is.True);
 	}
 
 	[Test]
