@@ -4,37 +4,77 @@ using System;
 using System.Linq;
 
 
-public readonly struct Result {
-	public readonly (SystemErrors system, PlayerErrors player) errors;
+public readonly struct Result : IResult<(SystemErrors system, PlayerErrors player)> {
+	public readonly struct ResultErrors : IResult<(SystemErrors system, PlayerErrors player)> {
+		public readonly (SystemErrors system, PlayerErrors player) errors;
+
+		public ResultErrors((SystemErrors system, PlayerErrors player) errors) {
+			this.errors = errors;
+		}
+
+		public TOut Switch<TOut>(Func<(SystemErrors system, PlayerErrors player), TOut> error, Func<TOut> ok) {
+			return error(this.errors);
+		}
+	}
+
+	private readonly struct ResultOk : IResult<(SystemErrors system, PlayerErrors player)> {
+		public TOut Switch<TOut>(Func<(SystemErrors system, PlayerErrors player), TOut> error, Func<TOut> ok) {
+			return ok();
+		}
+	}
+
+	private readonly IResult<(SystemErrors system, PlayerErrors player)> errorsOrOk;
+
+	public Result() {
+		this.errorsOrOk = new ResultOk();
+	}
 
 	private Result((SystemErrors system, PlayerErrors player) errors) {
-		this.errors = errors;
+		this.errorsOrOk = new Result.ResultErrors(errors);
+	}
+
+	public TOut Switch<TOut>(Func<(SystemErrors system, PlayerErrors player), TOut> error, Func<TOut> ok) {
+		return this.errorsOrOk.Switch(
+			errors => error(errors),
+			() => ok()
+		);
+	}
+
+	public static Result Ok() {
+		return new Result();
 	}
 
 	public static Result<T> Ok<T>(T value) {
 		return new Result<T>(value);
 	}
 
-	public static Result PlayerError(string error) {
+	public static Result.ResultErrors PlayerError(string error) {
 		return Result.Error((PlayerError)error);
 	}
 
-	public static Result SystemError(string error) {
+	public static Result.ResultErrors SystemError(string error) {
 		return Result.Error((SystemError)error);
 	}
 
-	public static Result Error(PlayerError error) {
+	public static Result.ResultErrors Error(PlayerError error) {
 		var errors = (Enumerable.Empty<SystemError>(), new PlayerError[] { error });
-		return new Result(errors);
+		return new Result.ResultErrors(errors);
 	}
 
-	public static Result Error(SystemError error) {
+	public static Result.ResultErrors Error(SystemError error) {
 		var errors = (new SystemError[] { error }, Enumerable.Empty<PlayerError>());
-		return new Result(errors);
+		return new Result.ResultErrors(errors);
 	}
 
-	public static Result Errors((SystemErrors system, PlayerErrors player) errors) {
-		return new Result(errors);
+	public static Result.ResultErrors Errors((SystemErrors system, PlayerErrors player) errors) {
+		return new Result.ResultErrors(errors);
+	}
+
+	public static implicit operator Result(Result.ResultErrors result) {
+		return result.Switch(
+			error => new Result(error),
+			() => new Result()
+		);
 	}
 }
 
@@ -67,7 +107,7 @@ public readonly struct Result<T> : IResult<(SystemErrors system, PlayerErrors pl
 		return this.errorsOrValue.Switch(error, value);
 	}
 
-	public static implicit operator Result<T>(Result result) {
+	public static implicit operator Result<T>(Result.ResultErrors result) {
 		return new Result<T>(result.errors);
 	}
 
