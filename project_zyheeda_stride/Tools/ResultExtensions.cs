@@ -65,6 +65,32 @@ public static class GenericResultExtensions {
 		);
 	}
 
+	public static Result FlatMap(this Result result, Func<Result> map) {
+		return result.Switch(
+			errors => map().Switch(
+				mapErrors => Result.Errors((
+					errors.system.Concat(mapErrors.system),
+					errors.player.Concat(mapErrors.player)
+				)),
+				() => Result.Errors(errors)
+			),
+			() => map()
+		);
+	}
+
+	public static Result<T> FlatMap<T>(this Result result, Func<Result<T>> map) {
+		return result.Switch(
+			errors => map().Switch(
+				mapErrors => Result.Errors((
+					errors.system.Concat(mapErrors.system),
+					errors.player.Concat(mapErrors.player)
+				)),
+				_ => Result.Errors(errors)
+			),
+			() => map()
+		);
+	}
+
 	public static Result<T> Flatten<T>(this Result<Result<T>> result) {
 		return result.FlatMap(v => v);
 	}
