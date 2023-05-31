@@ -115,6 +115,25 @@ public class TestGenericResultExtensions {
 	}
 
 	[Test]
+	public void MapVoidOkay() {
+		var result = Result.Ok();
+		var ok = result.Map(() => true).UnpackOr(false);
+
+		Assert.That(ok, Is.True);
+	}
+
+	[Test]
+	public void MapVoidErrors() {
+		var result = (Result)Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "BBB" }));
+		var errors = result.Map(() => true).Switch<(string, string)>(
+			errors => (errors.system.First(), errors.player.First()),
+			_ => ("", "")
+		);
+
+		Assert.That(errors, Is.EqualTo(("AAA", "BBB")));
+	}
+
+	[Test]
 	public void FlatMapVoidOkayAndMapVoidOkayToOkay() {
 		var func = () => Result.Ok();
 		var result = Result.Ok();
