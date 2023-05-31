@@ -51,6 +51,13 @@ public static class GenericResultExtensions {
 		);
 	}
 
+	public static Result<TOut> Map<TOut>(this Result result, Func<TOut> map) {
+		return result.Switch(
+			errors => Result.Errors(errors),
+			() => Result.Ok(map())
+		);
+	}
+
 	public static Result<TOut> FlatMap<T, TOut>(this Result<T> result, Func<T, Result<TOut>> map) {
 		return result.Switch(
 			errors => Result.Errors(errors),
@@ -62,6 +69,32 @@ public static class GenericResultExtensions {
 		return result.Switch(
 			errors => Result.Errors(errors),
 			value => map(value)
+		);
+	}
+
+	public static Result FlatMap(this Result result, Func<Result> map) {
+		return result.Switch(
+			errors => map().Switch(
+				mapErrors => Result.Errors((
+					errors.system.Concat(mapErrors.system),
+					errors.player.Concat(mapErrors.player)
+				)),
+				() => Result.Errors(errors)
+			),
+			() => map()
+		);
+	}
+
+	public static Result<T> FlatMap<T>(this Result result, Func<Result<T>> map) {
+		return result.Switch(
+			errors => map().Switch(
+				mapErrors => Result.Errors((
+					errors.system.Concat(mapErrors.system),
+					errors.player.Concat(mapErrors.player)
+				)),
+				_ => Result.Errors(errors)
+			),
+			() => map()
 		);
 	}
 

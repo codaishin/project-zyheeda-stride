@@ -115,6 +115,109 @@ public class TestGenericResultExtensions {
 	}
 
 	[Test]
+	public void MapVoidOkay() {
+		var result = Result.Ok();
+		var ok = result.Map(() => true).UnpackOr(false);
+
+		Assert.That(ok, Is.True);
+	}
+
+	[Test]
+	public void MapVoidErrors() {
+		var result = (Result)Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "BBB" }));
+		var errors = result.Map(() => true).Switch<(string, string)>(
+			errors => (errors.system.First(), errors.player.First()),
+			_ => ("", "")
+		);
+
+		Assert.That(errors, Is.EqualTo(("AAA", "BBB")));
+	}
+
+	[Test]
+	public void FlatMapVoidOkayAndMapVoidOkayToOkay() {
+		var func = () => Result.Ok();
+		var result = Result.Ok();
+
+		var ok = result.FlatMap(func).Switch(
+			_ => false,
+			() => true
+		);
+
+		Assert.That(ok, Is.True);
+	}
+
+	[Test]
+	public void FlatMapVoidOkayAndMapVoidErrorsToErrors() {
+		var func = () => (Result)Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" }));
+		var result = Result.Ok();
+
+		var errors = result.FlatMap(func).Switch<(string, string)>(
+			errors => (errors.system.First(), errors.player.First()),
+			() => ("", "")
+		);
+
+		Assert.That(errors, Is.EqualTo(("AAA", "aaa")));
+	}
+
+	[Test]
+	public void FlatMapVoidErrorsAndMapVoidErrorsToErrors() {
+		var func = () => (Result)Result.Errors((new SystemError[] { "BBB" }, new PlayerError[] { "bbb" }));
+		var result = (Result)Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" }));
+
+		var errors = result.FlatMap(func).Switch<(string, string)>(
+			errors => (
+				string.Join(", ", errors.system.Select(e => (string)e)),
+				string.Join(", ", errors.player.Select(e => (string)e))
+			),
+			() => ("", "")
+		);
+
+		Assert.That(errors, Is.EqualTo(("AAA, BBB", "aaa, bbb")));
+	}
+
+	[Test]
+	public void FlatMapVoidOkayAndMapOkayToOkay() {
+		var func = () => Result.Ok(42);
+		var result = Result.Ok();
+
+		var value = result.FlatMap(func).Switch(
+			_ => -1,
+			v => 42
+		);
+
+		Assert.That(value, Is.EqualTo(42));
+	}
+
+	[Test]
+	public void FlatMapVoidErrorsAndMapOkayToErrors() {
+		var func = () => Result.Ok(42);
+		var result = (Result)Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" }));
+
+		var errors = result.FlatMap(func).Switch<(string, string)>(
+			errors => (errors.system.First(), errors.player.First()),
+			v => ("", "")
+		);
+
+		Assert.That(errors, Is.EqualTo(("AAA", "aaa")));
+	}
+
+	[Test]
+	public void FlatMapVoidErrorsAndMapErrorsToErrors() {
+		var func = () => (Result<int>)Result.Errors((new SystemError[] { "BBB" }, new PlayerError[] { "bbb" }));
+		var result = (Result)Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" }));
+
+		var errors = result.FlatMap(func).Switch<(string, string)>(
+			errors => (
+				string.Join(", ", errors.system.Select(e => (string)e)),
+				string.Join(", ", errors.player.Select(e => (string)e))
+			),
+			v => ("", "")
+		);
+
+		Assert.That(errors, Is.EqualTo(("AAA, BBB", "aaa, bbb")));
+	}
+
+	[Test]
 	public void FlatMapResultWithValueAndMapOkayToValue() {
 		var invert = (int v) => new Result<float>((float)1 / v);
 		var result = new Result<int>(42).FlatMap(invert);
