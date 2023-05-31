@@ -1,6 +1,7 @@
 namespace ProjectZyheeda;
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Stride.Core.Mathematics;
 using Stride.Core.MicroThreading;
@@ -18,21 +19,27 @@ public abstract class BaseKineticController<TMove> :
 	public event Action<PhysicsComponent>? OnHit;
 
 	private MicroThread? thread;
-	private Action cancel = () => { };
+	private Cancel cancel = () => Result.Ok();
 
 	public BaseKineticController(TMove move) : base() {
 		this.move = move;
 	}
 
-	private void SystemLog(string message) {
-		this.EssentialServices.systemMessage.Log(new SystemError(message));
+	private Task LogErrors((SystemErrors system, PlayerErrors player) errors) {
+		this.EssentialServices.playerMessage.Log(errors.player.ToArray());
+		this.EssentialServices.systemMessage.Log(errors.system.ToArray());
+		return Task.CompletedTask;
+	}
+
+	private Task WaitPause(IWait pause) {
+		return pause.Wait(this.Script);
 	}
 
 	public override async Task Execute() {
 		var systemLogger = this.Game.Services.GetService<ISystemMessage>().ToMaybe();
 
 		if (this.collider is null) {
-			this.SystemLog(this.MissingField(nameof(this.collider)));
+			this.EssentialServices.systemMessage.Log(this.MissingField(nameof(this.collider)));
 			return;
 		}
 
@@ -40,7 +47,10 @@ public abstract class BaseKineticController<TMove> :
 			var collision = await this.collider.NewCollision();
 			this.thread?.Cancel();
 			this.OnHit?.Invoke(collision.Other(this.collider));
-			this.cancel();
+			this.cancel().Switch(
+				errors => this.LogErrors(errors),
+				() => { }
+			);
 		}
 	}
 
@@ -56,7 +66,7 @@ public abstract class BaseKineticController<TMove> :
 		this.thread?.Cancel();
 		this.thread = this.Script.AddTask(async () => {
 			foreach (var pause in run()) {
-				await pause.Wait(this.Script);
+				await pause.Switch(this.LogErrors, this.WaitPause);
 			}
 		});
 		this.Entity.Transform.Position = start;

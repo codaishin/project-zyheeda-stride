@@ -2,6 +2,7 @@ namespace Tests;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
@@ -14,8 +15,8 @@ public class TestAnimatedMove {
 	private IMove move = Mock.Of<IMove>();
 	private AnimatedMove animatedMove = new();
 	private FGetCoroutine getCoroutine = Mock.Of<FGetCoroutine>();
-	private Func<IEnumerable<IWait>> run = Mock.Of<Func<IEnumerable<IWait>>>();
-	private Action cancel = Mock.Of<Action>();
+	private Func<IEnumerable<Result<IWait>>> run = Mock.Of<Func<IEnumerable<Result<IWait>>>>();
+	private Cancel cancel = Mock.Of<Cancel>();
 
 	private class MockWait : IWait {
 		public Task Wait(ScriptSystem script) {
@@ -27,8 +28,8 @@ public class TestAnimatedMove {
 	public void SetUp() {
 		this.animatedMove = new() { move = this.move = Mock.Of<IMove>() };
 		this.getCoroutine = Mock.Of<FGetCoroutine>();
-		this.run = Mock.Of<Func<IEnumerable<IWait>>>();
-		this.cancel = Mock.Of<Action>();
+		this.run = Mock.Of<Func<IEnumerable<Result<IWait>>>>();
+		this.cancel = Mock.Of<Cancel>();
 
 		Mock
 			.Get(this.animatedMove.move)
@@ -36,11 +37,11 @@ public class TestAnimatedMove {
 
 		Mock
 			.Get(this.getCoroutine)
-			.SetReturnsDefault<(Func<IEnumerable<IWait>>, Action)>((this.run, this.cancel));
+			.SetReturnsDefault<(Func<IEnumerable<Result<IWait>>>, Cancel)>((this.run, this.cancel));
 
 		Mock
 			.Get(this.run)
-			.SetReturnsDefault<IEnumerable<IWait>>(new IWait[] { new MockWait(), new MockWait() });
+			.SetReturnsDefault<IEnumerable<Result<IWait>>>(new Result<IWait>[] { new MockWait(), new MockWait() });
 	}
 
 	[Test]
@@ -65,9 +66,9 @@ public class TestAnimatedMove {
 			.Get(this.getCoroutine)
 			.Verify(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()), Times.Once);
 
-		Assert.That(run(), Is.All.InstanceOf<MockWait>());
+		Assert.That(run().Select(w => w.UnpackOr(new WaitMilliSeconds(0))), Is.All.InstanceOf<MockWait>());
 
-		cancel();
+		_ = cancel();
 
 		Mock
 			.Get(this.cancel)
@@ -79,7 +80,10 @@ public class TestAnimatedMove {
 		var target = new Vector3(1, 0, 0);
 		var play = Mock.Of<Action<string>>();
 		var getCoroutine = this.animatedMove.PrepareCoroutineFor(new Entity(), _ => 0f, play).Switch(
-			error => throw new AssertionException(string.Join(", ", error)),
+			errors => throw new AssertionException((
+				string.Join(", ", errors.system.Select(e => (string)e)),
+				string.Join(", ", errors.player.Select(e => (string)e))
+			).ToString()),
 			value => value
 		);
 		var (run, _) = getCoroutine(() => target);
@@ -97,7 +101,10 @@ public class TestAnimatedMove {
 	public void PlayAnimationRun() {
 		var play = Mock.Of<Action<string>>();
 		var getCoroutine = this.animatedMove.PrepareCoroutineFor(new Entity(), _ => 0f, play).Switch(
-			error => throw new AssertionException(string.Join(", ", error)),
+			errors => throw new AssertionException((
+				string.Join(", ", errors.system.Select(e => (string)e)),
+				string.Join(", ", errors.player.Select(e => (string)e))
+			).ToString()),
 			value => value
 		);
 		var (run, _) = getCoroutine(() => new Vector3(1, 0, 0));
@@ -116,7 +123,10 @@ public class TestAnimatedMove {
 		var target = new Vector3(0.3f, 0, 0);
 		var play = Mock.Of<Action<string>>();
 		var getCoroutine = this.animatedMove.PrepareCoroutineFor(new Entity(), _ => 0.1f, play).Switch(
-			error => throw new AssertionException(string.Join(", ", error)),
+			errors => throw new AssertionException((
+				string.Join(", ", errors.system.Select(e => (string)e)),
+				string.Join(", ", errors.player.Select(e => (string)e))
+			).ToString()),
 			value => value
 		);
 		var (run, _) = getCoroutine(() => target);
@@ -134,18 +144,46 @@ public class TestAnimatedMove {
 		var target = new Vector3(1, 0, 0);
 		var play = Mock.Of<Action<string>>();
 		var getCoroutine = this.animatedMove.PrepareCoroutineFor(new Entity(), _ => 0, play).Switch(
-			error => throw new AssertionException(string.Join(", ", error)),
+			errors => throw new AssertionException((
+				string.Join(", ", errors.system.Select(e => (string)e)),
+				string.Join(", ", errors.player.Select(e => (string)e))
+			).ToString()),
 			value => value
 		);
 		var (run, cancel) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
 		_ = runner.MoveNext();
-		cancel();
+		_ = cancel();
 
 		Mock
 			.Get(play)
 			.Verify(func => func(AnimatedMove.fallbackAnimationKey), Times.Once);
+	}
+
+	[Test]
+	public void ReturnInnerCancelResult() {
+		var target = new Vector3(1, 0, 0);
+		var play = Mock.Of<Action<string>>();
+		var getCoroutine = this.animatedMove.PrepareCoroutineFor(new Entity(), _ => 0, play).Switch(
+			errors => throw new AssertionException((
+				string.Join(", ", errors.system.Select(e => (string)e)),
+				string.Join(", ", errors.player.Select(e => (string)e))
+			).ToString()),
+			value => value
+		);
+
+		_ = Mock
+			.Get(this.cancel)
+			.Setup(c => c()).Returns(Result.PlayerError("AAA"));
+
+		var (_, cancel) = getCoroutine(() => target);
+
+		var error = cancel().Switch<string>(
+			errors => errors.player.First(),
+			() => "no error"
+		);
+		Assert.That(error, Is.EqualTo("AAA"));
 	}
 
 	[Test]

@@ -1,6 +1,7 @@
 namespace Tests;
 
 using System;
+using System.Linq;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
@@ -38,7 +39,7 @@ public class TestMove : System.IDisposable {
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.1f);
 		var (run, _) = getCoroutine(() => target);
 
-		Assert.That(run(), Is.All.InstanceOf<WaitFrame>());
+		Assert.That(run().Select(w => w.UnpackOr(new WaitMilliSeconds(0))), Is.All.InstanceOf<WaitFrame>());
 	}
 
 	[Test]

@@ -31,7 +31,9 @@ public class StraightMove : IMove {
 				}
 			};
 
-			void cancel() { };
+			Result cancel() {
+				return Result.Ok();
+			}
 
 			return (run, cancel);
 		};

@@ -34,9 +34,10 @@ public class AnimatedMove : IAnimatedMove {
 				playAnimation(AnimatedMove.fallbackAnimationKey);
 			};
 
-			void cancel() {
-				cancelMove();
+			Result cancel() {
+				var result = cancelMove();
 				playAnimation(AnimatedMove.fallbackAnimationKey);
+				return result;
 			};
 
 			return (run, cancel);

@@ -84,11 +84,11 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 	[Test]
 	public void RunBehaviorWithTarget() {
-		static IEnumerable<IWait> run() {
+		static IEnumerable<Result<IWait>> run() {
 			yield break;
 		}
 
-		(Func<IEnumerable<IWait>>, Action) execution = (run, () => { });
+		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (run, () => Result.Ok());
 
 		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())
@@ -110,11 +110,11 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 	[Test]
 	public void RunBehaviorWithTargetTwice() {
-		static IEnumerable<IWait> run() {
+		static IEnumerable<Result<IWait>> run() {
 			yield break;
 		}
 
-		(Func<IEnumerable<IWait>>, Action) execution = (run, () => { });
+		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (run, () => Result.Ok());
 
 		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())
@@ -134,11 +134,11 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 	[Test]
 	public void EnqueueBehavior() {
-		static IEnumerable<IWait> run() {
+		static IEnumerable<Result<IWait>> run() {
 			yield break;
 		}
 
-		(Func<IEnumerable<IWait>>, Action) execution = (run, () => { });
+		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (run, () => Result.Ok());
 
 		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())

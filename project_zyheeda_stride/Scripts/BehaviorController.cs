@@ -24,10 +24,12 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 
 	private (Func<Coroutine>, Cancel) NothingEquipped(Func<Vector3> _) {
 		Coroutine run() {
-			this.EssentialServices.playerMessage.Log("nothing equipped");
-			yield break;
+			yield return Result.PlayerError("nothing equipped");
 		}
-		void cancel() { }
+		Result cancel() {
+			return Result.Ok();
+		}
+
 		return (run, cancel);
 	}
 

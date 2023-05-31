@@ -2,14 +2,12 @@ namespace Tests;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
 using Stride.Core.Mathematics;
 using Stride.Engine;
-
-
-
 
 public class BehaviorControllerTest : GameTestCollection {
 	private ISystemMessage systemMessage = Mock.Of<ISystemMessage>();
@@ -69,7 +67,7 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
 			.Returns((Func<Vector3> getTarget) => {
 				Assert.That(getTarget(), Is.EqualTo(target));
-				return (() => Array.Empty<IWait>(), () => { });
+				return (() => Array.Empty<Result<IWait>>(), () => Result.Ok());
 			});
 
 		this.controller.agent = new();
@@ -93,33 +91,35 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Get(this.playerMessage)
 			.Verify(m => m.Log(new PlayerError("nothing equipped")), Times.Never);
 
-		var (run, _) = this.controller.GetCoroutine(() => target);
+		var (run, cancel) = this.controller.GetCoroutine(() => target);
 		var coroutine = run().GetEnumerator();
 
 		_ = coroutine.MoveNext();
+		var error = coroutine.Current.Switch(
+			errors => errors.player.First(),
+			_ => (PlayerError)"no error"
+		);
 
-		Mock
-			.Get(this.playerMessage)
-			.Verify(m => m.Log("nothing equipped"), Times.Once);
+		Assert.That(error, Is.EqualTo((PlayerError)"nothing equipped"));
+
+		var cancelOk = cancel().Switch(_ => false, () => true);
+		Assert.That(cancelOk, Is.True);
 	}
 
 	[Test]
 	public void EquipmentMissingOnUseBeforeAnythingIsSet() {
 		var equipment = Mock.Of<IEquipment>();
 		var target = Vector3.UnitX;
-
-		Mock
-			.Get(this.playerMessage)
-			.Verify(m => m.Log(new PlayerError("nothing equipped")), Times.Never);
-
 		var (run, _) = this.controller.GetCoroutine(() => target);
 		var coroutine = run().GetEnumerator();
 
 		_ = coroutine.MoveNext();
+		var error = coroutine.Current.Switch(
+			errors => errors.player.First(),
+			_ => (PlayerError)"no error"
+		);
 
-		Mock
-			.Get(this.playerMessage)
-			.Verify(m => m.Log(new PlayerError("nothing equipped")), Times.Once);
+		Assert.That(error, Is.EqualTo((PlayerError)"nothing equipped"));
 	}
 
 	[Test]
@@ -162,9 +162,9 @@ public class BehaviorControllerTest : GameTestCollection {
 		var getCoroutine = Mock.Of<FGetCoroutine>();
 		var equipment = Mock.Of<IEquipment>();
 		var target = new Vector3(1, 2, 3);
-		(Func<IEnumerable<IWait>>, Action) execution = (
-			() => Array.Empty<IWait>(),
-			() => { }
+		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (
+			() => Array.Empty<Result<IWait>>(),
+			() => Result.Ok()
 		);
 
 		_ = Mock
