@@ -38,10 +38,14 @@ public class MoveController : ProjectZyheedaStartupScript, IEquipment {
 			.Flatten();
 	}
 
-	private void Play(string animationKey, AnimationComponent agentAnimator) {
+	private Result Play(string animationKey, AnimationComponent agentAnimator) {
 		var animation = this.EssentialServices.animation;
-		if (!animation.IsPlaying(agentAnimator, animationKey).UnpackOr(false)) {
-			_ = animation.Play(agentAnimator, animationKey);
-		}
+		return animation
+			.IsPlaying(agentAnimator, animationKey)
+			.FlatMap(
+				isPlaying => isPlaying
+					? Result.Ok()
+					: animation.Play(agentAnimator, animationKey)
+			);
 	}
 }

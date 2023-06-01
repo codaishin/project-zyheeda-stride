@@ -11,19 +11,23 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 	private Entity agent = new();
 	private MoveController moveController = new();
 	private IAnimatedMove move = Mock.Of<IAnimatedMove>();
+	private IAnimation animation = Mock.Of<IAnimation>();
 
 	[SetUp]
 	public void SetUp() {
-		var animation = Mock.Of<IAnimation>();
+		;
 		this.game.Services.RemoveService<IAnimation>();
-		this.game.Services.AddService<IAnimation>(animation);
+		this.game.Services.AddService<IAnimation>(this.animation = Mock.Of<IAnimation>());
 
 		Mock
-			.Get(animation)
+			.Get(this.animation)
 			.SetReturnsDefault<Result<bool>>(false);
 		Mock
-			.Get(animation)
-			.SetReturnsDefault<Result>(Result.SystemError("SYSTEM ERROR"));
+			.Get(this.animation)
+			.SetReturnsDefault<Result<IPlayingAnimation>>(Result.Ok(Mock.Of<IPlayingAnimation>()));
+		Mock
+			.Get(this.move)
+			.SetReturnsDefault<Result<bool>>(false);
 
 		this.agent = new Entity();
 		this.agent.AddChild(new Entity { new AnimationComponent() });
@@ -42,7 +46,7 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 		_ = Mock
 			.Get(this.move)
-			.Setup(m => m.PrepareCoroutineFor(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Action<string>>()))
+			.Setup(m => m.PrepareCoroutineFor(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Func<string, Result>>()))
 			.Returns(Result.Ok(mockGetCoroutine));
 
 		var getCoroutine = this.moveController
@@ -57,22 +61,19 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 	[Test]
 	public void PlayAnimation() {
-		var runPlay = null as Action<string>;
-		var prepareCoroutineFor = Mock.Of<Func<Entity, FSpeedToDelta, Action<string>, FGetCoroutine>>();
+		var prepareCoroutineFor = Mock.Of<Func<Entity, FSpeedToDelta, Func<string, Result>, FGetCoroutine>>();
 		var animation = this.game.Services.GetService<IAnimation>();
 		var animator = this.agent.GetChild(0).Get<AnimationComponent>();
 
 		_ = Mock
 			.Get(this.move)
-			.Setup(m => m.PrepareCoroutineFor(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Action<string>>()))
-			.Returns((Entity _, FSpeedToDelta _, Action<string> play) => {
-				runPlay = play;
+			.Setup(m => m.PrepareCoroutineFor(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Func<string, Result>>()))
+			.Returns((Entity _, FSpeedToDelta _, Func<string, Result> play) => {
+				_ = play("walk");
 				return Result.Ok(Mock.Of<FGetCoroutine>());
 			});
 
 		_ = this.moveController.PrepareCoroutineFor(this.agent);
-
-		runPlay!("walk");
 
 		Mock
 			.Get(animation)
@@ -81,52 +82,46 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 	[Test]
 	public void DoNotPlayActiveAnimations() {
-		var runPlay = null as Action<string>;
 		var prepareCoroutineFor = Mock.Of<Func<Entity, FSpeedToDelta, Action<string>, FGetCoroutine>>();
 		var animation = this.game.Services.GetService<IAnimation>();
 		var animator = this.agent.GetChild(0).Get<AnimationComponent>();
+		_ = Mock
+			.Get(animation)
+			.SetupSequence(g => g.IsPlaying(animator, "walk"))
+			.Returns(false)
+			.Returns(true);
 
 		_ = Mock
 			.Get(this.move)
-			.Setup(m => m.PrepareCoroutineFor(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Action<string>>()))
-			.Returns((Entity _, FSpeedToDelta _, Action<string> play) => {
-				runPlay = play;
+			.Setup(m => m.PrepareCoroutineFor(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Func<string, Result>>()))
+			.Returns((Entity _, FSpeedToDelta _, Func<string, Result> play) => {
+				_ = play("walk");
+				_ = play("walk");
+
+				Mock
+					.Get(animation)
+					.Verify(a => a.Play(animator, "walk"), Times.Once);
+
 				return Result.Ok(Mock.Of<FGetCoroutine>());
 			});
 
 		_ = this.moveController.PrepareCoroutineFor(this.agent);
-
-		runPlay!("walk");
-
-		_ = Mock
-			.Get(animation)
-			.Setup(g => g.IsPlaying(animator, "walk"))
-			.Returns(true);
-
-		runPlay!("walk");
-
-		Mock
-			.Get(animation)
-			.Verify(a => a.Play(animator, "walk"), Times.Once);
 	}
 
 	[Test]
 	public void MultiplySpeedWithUpdateTimeElapsed() {
-		var runDelta = null as FSpeedToDelta;
-		var prepareCoroutineFor = Mock.Of<Func<Entity, FSpeedToDelta, Action<string>, FGetCoroutine>>();
+		var prepareCoroutineFor = Mock.Of<Func<Entity, FSpeedToDelta, Func<string, Result>, FGetCoroutine>>();
 
 		_ = Mock
 			.Get(this.move)
-			.Setup(m => m.PrepareCoroutineFor(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Action<string>>()))
-			.Returns((Entity _, FSpeedToDelta delta, Action<string> _) => {
-				runDelta = delta;
+			.Setup(m => m.PrepareCoroutineFor(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Func<string, Result>>()))
+			.Returns((Entity _, FSpeedToDelta delta, Func<string, Result> _) => {
+				var deltaElapsed = (float)this.game.UpdateTime.Elapsed.TotalSeconds;
+				Assert.That(delta(42), Is.EqualTo(42 * deltaElapsed));
 				return Result.Ok(Mock.Of<FGetCoroutine>());
 			});
 
 		_ = this.moveController.PrepareCoroutineFor(this.agent);
-
-		var deltaElapsed = (float)this.game.UpdateTime.Elapsed.TotalSeconds;
-		Assert.That(runDelta!(42), Is.EqualTo(42 * deltaElapsed));
 	}
 
 	[Test]
@@ -150,6 +145,67 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 		var missingMove = this.moveController.MissingField(nameof(this.moveController.move));
 		Assert.That(error, Is.EqualTo(missingMove));
+	}
+
+	[Test]
+	public void MoveError() {
+		_ = Mock
+			.Get(this.move)
+			.Setup(m => m.PrepareCoroutineFor(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Func<string, Result>>()))
+			.Returns(Result.SystemError("LLL"));
+
+		var error = this.moveController
+			.PrepareCoroutineFor(this.agent)
+			.Switch<string>(errors => errors.system.First(), _ => "no error, got actual behavior");
+
+		Assert.That(error, Is.EqualTo("LLL"));
+	}
+
+	[Test]
+	public void CheckAnimationError() {
+		_ = Mock
+			.Get(this.animation)
+			.Setup(a => a.IsPlaying(It.IsAny<AnimationComponent>(), It.IsAny<string>()))
+			.Returns(Result.SystemError("LLL"));
+		_ = Mock
+			.Get(this.move)
+			.Setup(m => m.PrepareCoroutineFor(It.IsAny<Entity>(), It.IsAny<FSpeedToDelta>(), It.IsAny<Func<string, Result>>()))
+			.Returns((Entity _, FSpeedToDelta _, Func<string, Result> play) => {
+				var error = play("").Switch<string>(
+					errors => errors.system.First(),
+					() => "no error, got actual behavior"
+				);
+
+				Assert.That(error, Is.EqualTo("LLL"));
+
+				return Result.Ok(Mock.Of<FGetCoroutine>());
+			});
+
+		_ = this.moveController.PrepareCoroutineFor(this.agent);
+
+	}
+
+	[Test]
+	public void PlayAnimationError() {
+		_ = Mock
+			.Get(this.animation)
+			.Setup(a => a.Play(It.IsAny<AnimationComponent>(), It.IsAny<string>()))
+			.Returns(Result.SystemError("LLL"));
+		_ = Mock
+			.Get(this.move)
+			.Setup(m => m.PrepareCoroutineFor(It.IsAny<Entity>(), It.IsAny<FSpeedToDelta>(), It.IsAny<Func<string, Result>>()))
+			.Returns((Entity _, FSpeedToDelta _, Func<string, Result> play) => {
+				var error = play("").Switch<string>(
+					errors => errors.system.First(),
+					() => "no error, got actual behavior"
+				);
+
+				Assert.That(error, Is.EqualTo("LLL"));
+
+				return Result.Ok(Mock.Of<FGetCoroutine>());
+			});
+
+		_ = this.moveController.PrepareCoroutineFor(this.agent);
 	}
 
 	public void Dispose() {

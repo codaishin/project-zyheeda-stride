@@ -7,6 +7,6 @@ public interface IAnimatedMove {
 	Result<FGetCoroutine> PrepareCoroutineFor(
 		Entity agent,
 		FSpeedToDelta delta,
-		Action<string> playAnimation
+		Func<string, Result> playAnimation
 	);
 }

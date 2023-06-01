@@ -122,4 +122,11 @@ public readonly struct Result<T> : IResult<(SystemErrors system, PlayerErrors pl
 	public static implicit operator Result<T>(PlayerError error) {
 		return new Result<T>((Enumerable.Empty<SystemError>(), new PlayerError[] { error }));
 	}
+
+	public static implicit operator Result(Result<T> result) {
+		return result.Switch(
+			errors => Result.Errors(errors),
+			_ => Result.Ok()
+		);
+	}
 }
