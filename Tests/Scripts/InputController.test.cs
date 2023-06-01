@@ -19,11 +19,11 @@ public class TestInputController : GameTestCollection, IDisposable {
 	private List<TaskCompletionSource<InputAction>> newActionFnTaskTokens = new();
 	private ISystemMessage systemMessage = Mock.Of<ISystemMessage>();
 	private IPlayerMessage playerMessage = Mock.Of<IPlayerMessage>();
+	private IInputDispatcher dispatcher = Mock.Of<IInputDispatcher>();
 
 	[SetUp]
 	public void Setup() {
 		var newActionCallCount = 0;
-		var dispatcher = Mock.Of<IInputDispatcher>();
 		this.controller = new InputController {
 			input = this.inputStream = Mock.Of<IInputStream>(),
 			behavior = Maybe.Some(this.behavior = Mock.Of<IBehavior>()),
@@ -54,7 +54,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 		this.game.Services.RemoveService<IPlayerMessage>();
 		this.game.Services.AddService(this.playerMessage = Mock.Of<IPlayerMessage>());
 		this.game.Services.RemoveService<IInputDispatcher>();
-		this.game.Services.AddService(dispatcher);
+		this.game.Services.AddService(this.dispatcher = Mock.Of<IInputDispatcher>());
 
 		this.Scene.Entities.Add(new Entity { this.controller });
 
@@ -296,6 +296,47 @@ public class TestInputController : GameTestCollection, IDisposable {
 		this.newActionFnTaskTokens[0].SetResult(InputAction.Run);
 
 		this.game.WaitFrames(1);
+
+		Mock
+			.Get(this.systemMessage)
+			.Verify(m => m.Log("AAA"), Times.Once);
+		Mock
+			.Get(this.playerMessage)
+			.Verify(m => m.Log("aaa"), Times.Once);
+	}
+
+	[Test]
+	public void LogInputDispatcherAddErrors() {
+		_ = Mock
+			.Get(this.dispatcher)
+			.Setup(d => d.Add(It.IsAny<IInputStream>()))
+			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
+
+		_ = this.Scene.Entities.Remove(this.controller.Entity);
+		this.Scene.Entities.Add(this.controller.Entity);
+
+		this.game.WaitFrames(2);
+
+		Mock
+			.Get(this.systemMessage)
+			.Verify(m => m.Log("AAA"), Times.Once);
+		Mock
+			.Get(this.playerMessage)
+			.Verify(m => m.Log("aaa"), Times.Once);
+	}
+
+	[Test]
+	public void LogInputDispatcherRemoveErrors() {
+		_ = Mock
+			.Get(this.dispatcher)
+			.Setup(d => d.Remove(It.IsAny<IInputStream>()))
+			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
+
+		this.game.WaitFrames(1);
+
+		_ = this.Scene.Entities.Remove(this.controller.Entity);
+
+		this.game.WaitFrames(2);
 
 		Mock
 			.Get(this.systemMessage)
