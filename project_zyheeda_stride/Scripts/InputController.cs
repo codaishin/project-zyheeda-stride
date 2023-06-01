@@ -1,6 +1,7 @@
 namespace ProjectZyheeda;
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -11,6 +12,11 @@ public class InputController : ProjectZyheedaAsyncScript {
 	public IMaybe<IBehavior>? behavior;
 	public IMaybe<IScheduler>? scheduler;
 
+	private void LogErrors((IEnumerable<SystemError> system, IEnumerable<PlayerError> player) errors) {
+		this.EssentialServices.systemMessage.Log(errors.system.ToArray());
+		this.EssentialServices.playerMessage.Log(errors.player.ToArray());
+	}
+
 	private Action<InputAction> RunBehavior(IGetTarget getTarget, IBehavior behavior, IScheduler scheduler) {
 		return action => {
 			Action<(Func<Coroutine>, Cancel)> runOrEnqueue =
@@ -19,13 +25,8 @@ public class InputController : ProjectZyheedaAsyncScript {
 					: scheduler.Enqueue;
 			getTarget
 				.GetTarget()
-				.Switch(
-					errors => {
-						this.EssentialServices.systemMessage.Log(errors.system.ToArray());
-						this.EssentialServices.playerMessage.Log(errors.player.ToArray());
-					},
-					getTarget => runOrEnqueue(behavior.GetCoroutine(getTarget))
-				);
+				.FlatMap(getTarget => behavior.GetCoroutine(getTarget))
+				.Switch(this.LogErrors, runOrEnqueue);
 		};
 	}
 

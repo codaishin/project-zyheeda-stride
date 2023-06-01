@@ -1,49 +1,40 @@
 ﻿namespace ProjectZyheeda;
 
 using System;
-using System.Linq;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 
 public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 	public IMaybe<IEquipment>? equipment;
-
 	public Entity? agent;
 
-	private Func<Entity, Result<FGetCoroutine>> GetBehavior {
-		get {
-			var getBehaviorAndEquipment =
-				(Entity agent) =>
-					this.equipment.ToMaybe().Flatten().Switch(
-						equipment => equipment.PrepareCoroutineFor(agent),
-						() => Result.Ok<FGetCoroutine>(this.NothingEquipped)
-					);
-			return getBehaviorAndEquipment;
-		}
-	}
-
-	private (Func<Coroutine>, Cancel) NothingEquipped(Func<Vector3> _) {
-		Coroutine run() {
+	private static Result<FGetCoroutine> NothingEquipped() {
+		static Coroutine Run() {
 			yield return Result.PlayerError("nothing equipped");
 		}
-		Result cancel() {
+
+		static Result Cancel() {
 			return Result.Ok();
 		}
 
-		return (run, cancel);
+		return Result.Ok<FGetCoroutine>((Func<Vector3> _) => (Run, Cancel));
 	}
 
-	public (Func<Coroutine>, Cancel) GetCoroutine(Func<Vector3> getTarget) {
-		return this.GetBehavior
+	private static Func<Entity, Result<FGetCoroutine>> GetBehaviorFn(IMaybe<IEquipment>? equipment) {
+		return (Entity agent) =>
+			equipment
+				.ToMaybe()
+				.Flatten()
+				.Switch(
+					equipment => equipment.PrepareCoroutineFor(agent),
+					BehaviorController.NothingEquipped
+				);
+	}
+
+	public Result<(Func<Coroutine>, Cancel)> GetCoroutine(Func<Vector3> getTarget) {
+		return BehaviorController.GetBehaviorFn(this.equipment)
 			.ApplyWeak(this.agent.OkOrSystemError(this.MissingField(nameof(this.agent))))
 			.Flatten()
-			.Switch(
-				errors => {
-					this.EssentialServices.systemMessage.Log(errors.system.ToArray());
-					this.EssentialServices.playerMessage.Log(errors.player.ToArray());
-					return this.NothingEquipped(getTarget);
-				},
-				value => value(getTarget)
-			);
+			.Map(getBehavior => getBehavior(getTarget));
 	}
 }

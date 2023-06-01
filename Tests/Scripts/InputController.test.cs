@@ -44,6 +44,11 @@ public class TestInputController : GameTestCollection, IDisposable {
 			.Setup(i => i.NewAction())
 			.Returns(() => this.newActionFnTaskTokens[newActionCallCount++].Task);
 
+		_ = Mock
+			.Get(this.getTarget)
+			.Setup(c => c.GetTarget())
+			.Returns(Result.Ok(() => Vector3.One));
+
 		this.game.Services.RemoveService<ISystemMessage>();
 		this.game.Services.AddService(this.systemMessage = Mock.Of<ISystemMessage>());
 		this.game.Services.RemoveService<IPlayerMessage>();
@@ -279,6 +284,25 @@ public class TestInputController : GameTestCollection, IDisposable {
 				this.controller.MissingField(nameof(this.controller.scheduler)),
 				this.controller.MissingField(nameof(this.controller.input))
 			), Times.Once);
+	}
+
+	[Test]
+	public void LogCoroutineError() {
+		_ = Mock
+			.Get(this.behavior)
+			.Setup(b => b.GetCoroutine(It.IsAny<Func<Vector3>>()))
+			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
+
+		this.newActionFnTaskTokens[0].SetResult(InputAction.Run);
+
+		this.game.WaitFrames(1);
+
+		Mock
+			.Get(this.systemMessage)
+			.Verify(m => m.Log("AAA"), Times.Once);
+		Mock
+			.Get(this.playerMessage)
+			.Verify(m => m.Log("aaa"), Times.Once);
 	}
 
 	public void Dispose() {
