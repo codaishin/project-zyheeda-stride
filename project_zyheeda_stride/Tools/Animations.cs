@@ -4,16 +4,16 @@ using System.Collections.Generic;
 using Stride.Engine;
 
 public class Animation : IAnimation {
-	public bool IsPlaying(AnimationComponent animations, string key) {
+	public Result<bool> IsPlaying(AnimationComponent animations, string key) {
 		return animations.IsPlaying(key);
 	}
 
-	public IMaybe<IPlayingAnimation> Play(AnimationComponent animations, string key) {
+	public Result<IPlayingAnimation> Play(AnimationComponent animations, string key) {
 		try {
 			var playingAnimation = animations.Play(key.ToString());
-			return Maybe.Some<IPlayingAnimation>(new PlayingAnimation(playingAnimation));
+			return new PlayingAnimation(playingAnimation);
 		} catch (KeyNotFoundException) {
-			return Maybe.None<IPlayingAnimation>();
+			return Result.SystemError(animations.KeyNotFound(key));
 		}
 	}
 }

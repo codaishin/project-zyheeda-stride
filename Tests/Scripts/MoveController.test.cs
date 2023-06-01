@@ -20,10 +20,10 @@ public class TestMoveController : GameTestCollection, System.IDisposable {
 
 		Mock
 			.Get(animation)
-			.SetReturnsDefault(false);
+			.SetReturnsDefault<Result<bool>>(false);
 		Mock
 			.Get(animation)
-			.SetReturnsDefault(Maybe.None<IPlayingAnimation>());
+			.SetReturnsDefault<Result>(Result.SystemError("SYSTEM ERROR"));
 
 		this.agent = new Entity();
 		this.agent.AddChild(new Entity { new AnimationComponent() });

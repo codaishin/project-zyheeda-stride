@@ -40,7 +40,7 @@ public class MoveController : ProjectZyheedaStartupScript, IEquipment {
 
 	private void Play(string animationKey, AnimationComponent agentAnimator) {
 		var animation = this.EssentialServices.animation;
-		if (!animation.IsPlaying(agentAnimator, animationKey)) {
+		if (!animation.IsPlaying(agentAnimator, animationKey).UnpackOr(false)) {
 			_ = animation.Play(agentAnimator, animationKey);
 		}
 	}
