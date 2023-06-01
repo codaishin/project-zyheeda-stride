@@ -20,3 +20,9 @@ public readonly struct WaitMilliSeconds : IWait {
 		return Task.Delay(this.milliSeconds);
 	}
 }
+
+public readonly struct NoWait : IWait {
+	public Task Wait(ScriptSystem script) {
+		return Task.CompletedTask;
+	}
+}

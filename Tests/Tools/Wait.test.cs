@@ -44,3 +44,22 @@ public class TestWaitMilliseconds : GameTestCollection {
 		Assert.That(time, Is.AtLeast(100));
 	}
 }
+
+public class TestNoWait : GameTestCollection {
+	[Test]
+	public async Task CompletesImmediately() {
+		var wait = new NoWait();
+		var token = new TaskCompletionSource();
+		var frame = 0;
+
+		this.Tasks.AddTask(async () => {
+			frame = this.game.UpdateTime.FrameCount;
+			await wait.Wait(this.game.Script);
+			token.SetResult();
+		});
+
+		await token.Task;
+
+		Assert.That(this.game.UpdateTime.FrameCount, Is.EqualTo(frame));
+	}
+}
