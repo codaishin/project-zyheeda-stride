@@ -134,6 +134,38 @@ public class TestGenericResultExtensions {
 	}
 
 	[Test]
+	public void MapOkVoidToAction() {
+		var action = Mock.Of<Action>();
+		var ok = Result.Ok().Map(action).Switch(
+			_ => false,
+			() => true
+		);
+
+		Assert.That(ok, Is.True);
+		Mock
+			.Get(action)
+			.Verify(a => a(), Times.Once);
+	}
+
+	[Test]
+	public void MapErrorVoidToAction() {
+		var action = Mock.Of<Action>();
+		var result = (Result)Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" }));
+		var errors = result.Map(action).Switch(
+			errors => (
+				string.Join(", ", errors.system.Select(e => (string)e)),
+				string.Join(", ", errors.player.Select(e => (string)e))
+			).ToString(),
+			() => "no errors"
+		);
+
+		Assert.That(errors, Is.EqualTo(("AAA", "aaa").ToString()));
+		Mock
+			.Get(action)
+			.Verify(a => a(), Times.Never);
+	}
+
+	[Test]
 	public void FlatMapVoidOkayAndMapVoidOkayToOkay() {
 		var func = () => Result.Ok();
 		var result = Result.Ok();
