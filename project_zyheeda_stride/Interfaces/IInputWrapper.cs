@@ -3,5 +3,5 @@ namespace ProjectZyheeda;
 using Stride.Core.Mathematics;
 
 public interface IInputWrapper {
-	Vector2 MousePosition { get; }
+	Result<Vector2> MousePosition { get; }
 }
