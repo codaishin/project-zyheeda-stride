@@ -39,24 +39,24 @@ public class SchedulerController : ProjectZyheedaStartupScript, IScheduler {
 		this.dequeueThread = this.Script.AddTask(this.Dequeue);
 	}
 
-	public void Clear() {
+	public Result Clear() {
 		this.queue.Clear();
-		this.cancelExecution?.Invoke().Switch(
-			errors => this.LogErrors(errors),
-			() => { }
-		);
+		var result = this.cancelExecution?.Invoke();
 		this.cancelExecution = null;
 		this.dequeueThread?.Cancel();
 		this.dequeueThread = null;
+		return result ?? Result.Ok();
 	}
 
-	public void Enqueue((Func<Coroutine>, Cancel) execution) {
+	public Result Enqueue((Func<Coroutine>, Cancel) execution) {
 		this.queue.Enqueue(execution);
 		this.StartDequeue();
+		return Result.Ok();
 	}
 
-	public void Run((Func<Coroutine>, Cancel) execution) {
-		this.Clear();
-		this.Enqueue(execution);
+	public Result Run((Func<Coroutine>, Cancel) execution) {
+		return this
+			.Clear()
+			.FlatMap(() => this.Enqueue(execution));
 	}
 }

@@ -326,6 +326,54 @@ public class TestInputController : GameTestCollection, IDisposable {
 	}
 
 	[Test]
+	public void LogCoroutineRunError() {
+		_ = Mock
+			.Get(this.behavior)
+			.Setup(b => b.GetCoroutine(It.IsAny<Func<Vector3>>()))
+			.Returns((() => Enumerable.Empty<Result<IWait>>(), () => Result.Ok()));
+
+		_ = Mock
+			.Get(this.scheduler)
+			.Setup(s => s.Run(It.IsAny<(Func<IEnumerable<Result<IWait>>>, Cancel)>()))
+			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
+
+		this.newActionFnTaskTokens[0].SetResult(InputAction.Run);
+
+		this.game.WaitFrames(2);
+
+		Mock
+			.Get(this.systemMessage)
+			.Verify(m => m.Log("AAA"), Times.Once);
+		Mock
+			.Get(this.playerMessage)
+			.Verify(m => m.Log("aaa"), Times.Once);
+	}
+
+	[Test]
+	public void LogCoroutineEnqueError() {
+		_ = Mock
+			.Get(this.behavior)
+			.Setup(b => b.GetCoroutine(It.IsAny<Func<Vector3>>()))
+			.Returns((() => Enumerable.Empty<Result<IWait>>(), () => Result.Ok()));
+
+		_ = Mock
+			.Get(this.scheduler)
+			.Setup(s => s.Enqueue(It.IsAny<(Func<IEnumerable<Result<IWait>>>, Cancel)>()))
+			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
+
+		this.newActionFnTaskTokens[0].SetResult(InputAction.Chain);
+
+		this.game.WaitFrames(2);
+
+		Mock
+			.Get(this.systemMessage)
+			.Verify(m => m.Log("AAA"), Times.Once);
+		Mock
+			.Get(this.playerMessage)
+			.Verify(m => m.Log("aaa"), Times.Once);
+	}
+
+	[Test]
 	public void LogInputDispatcherAddErrors() {
 		_ = Mock
 			.Get(this.dispatcher)
