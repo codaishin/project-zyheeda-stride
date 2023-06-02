@@ -11,14 +11,9 @@ public class SchedulerController : ProjectZyheedaStartupScript, IScheduler {
 	private MicroThread? dequeueThread;
 	private Cancel? cancelExecution;
 
-	private Task LogErrors((SystemErrors system, PlayerErrors player) errors) {
+	private void LogErrors((SystemErrors system, PlayerErrors player) errors) {
 		this.EssentialServices.systemMessage.Log(errors.system.ToArray());
 		this.EssentialServices.playerMessage.Log(errors.player.ToArray());
-		return Task.CompletedTask;
-	}
-
-	private Task WaitPause(IWait pause) {
-		return pause.Wait(this.Script);
 	}
 
 	private async Task Dequeue() {
@@ -26,7 +21,10 @@ public class SchedulerController : ProjectZyheedaStartupScript, IScheduler {
 			(var runExecution, this.cancelExecution) = execution;
 			var coroutine = runExecution();
 			foreach (var yield in coroutine) {
-				await yield.Switch(this.LogErrors, this.WaitPause);
+				var result = await yield
+					.Map(y => y.Wait(this.Script))
+					.Flatten();
+				result.Switch(this.LogErrors, () => { });
 			}
 			this.cancelExecution = null;
 		}

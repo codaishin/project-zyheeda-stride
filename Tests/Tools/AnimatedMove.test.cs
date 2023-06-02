@@ -19,7 +19,7 @@ public class TestAnimatedMove {
 	private Cancel cancel = Mock.Of<Cancel>();
 
 	private class MockWait : IWait {
-		public Task Wait(ScriptSystem script) {
+		public Task<Result> Wait(ScriptSystem script) {
 			throw new NotImplementedException();
 		}
 	}

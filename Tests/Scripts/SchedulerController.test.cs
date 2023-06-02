@@ -4,10 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
 using Stride.Engine;
+using Stride.Engine.Processors;
 
 public class SchedulerControllerTest : GameTestCollection {
 	private SchedulerController schedulerController = new();
@@ -449,5 +451,33 @@ public class SchedulerControllerTest : GameTestCollection {
 		_ = this.schedulerController.Clear();
 
 		Mock.Get(cancel).Verify(cancel => cancel(), Times.Never);
+	}
+
+	[Test]
+	public void LogWaitErrors() {
+		var wait = Mock.Of<IWait>();
+		var errors = (new SystemError[] { "AAA" }, new PlayerError[] { "LLL" });
+
+		_ = Mock
+			.Get(wait)
+			.Setup(w => w.Wait(It.IsAny<ScriptSystem>()))
+			.Returns(Task.FromResult((Result)Result.Errors(errors)));
+
+		IEnumerable<Result<IWait>> doNotWait() {
+			yield return Result.Ok(wait);
+		}
+
+		var cancel = Mock.Of<Cancel>();
+
+		_ = this.schedulerController.Run((doNotWait, cancel));
+
+		this.game.WaitFrames(2);
+
+		Mock
+			.Get(this.game.Services.GetService<ISystemMessage>())
+			.Verify(s => s.Log("AAA"), Times.Once);
+		Mock
+			.Get(this.game.Services.GetService<IPlayerMessage>())
+			.Verify(s => s.Log("LLL"), Times.Once);
 	}
 }
