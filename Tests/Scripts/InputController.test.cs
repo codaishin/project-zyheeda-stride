@@ -2,6 +2,7 @@ namespace Tests;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
@@ -16,7 +17,7 @@ public class TestInputController : GameTestCollection, IDisposable {
 	private IBehavior behavior = Mock.Of<IBehavior>();
 	private IGetTarget getTarget = Mock.Of<IGetTarget>();
 	private IScheduler scheduler = Mock.Of<IScheduler>();
-	private List<TaskCompletionSource<InputAction>> newActionFnTaskTokens = new();
+	private List<TaskCompletionSource<Result<InputAction>>> newActionFnTaskTokens = new();
 	private ISystemMessage systemMessage = Mock.Of<ISystemMessage>();
 	private IPlayerMessage playerMessage = Mock.Of<IPlayerMessage>();
 	private IInputDispatcher dispatcher = Mock.Of<IInputDispatcher>();
@@ -31,12 +32,12 @@ public class TestInputController : GameTestCollection, IDisposable {
 			scheduler = Maybe.Some(this.scheduler = Mock.Of<IScheduler>())
 		};
 
-		this.newActionFnTaskTokens = new List<TaskCompletionSource<InputAction>> {
-			new TaskCompletionSource<InputAction>(),
-			new TaskCompletionSource<InputAction>(),
-			new TaskCompletionSource<InputAction>(),
-			new TaskCompletionSource<InputAction>(),
-			new TaskCompletionSource<InputAction>(),
+		this.newActionFnTaskTokens = new List<TaskCompletionSource<Result<InputAction>>> {
+			new TaskCompletionSource<Result<InputAction>>(),
+			new TaskCompletionSource<Result<InputAction>>(),
+			new TaskCompletionSource<Result<InputAction>>(),
+			new TaskCompletionSource<Result<InputAction>>(),
+			new TaskCompletionSource<Result<InputAction>>(),
 		};
 
 		_ = Mock
@@ -296,6 +297,25 @@ public class TestInputController : GameTestCollection, IDisposable {
 		this.newActionFnTaskTokens[0].SetResult(InputAction.Run);
 
 		this.game.WaitFrames(1);
+
+		Mock
+			.Get(this.systemMessage)
+			.Verify(m => m.Log("AAA"), Times.Once);
+		Mock
+			.Get(this.playerMessage)
+			.Verify(m => m.Log("aaa"), Times.Once);
+	}
+
+	[Test]
+	public void LogActionError() {
+		_ = Mock
+			.Get(this.behavior)
+			.Setup(b => b.GetCoroutine(It.IsAny<Func<Vector3>>()))
+			.Returns((() => Enumerable.Empty<Result<IWait>>(), () => Result.Ok()));
+
+		this.newActionFnTaskTokens[0].SetResult(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
+
+		this.game.WaitFrames(2);
 
 		Mock
 			.Get(this.systemMessage)

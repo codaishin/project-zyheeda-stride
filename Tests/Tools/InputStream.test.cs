@@ -16,13 +16,16 @@ public class TestInputStream {
 
 		Assert.That(task.IsCompletedSuccessfully, Is.False);
 
-		stream.ProcessEvent(InputKeys.ShiftLeft, isDown: true);
+		var result = stream.ProcessEvent(InputKeys.ShiftLeft, isDown: true);
 
-		Assert.That(task.IsCompletedSuccessfully, Is.True);
+		Assert.Multiple(() => {
+			Assert.That(result.Switch(_ => false, () => true), Is.True);
+			Assert.That(task.IsCompletedSuccessfully, Is.True);
+		});
 
 		var action = await task;
 
-		Assert.That(action, Is.EqualTo(InputAction.Run));
+		Assert.That(action.UnpackOr(InputAction.Chain), Is.EqualTo(InputAction.Run));
 	}
 
 	[Test]
@@ -34,13 +37,19 @@ public class TestInputStream {
 
 		var task = stream.NewAction();
 
-		stream.ProcessEvent(InputKeys.ShiftLeft, isDown: true);
+		var result = stream.ProcessEvent(InputKeys.ShiftLeft, isDown: true);
 
-		Assert.That(task.IsCompletedSuccessfully, Is.False);
+		Assert.Multiple(() => {
+			Assert.That(result.Switch(_ => false, () => true), Is.True);
+			Assert.That(task.IsCompletedSuccessfully, Is.False);
+		});
 
-		stream.ProcessEvent(InputKeys.MouseRight, isDown: true);
+		result = stream.ProcessEvent(InputKeys.MouseRight, isDown: true);
 
-		Assert.That(task.IsCompletedSuccessfully, Is.True);
+		Assert.Multiple(() => {
+			Assert.That(result.Switch(_ => false, () => true), Is.True);
+			Assert.That(task.IsCompletedSuccessfully, Is.True);
+		});
 	}
 
 	[Test]
@@ -52,15 +61,21 @@ public class TestInputStream {
 
 		var task = stream.NewAction();
 
-		stream.ProcessEvent(InputKeys.MouseRight, isDown: true);
+		var result = stream.ProcessEvent(InputKeys.MouseRight, isDown: true);
 
-		Assert.That(task.IsCompletedSuccessfully, Is.False);
+		Assert.Multiple(() => {
+			Assert.That(result.Switch(_ => false, () => true), Is.True);
+			Assert.That(task.IsCompletedSuccessfully, Is.False);
+		});
 
 		stream.activation = InputActivation.OnPress;
 
-		stream.ProcessEvent(InputKeys.MouseRight, isDown: false);
+		result = stream.ProcessEvent(InputKeys.MouseRight, isDown: false);
 
-		Assert.That(task.IsCompletedSuccessfully, Is.False);
+		Assert.Multiple(() => {
+			Assert.That(result.Switch(_ => false, () => true), Is.True);
+			Assert.That(task.IsCompletedSuccessfully, Is.False);
+		});
 	}
 
 	[Test]
@@ -73,13 +88,17 @@ public class TestInputStream {
 
 		var task = stream.NewAction();
 
-		stream.ProcessEvent(InputKeys.ShiftLeft, isDown: true);
-		stream.ProcessEvent(InputKeys.MouseRight, isDown: true);
+		var result = stream.ProcessEvent(InputKeys.ShiftLeft, isDown: true);
+
+		Assert.That(result.Switch(_ => false, () => true), Is.True);
+
+		result = stream.ProcessEvent(InputKeys.MouseRight, isDown: true);
 
 		Assert.Multiple(async () => {
+			Assert.That(result.Switch(_ => false, () => true), Is.True);
 			Assert.That(task.IsCompletedSuccessfully, Is.True);
 			var action = await task;
-			Assert.That(action, Is.EqualTo(InputAction.Chain));
+			Assert.That(action.UnpackOr(InputAction.Run), Is.EqualTo(InputAction.Chain));
 		});
 	}
 
@@ -93,14 +112,17 @@ public class TestInputStream {
 
 		var task = stream.NewAction();
 
-		stream.ProcessEvent(InputKeys.ShiftLeft, isDown: false);
-		stream.ProcessEvent(InputKeys.MouseRight, isDown: true);
+		var result = stream.ProcessEvent(InputKeys.ShiftLeft, isDown: false);
 
+		Assert.That(result.Switch(_ => false, () => true), Is.True);
+
+		result = stream.ProcessEvent(InputKeys.MouseRight, isDown: true);
 
 		Assert.Multiple(async () => {
+			Assert.That(result.Switch(_ => false, () => true), Is.True);
 			Assert.That(task.IsCompletedSuccessfully, Is.True);
 			var action = await task;
-			Assert.That(action, Is.EqualTo(InputAction.Run));
+			Assert.That(action.UnpackOr(InputAction.Chain), Is.EqualTo(InputAction.Run));
 		});
 
 	}
@@ -114,8 +136,9 @@ public class TestInputStream {
 
 		var taskA = stream.NewAction();
 
-		stream.ProcessEvent(InputKeys.ShiftLeft, isDown: true);
+		var result = stream.ProcessEvent(InputKeys.ShiftLeft, isDown: true);
 
+		Assert.That(result.Switch(_ => false, () => true), Is.True);
 		var taskB = stream.NewAction();
 
 		Assert.That(taskA, Is.Not.SameAs(taskB));

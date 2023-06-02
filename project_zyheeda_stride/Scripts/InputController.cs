@@ -62,7 +62,10 @@ public class InputController : ProjectZyheedaAsyncScript {
 		return async () => {
 			while (this.Game.IsRunning) {
 				var action = await input.NewAction();
-				run(action);
+				action.Switch(
+					errors => this.LogErrors(errors),
+					action => run(action)
+				);
 			}
 		};
 	}
