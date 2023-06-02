@@ -147,6 +147,24 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 	}
 
 	[Test]
+	public void MousePositionError() {
+		_ = Mock.Get(this.game.Services.GetService<IInputWrapper>())
+			.SetupGet(i => i.MousePosition)
+			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
+
+		this.game.WaitFrames(2);
+
+		var errors = this.getMousePosition
+			.GetTarget()
+			.Switch(
+				errors => $"{(string)errors.system.First()}, {(string)errors.player.First()}",
+				target => "no errors"
+			);
+
+		Assert.That(errors, Is.EqualTo("AAA, aaa"));
+	}
+
+	[Test]
 	public void MissingCamera() {
 		this.getMousePosition.camera = null;
 

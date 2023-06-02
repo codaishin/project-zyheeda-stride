@@ -4,5 +4,5 @@ using System.Collections.Generic;
 using Stride.Engine;
 
 public interface IPrefabLoader {
-	List<Entity> Instantiate(Prefab prefab);
+	Result<List<Entity>> Instantiate(Prefab prefab);
 }

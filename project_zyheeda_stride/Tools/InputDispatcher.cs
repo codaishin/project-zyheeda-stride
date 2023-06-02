@@ -44,11 +44,15 @@ public class InputDispatcher :
 		}
 	}
 
-	public void Add(IInputStream stream) {
-		_ = this.streams.Add(stream);
+	public Result Add(IInputStream stream) {
+		return this.streams.Add(stream)
+			? Result.Ok()
+			: Result.SystemError($"{stream}: Can only add one input stream once");
 	}
 
-	public void Remove(IInputStream stream) {
-		_ = this.streams.Remove(stream);
+	public Result Remove(IInputStream stream) {
+		return this.streams.Remove(stream)
+			? Result.Ok()
+			: Result.SystemError($"{stream}: Could not be removed, due to not being in the set");
 	}
 }

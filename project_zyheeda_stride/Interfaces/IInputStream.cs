@@ -8,6 +8,6 @@ public enum InputAction {
 }
 
 public interface IInputStream {
-	Task<InputAction> NewAction();
-	void ProcessEvent(InputKeys key, bool isDown);
+	Task<Result<InputAction>> NewAction();
+	Result ProcessEvent(InputKeys key, bool isDown);
 }

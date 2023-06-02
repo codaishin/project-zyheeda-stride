@@ -12,35 +12,49 @@ public class AnimatedMove : IAnimatedMove {
 	public IMove? move;
 	public string animationKey = "";
 
-	public Result<FGetCoroutine> PrepareCoroutineFor(
-		Entity agent,
-		FSpeedToDelta delta,
-		Action<string> playAnimation
-	) {
-		if (this.move is null) {
-			return Result.SystemError(this.MissingField(nameof(this.move)));
-		}
+	private static Func<string, Result<IWait>> RunAnimation(Func<string, Result> playAnimation) {
+		return key => playAnimation(key).Map<IWait>(() => new NoWait());
+	}
 
-		var innerGetCoroutine = this.move.PrepareCoroutineFor(agent, delta);
-
+	private Result<FGetCoroutine> GetCoroutine(FGetCoroutine innerGetCoroutine, Func<string, Result<IWait>> play) {
 		(Func<Coroutine>, Cancel) GetCoroutine(Func<Vector3> getTarget) {
 			var (runMove, cancelMove) = innerGetCoroutine(getTarget);
 
 			Coroutine run() {
-				playAnimation(this.animationKey);
+				yield return play(this.animationKey);
 				foreach (var wait in runMove()) {
 					yield return wait;
 				}
-				playAnimation(AnimatedMove.fallbackAnimationKey);
+				yield return play(AnimatedMove.fallbackAnimationKey);
 			};
 
-			void cancel() {
-				cancelMove();
-				playAnimation(AnimatedMove.fallbackAnimationKey);
+			Result cancel() {
+				return cancelMove()
+					.FlatMap(() => play(AnimatedMove.fallbackAnimationKey));
 			};
 
 			return (run, cancel);
 		}
 		return Result.Ok<FGetCoroutine>(GetCoroutine);
+	}
+
+	public Result<FGetCoroutine> PrepareCoroutineFor(
+		Entity agent,
+		FSpeedToDelta delta,
+		Func<string, Result> playAnimation
+	) {
+		var getCoroutine =
+			(FGetCoroutine innerGetCoroutine) =>
+			(Func<string, Result<IWait>> play) =>
+				this.GetCoroutine(innerGetCoroutine, play);
+
+		var innerGetCoroutine = this.move
+			.OkOrSystemError(this.MissingField(nameof(this.move)))
+			.FlatMap(move => move.PrepareCoroutineFor(agent, delta));
+
+		return getCoroutine
+			.ApplyWeak(innerGetCoroutine)
+			.Apply(AnimatedMove.RunAnimation(playAnimation))
+			.Flatten();
 	}
 }

@@ -2,6 +2,7 @@ namespace Tests;
 
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
@@ -131,6 +132,38 @@ public class TestGenericResultExtensions {
 		);
 
 		Assert.That(errors, Is.EqualTo(("AAA", "BBB")));
+	}
+
+	[Test]
+	public void MapOkVoidToAction() {
+		var action = Mock.Of<Action>();
+		var ok = Result.Ok().Map(action).Switch(
+			_ => false,
+			() => true
+		);
+
+		Assert.That(ok, Is.True);
+		Mock
+			.Get(action)
+			.Verify(a => a(), Times.Once);
+	}
+
+	[Test]
+	public void MapErrorVoidToAction() {
+		var action = Mock.Of<Action>();
+		var result = (Result)Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" }));
+		var errors = result.Map(action).Switch(
+			errors => (
+				string.Join(", ", errors.system.Select(e => (string)e)),
+				string.Join(", ", errors.player.Select(e => (string)e))
+			).ToString(),
+			() => "no errors"
+		);
+
+		Assert.That(errors, Is.EqualTo(("AAA", "aaa").ToString()));
+		Mock
+			.Get(action)
+			.Verify(a => a(), Times.Never);
 	}
 
 	[Test]
@@ -312,6 +345,42 @@ public class TestGenericResultExtensions {
 		var ok = nested.Flatten().Switch(_ => false, () => true);
 
 		Assert.That(ok, Is.True);
+	}
+
+	[Test]
+	public async Task FlattenResultWithTaskWithVoidResultOkay() {
+		var result = Result.Ok(Task.FromResult(Result.Ok()));
+		var flat = await result.Flatten();
+		var ok = flat.Switch(
+			_ => false,
+			() => true
+		);
+
+		Assert.That(ok, Is.True);
+	}
+
+	[Test]
+	public async Task FlattenResultErrorsWithTaskWithVoidResult() {
+		Result<Task<Result>> result = Result.PlayerError("AAA");
+		var flat = await result.Flatten();
+		var errors = flat.Switch(
+			errors => (string)errors.player.FirstOrDefault(),
+			() => "no errors"
+		);
+
+		Assert.That(errors, Is.EqualTo("AAA"));
+	}
+
+	[Test]
+	public async Task FlattenResultWithTaskWithVoidResultErrors() {
+		var result = Result.Ok(Task.FromResult<Result>(Result.PlayerError("AAA")));
+		var flat = await result.Flatten();
+		var errors = flat.Switch(
+			errors => (string)errors.player.FirstOrDefault(),
+			() => "no errors"
+		);
+
+		Assert.That(errors, Is.EqualTo("AAA"));
 	}
 
 	[Test]

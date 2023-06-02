@@ -2,6 +2,7 @@ namespace ProjectZyheeda;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Stride.Core.MicroThreading;
 
@@ -10,12 +11,20 @@ public class SchedulerController : ProjectZyheedaStartupScript, IScheduler {
 	private MicroThread? dequeueThread;
 	private Cancel? cancelExecution;
 
+	private void LogErrors((SystemErrors system, PlayerErrors player) errors) {
+		this.EssentialServices.systemMessage.Log(errors.system.ToArray());
+		this.EssentialServices.playerMessage.Log(errors.player.ToArray());
+	}
+
 	private async Task Dequeue() {
 		while (this.queue.TryDequeue(out var execution)) {
 			(var runExecution, this.cancelExecution) = execution;
 			var coroutine = runExecution();
 			foreach (var yield in coroutine) {
-				await yield.Wait(this.Script);
+				var result = await yield
+					.Map(y => y.Wait(this.Script))
+					.Flatten();
+				result.Switch(this.LogErrors, () => { });
 			}
 			this.cancelExecution = null;
 		}
@@ -28,21 +37,24 @@ public class SchedulerController : ProjectZyheedaStartupScript, IScheduler {
 		this.dequeueThread = this.Script.AddTask(this.Dequeue);
 	}
 
-	public void Clear() {
+	public Result Clear() {
 		this.queue.Clear();
-		this.cancelExecution?.Invoke();
+		var result = this.cancelExecution?.Invoke();
 		this.cancelExecution = null;
 		this.dequeueThread?.Cancel();
 		this.dequeueThread = null;
+		return result ?? Result.Ok();
 	}
 
-	public void Enqueue((Func<Coroutine>, Cancel) execution) {
+	public Result Enqueue((Func<Coroutine>, Cancel) execution) {
 		this.queue.Enqueue(execution);
 		this.StartDequeue();
+		return Result.Ok();
 	}
 
-	public void Run((Func<Coroutine>, Cancel) execution) {
-		this.Clear();
-		this.Enqueue(execution);
+	public Result Run((Func<Coroutine>, Cancel) execution) {
+		return this
+			.Clear()
+			.FlatMap(() => this.Enqueue(execution));
 	}
 }

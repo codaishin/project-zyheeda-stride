@@ -2,6 +2,7 @@ namespace ProjectZyheeda;
 
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 public static class ResultExtensions {
 	public static void Switch<TError>(this IResult<TError> result, Action<TError> error, Action ok) {
@@ -58,6 +59,16 @@ public static class GenericResultExtensions {
 		);
 	}
 
+	public static Result Map(this Result result, Action map) {
+		return result.Switch(
+			errors => Result.Errors(errors),
+			() => {
+				map();
+				return Result.Ok();
+			}
+		);
+	}
+
 	public static Result<TOut> FlatMap<T, TOut>(this Result<T> result, Func<T, Result<TOut>> map) {
 		return result.Switch(
 			errors => Result.Errors(errors),
@@ -104,6 +115,13 @@ public static class GenericResultExtensions {
 
 	public static Result Flatten(this Result<Result> result) {
 		return result.FlatMap(v => v);
+	}
+
+	public static Task<Result> Flatten(this Result<Task<Result>> result) {
+		return result.Switch(
+			errors => Task.FromResult<Result>(Result.Errors(errors)),
+			async result => await result
+		);
 	}
 
 	public static T UnpackOr<T>(this Result<T> result, T fallback) {

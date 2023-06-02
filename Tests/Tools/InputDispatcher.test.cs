@@ -1,5 +1,6 @@
 namespace Tests;
 
+using System.Linq;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
@@ -19,7 +20,7 @@ public class TestInputDispatcher {
 
 	[Test]
 	public void DispatchKeyInput() {
-		this.dispatcher!.Add(this.stream);
+		_ = this.dispatcher.Add(this.stream);
 
 		this.dispatcher.ProcessEvent(new KeyEvent { Key = Keys.LeftShift, IsDown = false });
 		Mock
@@ -34,7 +35,7 @@ public class TestInputDispatcher {
 
 	[Test]
 	public void DispatchUnmappedKeyInput() {
-		this.dispatcher!.Add(this.stream);
+		_ = this.dispatcher.Add(this.stream);
 
 		this.dispatcher.ProcessEvent(new KeyEvent { Key = Keys.Home, IsDown = false });
 
@@ -45,7 +46,7 @@ public class TestInputDispatcher {
 
 	[Test]
 	public void DispatchMouseInput() {
-		this.dispatcher!.Add(this.stream);
+		_ = this.dispatcher.Add(this.stream);
 
 		this.dispatcher.ProcessEvent(new MouseButtonEvent { Button = MouseButton.Left, IsDown = false });
 		Mock
@@ -60,7 +61,7 @@ public class TestInputDispatcher {
 
 	[Test]
 	public void DispatchUnmappedMouseInput() {
-		this.dispatcher!.Add(this.stream);
+		_ = this.dispatcher.Add(this.stream);
 
 		this.dispatcher.ProcessEvent(new MouseButtonEvent { Button = MouseButton.Extended1, IsDown = false });
 
@@ -71,9 +72,9 @@ public class TestInputDispatcher {
 
 	[Test]
 	public void MultipleAddsAreProcessedJustOnce() {
-		this.dispatcher!.Add(this.stream);
-		this.dispatcher!.Add(this.stream);
-		this.dispatcher!.Add(this.stream);
+		_ = this.dispatcher.Add(this.stream);
+		_ = this.dispatcher.Add(this.stream);
+		_ = this.dispatcher.Add(this.stream);
 
 		this.dispatcher.ProcessEvent(new MouseButtonEvent { Button = MouseButton.Left, IsDown = false });
 
@@ -83,14 +84,39 @@ public class TestInputDispatcher {
 	}
 
 	[Test]
+	public void AddResults() {
+		var ok = this.dispatcher.Add(this.stream).Switch(_ => false, () => true);
+		Assert.That(ok, Is.True);
+
+		var error = this.dispatcher.Add(this.stream).Switch<string>(
+			errors => errors.system.First(),
+			() => "no error"
+		);
+		Assert.That(error, Is.EqualTo($"{this.stream}: Can only add one input stream once"));
+	}
+
+	[Test]
 	public void RemoveStream() {
-		this.dispatcher!.Add(this.stream);
-		this.dispatcher!.Remove(this.stream);
+		_ = this.dispatcher.Add(this.stream);
+		_ = this.dispatcher.Remove(this.stream);
 
 		this.dispatcher.ProcessEvent(new MouseButtonEvent { Button = MouseButton.Left, IsDown = false });
 
 		Mock
 			.Get(this.stream)
 			.Verify(s => s.ProcessEvent(InputKeys.MouseLeft, false), Times.Never);
+	}
+
+	[Test]
+	public void RemoveResults() {
+		_ = this.dispatcher.Add(this.stream).Switch(_ => false, () => true);
+		var ok = this.dispatcher.Remove(this.stream).Switch(_ => false, () => true);
+		Assert.That(ok, Is.True);
+
+		var error = this.dispatcher.Remove(this.stream).Switch<string>(
+			errors => errors.system.First(),
+			() => "no error"
+		);
+		Assert.That(error, Is.EqualTo($"{this.stream}: Could not be removed, due to not being in the set"));
 	}
 }

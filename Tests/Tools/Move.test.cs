@@ -1,6 +1,8 @@
 namespace Tests;
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
@@ -18,10 +20,20 @@ public class TestMove : System.IDisposable {
 		this.move = new();
 	}
 
+	private static FGetCoroutine Fail((IEnumerable<SystemError> system, IEnumerable<PlayerError> player) errors) {
+		throw new AssertionException((
+			string.Join(", ", errors.system.Select(e => (string)e)),
+			string.Join(", ", errors.player.Select(e => (string)e))
+		).ToString());
+	}
+
 	[Test]
 	public void MoveTowardsTarget() {
 		var target = new Vector3(1, 0, 0);
-		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.1f);
+		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.1f).Switch(
+			TestMove.Fail,
+			getCoroutine => getCoroutine
+		);
 		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
@@ -35,17 +47,23 @@ public class TestMove : System.IDisposable {
 	[Test, Timeout(1000)]
 	public void YieldsWaitFrames() {
 		var target = new Vector3(1, 0, 0);
-		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.1f);
+		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.1f).Switch(
+			TestMove.Fail,
+			getCoroutine => getCoroutine
+		);
 		var (run, _) = getCoroutine(() => target);
 
-		Assert.That(run(), Is.All.InstanceOf<WaitFrame>());
+		Assert.That(run().Select(w => w.UnpackOr(new WaitMilliSeconds(0))), Is.All.InstanceOf<WaitFrame>());
 	}
 
 	[Test]
 	public void UseSpeedToGetDelta() {
 		var target = new Vector3(1, 0, 0);
 		var delta = Mock.Of<FSpeedToDelta>();
-		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, delta);
+		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, delta).Switch(
+			TestMove.Fail,
+			getCoroutine => getCoroutine
+		);
 		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
@@ -71,7 +89,10 @@ public class TestMove : System.IDisposable {
 	public void UseCurrentSpeedToGetDelta() {
 		var target = new Vector3(1, 0, 0);
 		var delta = Mock.Of<FSpeedToDelta>();
-		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, delta);
+		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, delta).Switch(
+			TestMove.Fail,
+			getCoroutine => getCoroutine
+		);
 		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
@@ -104,7 +125,10 @@ public class TestMove : System.IDisposable {
 	[Test]
 	public void MoveTowardsTargetEntityAfterChangingTargetPosition() {
 		var target = new Entity();
-		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.1f);
+		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.1f).Switch(
+			TestMove.Fail,
+			getCoroutine => getCoroutine
+		);
 		var (run, _) = getCoroutine(() => target.Transform.Position);
 		var runner = run().GetEnumerator();
 
@@ -126,7 +150,10 @@ public class TestMove : System.IDisposable {
 	public void MoveTowardsTargetWithChangingDeltas() {
 		var target = new Vector3(1, 0, 0);
 		var delta = Mock.Of<FSpeedToDelta>();
-		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, delta);
+		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, delta).Switch(
+			TestMove.Fail,
+			getCoroutine => getCoroutine
+		);
 		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
@@ -153,7 +180,10 @@ public class TestMove : System.IDisposable {
 	[Test]
 	public void MoveTowardsTarget0Neg10() {
 		var target = new Vector3(0, -1, 0);
-		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.2f);
+		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.2f).Switch(
+			TestMove.Fail,
+			getCoroutine => getCoroutine
+		);
 		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
@@ -168,7 +198,10 @@ public class TestMove : System.IDisposable {
 	[Test]
 	public void MoveTowardsTargetFromOffsetPosition() {
 		var target = new Vector3(1, 1, 0);
-		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.3f);
+		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.3f).Switch(
+			TestMove.Fail,
+			getCoroutine => getCoroutine
+		);
 		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
@@ -183,7 +216,10 @@ public class TestMove : System.IDisposable {
 	[Test]
 	public void MoveTowardsTargetWithNotNormalizedInitialDistance() {
 		var target = new Vector3(1, 1, 0);
-		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.3f);
+		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.3f).Switch(
+			TestMove.Fail,
+			getCoroutine => getCoroutine
+		);
 		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
@@ -201,7 +237,10 @@ public class TestMove : System.IDisposable {
 	[Test]
 	public void DoNotOvershoot() {
 		var target = new Vector3(1, 0, 0);
-		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.8f);
+		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.8f).Switch(
+			TestMove.Fail,
+			getCoroutine => getCoroutine
+		);
 		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
@@ -215,7 +254,10 @@ public class TestMove : System.IDisposable {
 	[Test]
 	public void LookAtTarget() {
 		var target = new Vector3(1, 0, 0);
-		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0f);
+		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0f).Switch(
+			TestMove.Fail,
+			getCoroutine => getCoroutine
+		);
 		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
@@ -230,7 +272,10 @@ public class TestMove : System.IDisposable {
 	[Test]
 	public void LookAtTargetFromOffset() {
 		var target = new Vector3(1, 0, 0);
-		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0f);
+		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0f).Switch(
+			TestMove.Fail,
+			getCoroutine => getCoroutine
+		);
 		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 
@@ -246,7 +291,10 @@ public class TestMove : System.IDisposable {
 	[Test]
 	public void NoRotationChangeWhenTargetIsCurrentPosition() {
 		var target = new Vector3(1, 0, 0);
-		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0f);
+		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0f).Switch(
+			TestMove.Fail,
+			getCoroutine => getCoroutine
+		);
 		var (run, _) = getCoroutine(() => target);
 		var runner = run().GetEnumerator();
 		var expectedRotation = this.agent.Transform.Rotation;

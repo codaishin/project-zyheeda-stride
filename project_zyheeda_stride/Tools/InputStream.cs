@@ -14,46 +14,38 @@ public enum InputKeys {
 
 [DataContract]
 public class InputStream : IInputStream {
-	public InputKeys activationKey;
-	public InputActivation activation;
-	public InputKeys chainKey;
+	public InputKeys activationKey = InputKeys.None;
+	public InputActivation activation = InputActivation.OnPress;
+	public InputKeys chainKey = InputKeys.None;
 
-	private TaskCompletionSource<InputAction> actionToken;
+	private TaskCompletionSource<Result<InputAction>> actionToken = new();
 	private bool primedForChaining;
 
-	public InputStream() {
-		this.activationKey = InputKeys.None;
-		this.chainKey = InputKeys.None;
-		this.activation = InputActivation.OnPress;
-		this.actionToken = new();
-		this.primedForChaining = false;
-	}
-
-	public Task<InputAction> NewAction() {
+	public Task<Result<InputAction>> NewAction() {
 		return this.actionToken.Task;
 	}
 
-	public void ProcessEvent(InputKeys key, bool isDown) {
-		if (key == this.chainKey) {
-			this.ToggleChain(isDown);
-			return;
-		}
-		if (key != this.activationKey) {
-			return;
-		}
-		this.ResolveTask(isDown);
+	public Result ProcessEvent(InputKeys key, bool isDown) {
+		return key == this.chainKey
+			? this.TryPrimeForChaining(isDown)
+			: key == this.activationKey
+			? this.TryRunOrChain(isDown)
+			: Result.Ok();
 	}
 
-	private void ToggleChain(bool isDown) {
+	private Result TryPrimeForChaining(bool isDown) {
 		this.primedForChaining = InputStream.Matches(InputActivation.OnPress, isDown);
+		return Result.Ok();
 	}
 
-	private void ResolveTask(bool isDown) {
+	private Result TryRunOrChain(bool isDown) {
+		var ok = Result.Ok();
 		if (!InputStream.Matches(this.activation, isDown)) {
-			return;
+			return ok;
 		}
 		this.actionToken.SetResult(this.primedForChaining ? InputAction.Chain : InputAction.Run);
 		this.actionToken = new();
+		return ok;
 	}
 
 	private static bool Matches(InputActivation activation, bool isDown) {

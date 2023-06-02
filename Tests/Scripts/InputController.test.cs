@@ -2,6 +2,7 @@ namespace Tests;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
@@ -16,14 +17,14 @@ public class TestInputController : GameTestCollection, IDisposable {
 	private IBehavior behavior = Mock.Of<IBehavior>();
 	private IGetTarget getTarget = Mock.Of<IGetTarget>();
 	private IScheduler scheduler = Mock.Of<IScheduler>();
-	private List<TaskCompletionSource<InputAction>> newActionFnTaskTokens = new();
+	private List<TaskCompletionSource<Result<InputAction>>> newActionFnTaskTokens = new();
 	private ISystemMessage systemMessage = Mock.Of<ISystemMessage>();
 	private IPlayerMessage playerMessage = Mock.Of<IPlayerMessage>();
+	private IInputDispatcher dispatcher = Mock.Of<IInputDispatcher>();
 
 	[SetUp]
 	public void Setup() {
 		var newActionCallCount = 0;
-		var dispatcher = Mock.Of<IInputDispatcher>();
 		this.controller = new InputController {
 			input = this.inputStream = Mock.Of<IInputStream>(),
 			behavior = Maybe.Some(this.behavior = Mock.Of<IBehavior>()),
@@ -31,12 +32,12 @@ public class TestInputController : GameTestCollection, IDisposable {
 			scheduler = Maybe.Some(this.scheduler = Mock.Of<IScheduler>())
 		};
 
-		this.newActionFnTaskTokens = new List<TaskCompletionSource<InputAction>> {
-			new TaskCompletionSource<InputAction>(),
-			new TaskCompletionSource<InputAction>(),
-			new TaskCompletionSource<InputAction>(),
-			new TaskCompletionSource<InputAction>(),
-			new TaskCompletionSource<InputAction>(),
+		this.newActionFnTaskTokens = new List<TaskCompletionSource<Result<InputAction>>> {
+			new TaskCompletionSource<Result<InputAction>>(),
+			new TaskCompletionSource<Result<InputAction>>(),
+			new TaskCompletionSource<Result<InputAction>>(),
+			new TaskCompletionSource<Result<InputAction>>(),
+			new TaskCompletionSource<Result<InputAction>>(),
 		};
 
 		_ = Mock
@@ -44,12 +45,17 @@ public class TestInputController : GameTestCollection, IDisposable {
 			.Setup(i => i.NewAction())
 			.Returns(() => this.newActionFnTaskTokens[newActionCallCount++].Task);
 
+		_ = Mock
+			.Get(this.getTarget)
+			.Setup(c => c.GetTarget())
+			.Returns(Result.Ok(() => Vector3.One));
+
 		this.game.Services.RemoveService<ISystemMessage>();
 		this.game.Services.AddService(this.systemMessage = Mock.Of<ISystemMessage>());
 		this.game.Services.RemoveService<IPlayerMessage>();
 		this.game.Services.AddService(this.playerMessage = Mock.Of<IPlayerMessage>());
 		this.game.Services.RemoveService<IInputDispatcher>();
-		this.game.Services.AddService(dispatcher);
+		this.game.Services.AddService(this.dispatcher = Mock.Of<IInputDispatcher>());
 
 		this.Scene.Entities.Add(new Entity { this.controller });
 
@@ -84,11 +90,11 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 	[Test]
 	public void RunBehaviorWithTarget() {
-		static IEnumerable<IWait> run() {
+		static IEnumerable<Result<IWait>> run() {
 			yield break;
 		}
 
-		(Func<IEnumerable<IWait>>, Action) execution = (run, () => { });
+		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (run, () => Result.Ok());
 
 		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())
@@ -110,11 +116,11 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 	[Test]
 	public void RunBehaviorWithTargetTwice() {
-		static IEnumerable<IWait> run() {
+		static IEnumerable<Result<IWait>> run() {
 			yield break;
 		}
 
-		(Func<IEnumerable<IWait>>, Action) execution = (run, () => { });
+		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (run, () => Result.Ok());
 
 		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())
@@ -134,11 +140,11 @@ public class TestInputController : GameTestCollection, IDisposable {
 
 	[Test]
 	public void EnqueueBehavior() {
-		static IEnumerable<IWait> run() {
+		static IEnumerable<Result<IWait>> run() {
 			yield break;
 		}
 
-		(Func<IEnumerable<IWait>>, Action) execution = (run, () => { });
+		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (run, () => Result.Ok());
 
 		_ = Mock.Get(this.getTarget)
 			.Setup(c => c.GetTarget())
@@ -279,6 +285,133 @@ public class TestInputController : GameTestCollection, IDisposable {
 				this.controller.MissingField(nameof(this.controller.scheduler)),
 				this.controller.MissingField(nameof(this.controller.input))
 			), Times.Once);
+	}
+
+	[Test]
+	public void LogCoroutineError() {
+		_ = Mock
+			.Get(this.behavior)
+			.Setup(b => b.GetCoroutine(It.IsAny<Func<Vector3>>()))
+			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
+
+		this.newActionFnTaskTokens[0].SetResult(InputAction.Run);
+
+		this.game.WaitFrames(1);
+
+		Mock
+			.Get(this.systemMessage)
+			.Verify(m => m.Log("AAA"), Times.Once);
+		Mock
+			.Get(this.playerMessage)
+			.Verify(m => m.Log("aaa"), Times.Once);
+	}
+
+	[Test]
+	public void LogActionError() {
+		_ = Mock
+			.Get(this.behavior)
+			.Setup(b => b.GetCoroutine(It.IsAny<Func<Vector3>>()))
+			.Returns((() => Enumerable.Empty<Result<IWait>>(), () => Result.Ok()));
+
+		this.newActionFnTaskTokens[0].SetResult(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
+
+		this.game.WaitFrames(2);
+
+		Mock
+			.Get(this.systemMessage)
+			.Verify(m => m.Log("AAA"), Times.Once);
+		Mock
+			.Get(this.playerMessage)
+			.Verify(m => m.Log("aaa"), Times.Once);
+	}
+
+	[Test]
+	public void LogCoroutineRunError() {
+		_ = Mock
+			.Get(this.behavior)
+			.Setup(b => b.GetCoroutine(It.IsAny<Func<Vector3>>()))
+			.Returns((() => Enumerable.Empty<Result<IWait>>(), () => Result.Ok()));
+
+		_ = Mock
+			.Get(this.scheduler)
+			.Setup(s => s.Run(It.IsAny<(Func<IEnumerable<Result<IWait>>>, Cancel)>()))
+			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
+
+		this.newActionFnTaskTokens[0].SetResult(InputAction.Run);
+
+		this.game.WaitFrames(2);
+
+		Mock
+			.Get(this.systemMessage)
+			.Verify(m => m.Log("AAA"), Times.Once);
+		Mock
+			.Get(this.playerMessage)
+			.Verify(m => m.Log("aaa"), Times.Once);
+	}
+
+	[Test]
+	public void LogCoroutineEnqueError() {
+		_ = Mock
+			.Get(this.behavior)
+			.Setup(b => b.GetCoroutine(It.IsAny<Func<Vector3>>()))
+			.Returns((() => Enumerable.Empty<Result<IWait>>(), () => Result.Ok()));
+
+		_ = Mock
+			.Get(this.scheduler)
+			.Setup(s => s.Enqueue(It.IsAny<(Func<IEnumerable<Result<IWait>>>, Cancel)>()))
+			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
+
+		this.newActionFnTaskTokens[0].SetResult(InputAction.Chain);
+
+		this.game.WaitFrames(2);
+
+		Mock
+			.Get(this.systemMessage)
+			.Verify(m => m.Log("AAA"), Times.Once);
+		Mock
+			.Get(this.playerMessage)
+			.Verify(m => m.Log("aaa"), Times.Once);
+	}
+
+	[Test]
+	public void LogInputDispatcherAddErrors() {
+		_ = Mock
+			.Get(this.dispatcher)
+			.Setup(d => d.Add(It.IsAny<IInputStream>()))
+			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
+
+		_ = this.Scene.Entities.Remove(this.controller.Entity);
+		this.Scene.Entities.Add(this.controller.Entity);
+
+		this.game.WaitFrames(2);
+
+		Mock
+			.Get(this.systemMessage)
+			.Verify(m => m.Log("AAA"), Times.Once);
+		Mock
+			.Get(this.playerMessage)
+			.Verify(m => m.Log("aaa"), Times.Once);
+	}
+
+	[Test]
+	public void LogInputDispatcherRemoveErrors() {
+		_ = Mock
+			.Get(this.dispatcher)
+			.Setup(d => d.Remove(It.IsAny<IInputStream>()))
+			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
+
+		this.game.WaitFrames(1);
+
+		_ = this.Scene.Entities.Remove(this.controller.Entity);
+
+		this.game.WaitFrames(2);
+
+		Mock
+			.Get(this.systemMessage)
+			.Verify(m => m.Log("AAA"), Times.Once);
+		Mock
+			.Get(this.playerMessage)
+			.Verify(m => m.Log("aaa"), Times.Once);
 	}
 
 	public void Dispose() {

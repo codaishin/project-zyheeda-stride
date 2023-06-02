@@ -1,6 +1,6 @@
 namespace ProjectZyheeda;
 
 public interface IInputDispatcher {
-	void Add(IInputStream stream);
-	void Remove(IInputStream stream);
+	Result Add(IInputStream stream);
+	Result Remove(IInputStream stream);
 }
