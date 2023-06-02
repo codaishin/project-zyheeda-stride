@@ -23,8 +23,8 @@ public class StraightMove : IMove {
 		}
 	}
 
-	public FGetCoroutine PrepareCoroutineFor(Entity agent, FSpeedToDelta delta) {
-		return (Func<Vector3> getTarget) => {
+	public Result<FGetCoroutine> PrepareCoroutineFor(Entity agent, FSpeedToDelta delta) {
+		return Result.Ok<FGetCoroutine>((Func<Vector3> getTarget) => {
 			Coroutine run() {
 				foreach (var wait in this.MoveTowards(agent.Transform, getTarget, delta)) {
 					yield return wait;
@@ -36,6 +36,6 @@ public class StraightMove : IMove {
 			}
 
 			return (run, cancel);
-		};
+		});
 	}
 }

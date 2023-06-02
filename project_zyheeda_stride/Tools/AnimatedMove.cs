@@ -12,8 +12,30 @@ public class AnimatedMove : IAnimatedMove {
 	public IMove? move;
 	public string animationKey = "";
 
-	private static Func<string, Result<IWait>> Run(Func<string, Result> playAnimation) {
+	private static Func<string, Result<IWait>> RunAnimation(Func<string, Result> playAnimation) {
 		return key => playAnimation(key).Map<IWait>(() => new NoWait());
+	}
+
+	private Result<FGetCoroutine> GetCoroutine(FGetCoroutine innerGetCoroutine, Func<string, Result<IWait>> play) {
+		(Func<Coroutine>, Cancel) GetCoroutine(Func<Vector3> getTarget) {
+			var (runMove, cancelMove) = innerGetCoroutine(getTarget);
+
+			Coroutine run() {
+				yield return play(this.animationKey);
+				foreach (var wait in runMove()) {
+					yield return wait;
+				}
+				yield return play(AnimatedMove.fallbackAnimationKey);
+			};
+
+			Result cancel() {
+				return cancelMove()
+					.FlatMap(() => play(AnimatedMove.fallbackAnimationKey));
+			};
+
+			return (run, cancel);
+		}
+		return Result.Ok<FGetCoroutine>(GetCoroutine);
 	}
 
 	public Result<FGetCoroutine> PrepareCoroutineFor(
@@ -21,30 +43,18 @@ public class AnimatedMove : IAnimatedMove {
 		FSpeedToDelta delta,
 		Func<string, Result> playAnimation
 	) {
-		if (this.move is null) {
-			return Result.SystemError(this.MissingField(nameof(this.move)));
-		}
-		var playWithNoWait = AnimatedMove.Run(playAnimation);
-		var innerGetCoroutine = this.move.PrepareCoroutineFor(agent, delta);
+		var getCoroutine =
+			(FGetCoroutine innerGetCoroutine) =>
+			(Func<string, Result<IWait>> play) =>
+				this.GetCoroutine(innerGetCoroutine, play);
 
-		(Func<Coroutine>, Cancel) GetCoroutine(Func<Vector3> getTarget) {
-			var (runMove, cancelMove) = innerGetCoroutine(getTarget);
+		var innerGetCoroutine = this.move
+			.OkOrSystemError(this.MissingField(nameof(this.move)))
+			.FlatMap(move => move.PrepareCoroutineFor(agent, delta));
 
-			Coroutine run() {
-				yield return playWithNoWait(this.animationKey);
-				foreach (var wait in runMove()) {
-					yield return wait;
-				}
-				yield return playWithNoWait(AnimatedMove.fallbackAnimationKey);
-			};
-
-			Result cancel() {
-				return cancelMove()
-					.FlatMap(() => playAnimation(AnimatedMove.fallbackAnimationKey));
-			};
-
-			return (run, cancel);
-		}
-		return Result.Ok<FGetCoroutine>(GetCoroutine);
+		return getCoroutine
+			.ApplyWeak(innerGetCoroutine)
+			.Apply(AnimatedMove.RunAnimation(playAnimation))
+			.Flatten();
 	}
 }

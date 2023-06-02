@@ -48,7 +48,7 @@ public class TestKineticController : GameTestCollection {
 
 		Mock
 			.Get(this.kineticController.move)
-			.SetReturnsDefault<FGetCoroutine>(this.getCoroutine);
+			.SetReturnsDefault<Result<FGetCoroutine>>(this.getCoroutine);
 
 		this.Scene.Entities.Add(new Entity{
 			this.collider,
@@ -75,7 +75,7 @@ public class TestKineticController : GameTestCollection {
 			.Setup(m => m.PrepareCoroutineFor(It.IsAny<Entity>(), It.IsAny<FSpeedToDelta>()))
 			.Returns<Entity, FSpeedToDelta>((_, _speedToDelta) => {
 				speedToDelta = _speedToDelta;
-				return _ => (() => Array.Empty<Result<IWait>>(), Mock.Of<Cancel>());
+				return (FGetCoroutine)(_ => (() => Array.Empty<Result<IWait>>(), Mock.Of<Cancel>()));
 			});
 
 		this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(1, 1, 1), 42f);
@@ -93,7 +93,7 @@ public class TestKineticController : GameTestCollection {
 			.Setup(m => m.PrepareCoroutineFor(It.IsAny<Entity>(), It.IsAny<FSpeedToDelta>()))
 			.Returns<Entity, FSpeedToDelta>((_, _speedToDelta) => {
 				speedToDelta = _speedToDelta;
-				return _ => (() => Array.Empty<Result<IWait>>(), Mock.Of<Cancel>());
+				return (FGetCoroutine)(_ => (() => Array.Empty<Result<IWait>>(), Mock.Of<Cancel>()));
 			});
 
 		this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(1, 1, 1), 42f);
@@ -354,6 +354,24 @@ public class TestKineticController : GameTestCollection {
 
 		this.kineticController.Follow(new Vector3(0, 0, 0), () => obstacle.Transform.Position, 42f);
 		this.game.WaitFrames(11);
+
+		Mock
+			.Get(this.systemMessage)
+			.Verify(m => m.Log((SystemError)"AAA"));
+
+		Mock
+			.Get(this.playerMEssage)
+			.Verify(m => m.Log((PlayerError)"BBB"));
+	}
+
+	[Test]
+	public void LogMovePrepareCoroutineErrors() {
+		_ = Mock
+			.Get(this.kineticController.move)
+			.Setup(m => m.PrepareCoroutineFor(It.IsAny<Entity>(), It.IsAny<FSpeedToDelta>()))
+			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "BBB" })));
+
+		this.kineticController.Follow(new Vector3(0, 0, 0), () => Vector3.Zero, 42f);
 
 		Mock
 			.Get(this.systemMessage)

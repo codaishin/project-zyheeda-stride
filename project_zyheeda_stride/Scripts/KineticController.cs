@@ -58,8 +58,7 @@ public abstract class BaseKineticController<TMove> :
 		return (float)this.Game.UpdateTime.Elapsed.TotalSeconds * speed;
 	}
 
-	public void Follow(Vector3 start, Func<Vector3> getTarget, float rangeMultiplier) {
-		var getCoroutine = this.move.PrepareCoroutineFor(this.Entity, this.Delta);
+	private void Follow(Vector3 start, Func<Vector3> getTarget, float rangeMultiplier, FGetCoroutine getCoroutine) {
 		var scaledDirection = (getTarget() - start) * this.baseRange * rangeMultiplier;
 		(var run, this.cancel) = getCoroutine(() => start + scaledDirection);
 
@@ -70,6 +69,13 @@ public abstract class BaseKineticController<TMove> :
 			}
 		});
 		this.Entity.Transform.Position = start;
+	}
+
+	public void Follow(Vector3 start, Func<Vector3> getTarget, float rangeMultiplier) {
+		this.move.PrepareCoroutineFor(this.Entity, this.Delta).Switch(
+			errors => this.LogErrors(errors),
+			getCoroutine => this.Follow(start, getTarget, rangeMultiplier, getCoroutine)
+		);
 	}
 }
 

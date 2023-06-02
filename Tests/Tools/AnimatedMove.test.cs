@@ -40,7 +40,7 @@ public class TestAnimatedMove {
 
 		Mock
 			.Get(this.animatedMove.move)
-			.SetReturnsDefault(this.getCoroutine);
+			.SetReturnsDefault<Result<FGetCoroutine>>(this.getCoroutine);
 
 		Mock
 			.Get(this.getCoroutine)
@@ -279,5 +279,20 @@ public class TestAnimatedMove {
 			system,
 			Contains.Item((SystemError)this.animatedMove.MissingField(nameof(this.animatedMove.move)))
 		);
+	}
+
+	[Test]
+	public void ReturnMovePrepareErrors() {
+		_ = Mock
+			.Get(this.move)
+			.Setup(m => m.PrepareCoroutineFor(It.IsAny<Entity>(), It.IsAny<FSpeedToDelta>()))
+			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "BBB" })));
+
+		var result = this.animatedMove.PrepareCoroutineFor(new Entity(), _ => 1, _ => Result.Ok());
+		var errors = result.Switch(
+			errors => $"{(string)errors.system.First()}, {(string)errors.player.First()}",
+			_ => "no errors"
+		);
+		Assert.That(errors, Is.EqualTo("AAA, BBB"));
 	}
 }
