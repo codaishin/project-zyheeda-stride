@@ -30,6 +30,10 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 		this.game.Services.RemoveService<IInputWrapper>();
 		this.game.Services.AddService<IInputWrapper>(this.inputManagerWrapper);
 
+		Mock
+			.Get(this.game.Services.GetService<IInputWrapper>())
+			.SetReturnsDefault<Result<Vector2>>(Vector2.Zero);
+
 		this.game.WaitFrames(2);
 
 		var viewProjection = new Matrix() {
