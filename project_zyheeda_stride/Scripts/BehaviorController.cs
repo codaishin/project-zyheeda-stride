@@ -33,7 +33,7 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 
 	public Result<(Func<Coroutine>, Cancel)> GetCoroutine(Func<Vector3> getTarget) {
 		return BehaviorController.GetBehaviorFn(this.equipment)
-			.ApplyWeak(this.agent.OkOrSystemError(this.MissingField(nameof(this.agent))))
+			.Apply(this.agent.OkOrSystemError(this.MissingField(nameof(this.agent))))
 			.Flatten()
 			.Map(getBehavior => getBehavior(getTarget));
 	}

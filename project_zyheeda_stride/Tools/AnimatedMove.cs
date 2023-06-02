@@ -53,7 +53,7 @@ public class AnimatedMove : IAnimatedMove {
 			.FlatMap(move => move.PrepareCoroutineFor(agent, delta));
 
 		return getCoroutine
-			.ApplyWeak(innerGetCoroutine)
+			.Apply(innerGetCoroutine)
 			.Apply(AnimatedMove.RunAnimation(playAnimation))
 			.Flatten();
 	}

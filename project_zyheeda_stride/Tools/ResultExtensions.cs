@@ -132,17 +132,6 @@ public static class GenericResultExtensions {
 	}
 
 	public static Result<TOut> Apply<TIn, TOut>(this Result<Func<TIn, TOut>> apply, Result<TIn> result) {
-		return apply.FlatMap(func => result.Map(v => func(v)));
-	}
-
-	public static Result<TOut> Apply<TIn, TOut>(this Func<TIn, TOut> apply, Result<TIn> result) {
-		return result.Switch(
-			error => Result.Errors(error),
-			value => Result.Ok(apply(value))
-		);
-	}
-
-	public static Result<TOut> ApplyWeak<TIn, TOut>(this Result<Func<TIn, TOut>> apply, Result<TIn> result) {
 		return apply.Switch(
 			errors => result.Switch(
 				newErrors => Result.Errors((errors.system.Concat(newErrors.system), errors.player.Concat(newErrors.player))),
@@ -155,8 +144,8 @@ public static class GenericResultExtensions {
 		);
 	}
 
-	public static Result<TOut> ApplyWeak<TIn, TOut>(this Func<TIn, TOut> apply, Result<TIn> result) {
-		return result.Switch<Result<TOut>>(
+	public static Result<TOut> Apply<TIn, TOut>(this Func<TIn, TOut> apply, Result<TIn> result) {
+		return result.Switch(
 			errors => Result.Errors(errors),
 			value => Result.Ok(apply(value))
 		);

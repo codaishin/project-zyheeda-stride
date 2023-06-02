@@ -33,8 +33,8 @@ public class MoveController : ProjectZyheedaStartupScript, IEquipment {
 
 		var agentAnimatorOrError = MoveController.AnimatorOnChildOf(agent);
 		return prepareCoroutine
-			.ApplyWeak(this.EitherMoveOrError())
-			.ApplyWeak(agentAnimatorOrError)
+			.Apply(this.EitherMoveOrError())
+			.Apply(agentAnimatorOrError)
 			.Flatten();
 	}
 

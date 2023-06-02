@@ -396,46 +396,6 @@ public class TestGenericResultExtensions {
 	}
 
 	[Test]
-	public void ApplyMultipleElements() {
-		var fst = new Result<int>(4);
-		var snd = new Result<int>(15);
-		var trd = new Result<int>(23);
-
-		var sum = new Result<Func<int, Func<int, Func<int, int>>>>(
-			(int a) => (int b) => (int c) => a + b + c
-		);
-
-		var result = sum
-			.Apply(fst)
-			.Apply(snd)
-			.Apply(trd);
-
-		Assert.That(result.UnpackOr(-1), Is.EqualTo(42));
-	}
-
-	[Test]
-	public void ApplyMultipleElementsError() {
-		var fst = new Result<int>(4);
-		var snd = new Result<int>((Array.Empty<SystemError>(), new PlayerError[] { "ERROR" }));
-		var trd = new Result<int>(23);
-
-		var sum = new Result<Func<int, Func<int, Func<int, int>>>>(
-			(int a) => (int b) => (int c) => a + b + c
-		);
-
-		var result = sum
-			.Apply(fst)
-			.Apply(snd)
-			.Apply(trd);
-
-		var firstError = result.Switch<string>(
-			error => error.player.First(),
-			_ => "WRONG OR NO ERROR"
-		);
-		Assert.That(firstError, Is.EqualTo("ERROR"));
-	}
-
-	[Test]
 	public void ApplyMultipleElementsErrorConcatElementErrors() {
 		var fst = new Result<int>(4);
 		var snd = new Result<int>((Array.Empty<SystemError>(), new PlayerError[] { "ERROR 2" }));
@@ -446,9 +406,9 @@ public class TestGenericResultExtensions {
 		);
 
 		var result = sum
-			.ApplyWeak(fst)
-			.ApplyWeak(snd)
-			.ApplyWeak(trd);
+			.Apply(fst)
+			.Apply(snd)
+			.Apply(trd);
 
 		var errors = result.Switch(
 			errors => errors,
@@ -476,50 +436,16 @@ public class TestGenericResultExtensions {
 	}
 
 	[Test]
-	public void ApplyOnFuncError() {
-		var fst = new Result<int>((Array.Empty<SystemError>(), new PlayerError[] { "error" }));
-		var snd = new Result<int>(10);
-		var trd = new Result<int>(11);
-
-		var sum = (int a) => (int b) => (int c) => a + b + c;
-		var result = sum
-			.Apply(fst)
-			.Apply(snd)
-			.Apply(trd);
-
-		var firstError = result.Switch<string>(
-			errors => errors.player.First(),
-			_ => "WRONG OR NO ERROR"
-		);
-		Assert.That(firstError, Is.EqualTo("error"));
-	}
-
-	[Test]
-	public void ApplyWeakOnFunc() {
-		var fst = new Result<int>(4);
-		var snd = new Result<int>(10);
-		var trd = new Result<int>(11);
-
-		var sum = (int a) => (int b) => (int c) => a + b + c;
-		var result = sum
-			.ApplyWeak(fst)
-			.ApplyWeak(snd)
-			.ApplyWeak(trd);
-
-		Assert.That(result.UnpackOr(-1), Is.EqualTo(25));
-	}
-
-	[Test]
-	public void ApplyWeakOnFuncErrors() {
+	public void ApplyOnFuncErrors() {
 		var fst = new Result<int>((Array.Empty<SystemError>(), new PlayerError[] { "error fst" }));
 		var snd = new Result<int>(10);
 		var trd = new Result<int>((new SystemError[] { "error trd" }, Array.Empty<PlayerError>()));
 
 		var sum = (int a) => (int b) => (int c) => a + b + c;
 		var result = sum
-			.ApplyWeak(fst)
-			.ApplyWeak(snd)
-			.ApplyWeak(trd);
+			.Apply(fst)
+			.Apply(snd)
+			.Apply(trd);
 
 		var errors = result.Switch(
 			errors => errors,
