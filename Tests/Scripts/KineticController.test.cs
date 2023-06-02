@@ -2,6 +2,7 @@ namespace Tests;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
@@ -59,7 +60,7 @@ public class TestKineticController : GameTestCollection {
 
 	[Test]
 	public void PreparedCoroutineEntity() {
-		this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(1, 1, 1), 42f);
+		_ = this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(1, 1, 1), 42f);
 
 		Mock
 			.Get(this.kineticController.move)
@@ -78,7 +79,7 @@ public class TestKineticController : GameTestCollection {
 				return (FGetCoroutine)(_ => (() => Array.Empty<Result<IWait>>(), Mock.Of<Cancel>()));
 			});
 
-		this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(1, 1, 1), 42f);
+		_ = this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(1, 1, 1), 42f);
 
 		var delta = (float)this.game.UpdateTime.Elapsed.TotalSeconds;
 		Assert.That(speedToDelta!(3), Is.EqualTo(delta * 3));
@@ -96,7 +97,7 @@ public class TestKineticController : GameTestCollection {
 				return (FGetCoroutine)(_ => (() => Array.Empty<Result<IWait>>(), Mock.Of<Cancel>()));
 			});
 
-		this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(1, 1, 1), 42f);
+		_ = this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(1, 1, 1), 42f);
 
 		this.game.WaitFrames(3);
 
@@ -105,8 +106,19 @@ public class TestKineticController : GameTestCollection {
 	}
 
 	[Test]
+	public void FollowResultOk() {
+		var result = this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(3, 2, 1), 1f);
+		var ok = result.Switch(
+			_ => false,
+			() => true
+		);
+
+		Assert.That(ok, Is.True);
+	}
+
+	[Test]
 	public void SetStartingPosition() {
-		this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(3, 2, 1), 1f);
+		_ = this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(3, 2, 1), 1f);
 
 		this.game.WaitFrames(1);
 
@@ -117,7 +129,7 @@ public class TestKineticController : GameTestCollection {
 	[Test]
 	public void UseGetCoroutineWithAdjustedTarget() {
 		this.kineticController.baseRange = 10;
-		this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(2, 3, 4), 1);
+		_ = this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(2, 3, 4), 1);
 
 		_ = Mock
 			.Get(this.getCoroutine)
@@ -137,7 +149,7 @@ public class TestKineticController : GameTestCollection {
 	[Test]
 	public void UseGetCoroutineWithAdjustedTargetScaledByRangeMultiplier() {
 		this.kineticController.baseRange = 10;
-		this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(2, 3, 4), 5);
+		_ = this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(2, 3, 4), 5);
 
 		_ = Mock
 			.Get(this.getCoroutine)
@@ -166,7 +178,7 @@ public class TestKineticController : GameTestCollection {
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
 			.Returns((run, Mock.Of<Cancel>()));
 
-		this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(3, 2, 1), 42f);
+		_ = this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(3, 2, 1), 42f);
 
 		this.game.WaitFrames(1);
 
@@ -191,8 +203,8 @@ public class TestKineticController : GameTestCollection {
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
 			.Returns((run, Mock.Of<Cancel>()));
 
-		this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(3, 2, 1), 42f);
-		this.kineticController.Follow(new Vector3(100, 200, 300), () => new Vector3(3, 2, 1), 42f);
+		_ = this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(3, 2, 1), 42f);
+		_ = this.kineticController.Follow(new Vector3(100, 200, 300), () => new Vector3(3, 2, 1), 42f);
 
 		this.game.WaitFrames(1);
 
@@ -226,14 +238,14 @@ public class TestKineticController : GameTestCollection {
 		this.Scene.Entities.Add(obstacle);
 		this.game.WaitFrames(1);
 
-		this.kineticController.Follow(new Vector3(0, 0, 0), () => obstacle.Transform.Position, 42f);
+		_ = this.kineticController.Follow(new Vector3(0, 0, 0), () => obstacle.Transform.Position, 42f);
 		this.game.WaitFrames(11);
 
 		Assert.That(this.kineticController.Entity.Transform.Position.X, Is.InRange(2, 2.5));
 
 		this.game.WaitFrames(1);
 
-		this.kineticController.Follow(new Vector3(0, 0, 0), () => obstacle.Transform.Position, 42f);
+		_ = this.kineticController.Follow(new Vector3(0, 0, 0), () => obstacle.Transform.Position, 42f);
 		this.game.WaitFrames(11);
 
 		Assert.That(this.kineticController.Entity.Transform.Position.X, Is.InRange(2, 2.5));
@@ -266,7 +278,7 @@ public class TestKineticController : GameTestCollection {
 		this.Scene.Entities.Add(obstacle);
 		this.game.WaitFrames(1);
 
-		this.kineticController.Follow(new Vector3(0, 0, 0), () => obstacle.Transform.Position, 42f);
+		_ = this.kineticController.Follow(new Vector3(0, 0, 0), () => obstacle.Transform.Position, 42f);
 		this.game.WaitFrames(11);
 
 		Mock
@@ -302,7 +314,7 @@ public class TestKineticController : GameTestCollection {
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
 			.Returns((systemError, () => Result.Ok()));
 
-		this.kineticController.Follow(Vector3.Zero, () => Vector3.Zero, 1f);
+		_ = this.kineticController.Follow(Vector3.Zero, () => Vector3.Zero, 1f);
 		this.game.WaitFrames(2);
 
 		Mock
@@ -321,7 +333,7 @@ public class TestKineticController : GameTestCollection {
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
 			.Returns((playerError, () => Result.Ok()));
 
-		this.kineticController.Follow(Vector3.Zero, () => Vector3.Zero, 1f);
+		_ = this.kineticController.Follow(Vector3.Zero, () => Vector3.Zero, 1f);
 		this.game.WaitFrames(2);
 
 		Mock
@@ -352,7 +364,7 @@ public class TestKineticController : GameTestCollection {
 		this.Scene.Entities.Add(obstacle);
 		this.game.WaitFrames(1);
 
-		this.kineticController.Follow(new Vector3(0, 0, 0), () => obstacle.Transform.Position, 42f);
+		_ = this.kineticController.Follow(new Vector3(0, 0, 0), () => obstacle.Transform.Position, 42f);
 		this.game.WaitFrames(11);
 
 		Mock
@@ -365,20 +377,18 @@ public class TestKineticController : GameTestCollection {
 	}
 
 	[Test]
-	public void LogMovePrepareCoroutineErrors() {
+	public void ReturnMovePrepareCoroutineErrors() {
 		_ = Mock
 			.Get(this.kineticController.move)
 			.Setup(m => m.PrepareCoroutineFor(It.IsAny<Entity>(), It.IsAny<FSpeedToDelta>()))
 			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "BBB" })));
 
-		this.kineticController.Follow(new Vector3(0, 0, 0), () => Vector3.Zero, 42f);
+		var result = this.kineticController.Follow(new Vector3(0, 0, 0), () => Vector3.Zero, 42f);
+		var errors = result.Switch(
+			errors => $"{(string)errors.system.First()}, {(string)errors.player.First()}",
+			() => "no errors"
+		);
 
-		Mock
-			.Get(this.systemMessage)
-			.Verify(m => m.Log((SystemError)"AAA"));
-
-		Mock
-			.Get(this.playerMEssage)
-			.Verify(m => m.Log((PlayerError)"BBB"));
+		Assert.That(errors, Is.EqualTo("AAA, BBB"));
 	}
 }
