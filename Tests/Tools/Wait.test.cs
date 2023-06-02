@@ -14,13 +14,34 @@ public class TestWaitFrame : GameTestCollection {
 
 		this.Tasks.AddTask(async () => {
 			frame = this.game.UpdateTime.FrameCount;
-			await wait.Wait(this.game.Script);
+			_ = await wait.Wait(this.game.Script);
 			token.SetResult();
 		});
 
 		await token.Task;
 
 		Assert.That(this.game.UpdateTime.FrameCount, Is.EqualTo(frame + 1));
+	}
+
+	[Test]
+	public async Task ResultOk() {
+		var wait = new WaitFrame();
+		var token = new TaskCompletionSource();
+		Result result = Result.SystemError("result not set");
+
+		this.Tasks.AddTask(async () => {
+			result = await wait.Wait(this.game.Script);
+			token.SetResult();
+		});
+
+		await token.Task;
+
+		var ok = result.Switch(
+			_ => false,
+			() => true
+		);
+
+		Assert.That(ok, Is.True);
 	}
 }
 
@@ -34,7 +55,7 @@ public class TestWaitMilliseconds : GameTestCollection {
 		this.Tasks.AddTask(async () => {
 			var stopwatch = new Stopwatch();
 			stopwatch.Start();
-			await wait.Wait(this.game.Script);
+			_ = await wait.Wait(this.game.Script);
 			stopwatch.Stop();
 			token.SetResult(stopwatch.ElapsedMilliseconds);
 		});
@@ -42,6 +63,18 @@ public class TestWaitMilliseconds : GameTestCollection {
 		var time = await token.Task;
 
 		Assert.That(time, Is.AtLeast(100));
+	}
+
+	[Test]
+	public async Task ResultOk() {
+		var wait = new WaitMilliSeconds(0);
+		var result = await wait.Wait(this.game.Script);
+		var ok = result.Switch(
+			_ => false,
+			() => true
+		);
+
+		Assert.That(ok, Is.True);
 	}
 }
 
@@ -54,12 +87,24 @@ public class TestNoWait : GameTestCollection {
 
 		this.Tasks.AddTask(async () => {
 			frame = this.game.UpdateTime.FrameCount;
-			await wait.Wait(this.game.Script);
+			_ = await wait.Wait(this.game.Script);
 			token.SetResult();
 		});
 
 		await token.Task;
 
 		Assert.That(this.game.UpdateTime.FrameCount, Is.EqualTo(frame));
+	}
+
+	[Test]
+	public async Task ResultOk() {
+		var wait = new NoWait();
+		var result = await wait.Wait(this.game.Script);
+		var ok = result.Switch(
+			_ => false,
+			() => true
+		);
+
+		Assert.That(ok, Is.True);
 	}
 }
