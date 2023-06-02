@@ -2,6 +2,7 @@ namespace Tests;
 
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
 using ProjectZyheeda;
@@ -344,6 +345,42 @@ public class TestGenericResultExtensions {
 		var ok = nested.Flatten().Switch(_ => false, () => true);
 
 		Assert.That(ok, Is.True);
+	}
+
+	[Test]
+	public async Task FlattenResultWithTaskWithVoidResultOkay() {
+		var result = Result.Ok(Task.FromResult(Result.Ok()));
+		var flat = await result.Flatten();
+		var ok = flat.Switch(
+			_ => false,
+			() => true
+		);
+
+		Assert.That(ok, Is.True);
+	}
+
+	[Test]
+	public async Task FlattenResultErrorsWithTaskWithVoidResult() {
+		Result<Task<Result>> result = Result.PlayerError("AAA");
+		var flat = await result.Flatten();
+		var errors = flat.Switch(
+			errors => (string)errors.player.FirstOrDefault(),
+			() => "no errors"
+		);
+
+		Assert.That(errors, Is.EqualTo("AAA"));
+	}
+
+	[Test]
+	public async Task FlattenResultWithTaskWithVoidResultErrors() {
+		var result = Result.Ok(Task.FromResult<Result>(Result.PlayerError("AAA")));
+		var flat = await result.Flatten();
+		var errors = flat.Switch(
+			errors => (string)errors.player.FirstOrDefault(),
+			() => "no errors"
+		);
+
+		Assert.That(errors, Is.EqualTo("AAA"));
 	}
 
 	[Test]
