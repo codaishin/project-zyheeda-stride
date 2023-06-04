@@ -2,50 +2,41 @@ namespace Tests;
 
 using System;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using ProjectZyheeda;
 using Stride.Engine;
+using Xunit;
 
-[SetUpFixture]
-public class TestGame {
-	private static Game? game;
+public class GameFixture : IDisposable {
+	public readonly Game game;
+	public Scene RootScene => this.game.SceneSystem.SceneInstance.RootScene;
 
-	public static Game Game =>
-		TestGame.game ??
-		throw new NullReferenceException();
-
-	public static Scene RootScene =>
-		TestGame
-			.Game
-			.SceneSystem
-			.SceneInstance
-			.RootScene;
-
-	[OneTimeSetUp]
-	public void StartGame() {
-		var game = new Game();
-		_ = Task.Run(() => game.Run());
-		game.WaitFrames(1);
-		TestGame.game = game;
+	public GameFixture() {
+		this.game = new Game();
+		_ = Task.Run(() => this.game.Run());
+		this.game.WaitFrames(2);
 	}
 
-	[OneTimeTearDown]
-	public void StopGame() {
-		if (TestGame.game is null) {
+	public void Dispose() {
+		if (this.game is null) {
 			return;
 		}
-		if (TestGame.game.IsRunning) {
-			TestGame.game.Exit();
+		if (this.game.IsRunning) {
+			this.game.Exit();
 		}
-		TestGame.game.Dispose();
+		this.game.Dispose();
+		GC.SuppressFinalize(this);
 	}
 }
 
-[TestFixture]
-public class GameTestCollection {
-	public readonly Game game = TestGame.Game;
-	public Scene Scene { get; private set; } = TestGame.RootScene;
-	public Runner Tasks { get; private set; } = new();
+[CollectionDefinition("Game test collection")]
+public class GameTestCollectionDefinition : ICollectionFixture<GameFixture> { }
+
+[Collection("Game test collection")]
+public class GameTestCollection : IDisposable {
+	private readonly GameFixture fixture;
+	public readonly Game game;
+	public readonly Scene scene;
+	public readonly Runner tasks;
 
 	public class Runner : StartupScript {
 		public void AddTask(Func<Task> microThreadFunction) {
@@ -53,22 +44,21 @@ public class GameTestCollection {
 		}
 	}
 
-	[SetUp]
-	public void SetupRunner() {
-		var scene = new Scene();
-		TestGame.Game.SceneSystem.SceneInstance.RootScene.Children.Add(scene);
-		this.Scene = scene;
-		this.Tasks = new();
-		this.Scene.Entities.Add(new Entity { this.Tasks });
+	public GameTestCollection(GameFixture fixture) {
+		this.fixture = fixture;
+		this.game = fixture.game;
+
+		this.scene = new Scene();
+		this.fixture.RootScene.Children.Add(this.scene);
+
+		this.tasks = new();
+		this.scene.Entities.Add(new Entity { this.tasks });
 	}
 
-	[TearDown]
-	public void RemoveEntities() {
-		_ = TestGame.Game.SceneSystem.SceneInstance.RootScene.Children.Remove(this.Scene);
-		this.Scene.Dispose();
+	public void RemoveScene() {
+		_ = this.fixture.RootScene.Children.Remove(this.scene);
 	}
 
-	[TearDown]
 	public void RemoveEssentialServices() {
 		this.game.Services.RemoveService<IInputWrapper>();
 		this.game.Services.RemoveService<IAnimation>();
@@ -76,6 +66,12 @@ public class GameTestCollection {
 		this.game.Services.RemoveService<IPlayerMessage>();
 		this.game.Services.RemoveService<IPrefabLoader>();
 		this.game.WaitFrames(1);
+	}
+
+	public void Dispose() {
+		GC.SuppressFinalize(this);
+		this.RemoveScene();
+		this.RemoveEssentialServices();
 	}
 }
 
@@ -92,28 +88,24 @@ public static class TestTools {
 	}
 }
 
-[TestFixture]
-public class TestGameTests : GameTestCollection {
-	[Test]
-	public void TestHasGame() {
-		Assert.DoesNotThrow(() => _ = TestGame.Game);
-	}
+public class TestGameTestCollection : GameTestCollection {
+	public TestGameTestCollection(GameFixture fixture) : base(fixture) { }
 
-	[Test]
+	[Fact]
 	public void GameRuns() {
-		Assert.That(TestGame.Game.IsRunning, Is.True);
+		Assert.True(this.game.IsRunning);
 	}
 
-	[Test]
+	[Fact]
 	public void RunUpdate() {
 		var frame = this.game.UpdateTime.FrameCount;
 
 		this.game.WaitFrames(1);
 
-		Assert.That(this.game.UpdateTime.FrameCount, Is.EqualTo(frame + 1));
+		Assert.Equal(frame + 1, this.game.UpdateTime.FrameCount);
 	}
 
-	[Test]
+	[Fact]
 	public void RunTasks() {
 		var counter = 0;
 		var incrementCounterOnePerFrame = async () => {
@@ -123,9 +115,9 @@ public class TestGameTests : GameTestCollection {
 			}
 		};
 
-		this.Tasks.AddTask(incrementCounterOnePerFrame);
+		this.tasks.AddTask(incrementCounterOnePerFrame);
 		this.game.WaitFrames(10);
 
-		Assert.That(counter, Is.EqualTo(9));
+		Assert.Equal(9, counter);
 	}
 }

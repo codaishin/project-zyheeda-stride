@@ -2,17 +2,19 @@ namespace Tests;
 
 using System.Diagnostics;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using ProjectZyheeda;
+using Xunit;
 
 public class TestWaitFrame : GameTestCollection {
-	[Test]
+	public TestWaitFrame(GameFixture fixture) : base(fixture) { }
+
+	[Fact]
 	public async Task WaitNextFrame() {
 		var wait = new WaitFrame();
 		var token = new TaskCompletionSource();
 		var frame = 0;
 
-		this.Tasks.AddTask(async () => {
+		this.tasks.AddTask(async () => {
 			frame = this.game.UpdateTime.FrameCount;
 			_ = await wait.Wait(this.game.Script);
 			token.SetResult();
@@ -20,16 +22,16 @@ public class TestWaitFrame : GameTestCollection {
 
 		await token.Task;
 
-		Assert.That(this.game.UpdateTime.FrameCount, Is.EqualTo(frame + 1));
+		Assert.Equal(frame + 1, this.game.UpdateTime.FrameCount);
 	}
 
-	[Test]
+	[Fact]
 	public async Task ResultOk() {
 		var wait = new WaitFrame();
 		var token = new TaskCompletionSource();
 		Result result = Result.SystemError("result not set");
 
-		this.Tasks.AddTask(async () => {
+		this.tasks.AddTask(async () => {
 			result = await wait.Wait(this.game.Script);
 			token.SetResult();
 		});
@@ -41,18 +43,19 @@ public class TestWaitFrame : GameTestCollection {
 			() => true
 		);
 
-		Assert.That(ok, Is.True);
+		Assert.True(ok);
 	}
 }
 
 public class TestWaitMilliseconds : GameTestCollection {
+	public TestWaitMilliseconds(GameFixture fixture) : base(fixture) { }
 
-	[Test]
+	[Fact]
 	public async Task Wait100ms() {
 		var wait = new WaitMilliSeconds(100);
 		var token = new TaskCompletionSource<long>();
 
-		this.Tasks.AddTask(async () => {
+		this.tasks.AddTask(async () => {
 			var stopwatch = new Stopwatch();
 			stopwatch.Start();
 			_ = await wait.Wait(this.game.Script);
@@ -62,10 +65,10 @@ public class TestWaitMilliseconds : GameTestCollection {
 
 		var time = await token.Task;
 
-		Assert.That(time, Is.AtLeast(100));
+		Assert.True(time > 100);
 	}
 
-	[Test]
+	[Fact]
 	public async Task ResultOk() {
 		var wait = new WaitMilliSeconds(0);
 		var result = await wait.Wait(this.game.Script);
@@ -74,18 +77,20 @@ public class TestWaitMilliseconds : GameTestCollection {
 			() => true
 		);
 
-		Assert.That(ok, Is.True);
+		Assert.True(ok);
 	}
 }
 
 public class TestNoWait : GameTestCollection {
-	[Test]
+	public TestNoWait(GameFixture fixture) : base(fixture) { }
+
+	[Fact]
 	public async Task CompletesImmediately() {
 		var wait = new NoWait();
 		var token = new TaskCompletionSource();
 		var frame = 0;
 
-		this.Tasks.AddTask(async () => {
+		this.tasks.AddTask(async () => {
 			frame = this.game.UpdateTime.FrameCount;
 			_ = await wait.Wait(this.game.Script);
 			token.SetResult();
@@ -93,10 +98,10 @@ public class TestNoWait : GameTestCollection {
 
 		await token.Task;
 
-		Assert.That(this.game.UpdateTime.FrameCount, Is.EqualTo(frame));
+		Assert.Equal(frame, this.game.UpdateTime.FrameCount);
 	}
 
-	[Test]
+	[Fact]
 	public async Task ResultOk() {
 		var wait = new NoWait();
 		var result = await wait.Wait(this.game.Script);
@@ -105,6 +110,6 @@ public class TestNoWait : GameTestCollection {
 			() => true
 		);
 
-		Assert.That(ok, Is.True);
+		Assert.True(ok);
 	}
 }

@@ -1,11 +1,11 @@
 namespace Tests;
 
 using System.Linq;
-using NUnit.Framework;
 using ProjectZyheeda;
+using Xunit;
 
-public class MaybeTest : GameTestCollection {
-	[Test]
+public class MaybeTest {
+	[Fact]
 	public void SwitchSome() {
 		var maybe = Maybe.Some(42);
 
@@ -14,10 +14,10 @@ public class MaybeTest : GameTestCollection {
 			none: () => -1
 		);
 
-		Assert.That(value, Is.EqualTo(42));
+		Assert.Equal(42, value);
 	}
 
-	[Test]
+	[Fact]
 	public void SwitchNone() {
 		var maybe = Maybe.None<int>();
 
@@ -26,10 +26,10 @@ public class MaybeTest : GameTestCollection {
 			none: () => -1
 		);
 
-		Assert.That(value, Is.EqualTo(-1));
+		Assert.Equal(-1, value);
 	}
 
-	[Test]
+	[Fact]
 	public void MapNoneToNone() {
 		var func = (int v) => v.ToString();
 		var result = Maybe.None<int>().Map(func);
@@ -38,10 +38,10 @@ public class MaybeTest : GameTestCollection {
 			none: () => ""
 		);
 
-		Assert.That(value, Is.Empty);
+		Assert.Empty(value);
 	}
 
-	[Test]
+	[Fact]
 	public void MapSomeToSome() {
 		var func = (int v) => v.ToString();
 		var result = Maybe.Some(42).Map(func);
@@ -50,10 +50,10 @@ public class MaybeTest : GameTestCollection {
 			none: () => ""
 		);
 
-		Assert.That(value, Is.EqualTo("42"));
+		Assert.Equal("42", value);
 	}
 
-	[Test]
+	[Fact]
 	public void FlatMapNoneWithNoneToNone() {
 		var func = (int v) => Maybe.None<string>();
 		var result = Maybe.None<int>().FlatMap(func);
@@ -62,10 +62,10 @@ public class MaybeTest : GameTestCollection {
 			none: () => ""
 		);
 
-		Assert.That(value, Is.Empty);
+		Assert.Empty(value);
 	}
 
-	[Test]
+	[Fact]
 	public void FlatMapSomeWithSomeToSome() {
 		var func = (int v) => Maybe.Some(v.ToString());
 		var result = Maybe.Some(42).FlatMap(func);
@@ -74,30 +74,30 @@ public class MaybeTest : GameTestCollection {
 			none: () => ""
 		);
 
-		Assert.That(value, Is.EqualTo("42"));
+		Assert.Equal("42", value);
 	}
 
-	[Test]
+	[Fact]
 	public void FlatMapSelf() {
 		var some = Maybe.Some(42);
 		var nested = Maybe.Some(some);
 
-		Assert.That(nested.Flatten(), Is.SameAs(some));
+		Assert.Same(some, nested.Flatten());
 	}
 
-	[Test]
+	[Fact]
 	public void UnpackFallbackWhenNone() {
 		var none = Maybe.None<float>();
-		Assert.That(none.UnpackOr(42f), Is.EqualTo(42f));
+		Assert.Equal(42f, none.UnpackOr(42f));
 	}
 
-	[Test]
+	[Fact]
 	public void UnpackSome() {
 		var some = Maybe.Some(4.2f);
-		Assert.That(some.UnpackOr(42f), Is.EqualTo(4.2f));
+		Assert.Equal(4.2f, some.UnpackOr(42f));
 	}
 
-	[Test]
+	[Fact]
 	public void SwitchSomeAction() {
 		var some = Maybe.Some(4.2f);
 		var result = 0f;
@@ -106,10 +106,10 @@ public class MaybeTest : GameTestCollection {
 			some: v => { result = v; },
 			none: () => { result = -1f; }
 		);
-		Assert.That(result, Is.EqualTo(4.2f));
+		Assert.Equal(4.2f, result);
 	}
 
-	[Test]
+	[Fact]
 	public void SwitchNoneAction() {
 		var none = Maybe.None<int>();
 		var result = 0f;
@@ -118,10 +118,10 @@ public class MaybeTest : GameTestCollection {
 			some: v => { result = v; },
 			none: () => { result = -1f; }
 		);
-		Assert.That(result, Is.EqualTo(-1f));
+		Assert.Equal(-1f, result);
 	}
 
-	[Test]
+	[Fact]
 	public void ApplyMultipleElements() {
 		var fst = Maybe.Some(4);
 		var snd = Maybe.Some(15);
@@ -133,10 +133,10 @@ public class MaybeTest : GameTestCollection {
 			.Apply(snd)
 			.Apply(trd);
 
-		Assert.That(result.UnpackOr(-1), Is.EqualTo(42));
+		Assert.Equal(42, result.UnpackOr(-1));
 	}
 
-	[Test]
+	[Fact]
 	public void ApplyMultipleElementsNone() {
 		var fst = Maybe.Some(4);
 		var snd = Maybe.None<int>();
@@ -148,18 +148,18 @@ public class MaybeTest : GameTestCollection {
 			.Apply(snd)
 			.Apply(trd);
 
-		Assert.That(result.UnpackOr(-1), Is.EqualTo(-1));
+		Assert.Equal(-1, result.UnpackOr(-1));
 	}
 
-	[Test]
+	[Fact]
 	public void SomeToValue() {
 		var some = Maybe.Some(42);
 		var value = some.ToOkOrSystemError("ERROR");
 
-		Assert.That(value.UnpackOr(-1), Is.EqualTo(42));
+		Assert.Equal(42, value.UnpackOr(-1));
 	}
 
-	[Test]
+	[Fact]
 	public void NoneToError() {
 		var some = Maybe.None<int>();
 		var value = some.ToOkOrSystemError("ERROR");
@@ -168,42 +168,42 @@ public class MaybeTest : GameTestCollection {
 			errors => errors.system.First(),
 			_ => "OKAY OR WRONG ERROR"
 		);
-		Assert.That(error, Is.EqualTo("ERROR"));
+		Assert.Equal("ERROR", error);
 	}
 
-	[Test]
+	[Fact]
 	public void ToMaybeSome() {
 		var value = "Hello";
 		value.ToMaybe().Switch(
-			some: some => Assert.That(some, Is.SameAs(value)),
+			some: some => Assert.Same(value, some),
 			none: () => Assert.Fail("Was None, but should have been some")
 		);
 	}
 
-	[Test]
+	[Fact]
 	public void ToMaybeSomeValueType() {
 		int? value = 42;
 		value.ToMaybe().Switch(
-			some: some => Assert.That(some, Is.EqualTo(value)),
+			some: some => Assert.Equal(value, some),
 			none: () => Assert.Fail("Was None, but should have been some")
 		);
 	}
 
-	[Test]
+	[Fact]
 	public void ToMaybeNone() {
 		var value = null as string;
 		value.ToMaybe().Switch(
 			some: some => Assert.Fail($"Was {some ?? "null"}, but should have been none"),
-			none: () => Assert.Pass()
+			none: () => { }
 		);
 	}
 
-	[Test]
+	[Fact]
 	public void ToMaybeNoneValueType() {
 		int? value = null;
 		value.ToMaybe().Switch(
 			some: some => Assert.Fail($"Was {some}, but should have been none"),
-			none: () => Assert.Pass()
+			none: () => { }
 		);
 	}
 }

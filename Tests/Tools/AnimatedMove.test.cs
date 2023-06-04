@@ -5,18 +5,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Moq;
-using NUnit.Framework;
 using ProjectZyheeda;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 using Stride.Engine.Processors;
+using Xunit;
+using Xunit.Sdk;
 
 public class TestAnimatedMove {
-	private IMove move = Mock.Of<IMove>();
-	private AnimatedMove animatedMove = new();
-	private FGetCoroutine getCoroutine = Mock.Of<FGetCoroutine>();
-	private Func<IEnumerable<Result<IWait>>> run = Mock.Of<Func<IEnumerable<Result<IWait>>>>();
-	private Cancel cancel = Mock.Of<Cancel>();
+	private readonly IMove move;
+	private readonly AnimatedMove animatedMove;
+	private readonly FGetCoroutine getCoroutine;
+	private readonly Func<IEnumerable<Result<IWait>>> run;
+	private readonly Cancel cancel;
 
 	private class MockWait : IWait {
 		public Task<Result> Wait(ScriptSystem script) {
@@ -25,14 +26,13 @@ public class TestAnimatedMove {
 	}
 
 	private static FGetCoroutine AssertFail((IEnumerable<SystemError> system, IEnumerable<PlayerError> player) errors) {
-		throw new AssertionException((
+		throw new XunitException((
 			string.Join(", ", errors.player),
 			string.Join(", ", errors.system)
 		).ToString());
 	}
 
-	[SetUp]
-	public void SetUp() {
+	public TestAnimatedMove() {
 		this.animatedMove = new() { move = this.move = Mock.Of<IMove>() };
 		this.getCoroutine = Mock.Of<FGetCoroutine>();
 		this.run = Mock.Of<Func<IEnumerable<Result<IWait>>>>();
@@ -51,7 +51,7 @@ public class TestAnimatedMove {
 			.SetReturnsDefault<IEnumerable<Result<IWait>>>(new Result<IWait>[] { new MockWait(), new MockWait() });
 	}
 
-	[Test]
+	[Fact]
 	public void UseMovesGetCoroutine() {
 		var agent = new Entity();
 		var delta = Mock.Of<FSpeedToDelta>();
@@ -73,7 +73,10 @@ public class TestAnimatedMove {
 		var waits = run().ToArray();
 		var innerWaits = waits.Skip(1).Take(waits.Length - 2);
 
-		Assert.That(innerWaits.Select(w => w.UnpackOr(new WaitMilliSeconds(0))), Is.All.InstanceOf<MockWait>());
+		Assert.All(
+			innerWaits.Select(w => w.UnpackOr(new WaitMilliSeconds(0))),
+			w => Assert.IsType<MockWait>(w)
+		);
 
 		_ = cancel();
 
@@ -82,7 +85,7 @@ public class TestAnimatedMove {
 			.Verify(cancel => cancel(), Times.Once);
 	}
 
-	[Test]
+	[Fact]
 	public void UseNoWaitForStartingAnimations() {
 		var agent = new Entity();
 		var delta = Mock.Of<FSpeedToDelta>();
@@ -102,13 +105,14 @@ public class TestAnimatedMove {
 			.Verify(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()), Times.Once);
 
 		var waits = run().ToArray();
+
 		Assert.Multiple(() => {
-			Assert.That(waits.First().UnpackOr(new WaitMilliSeconds(0)), Is.InstanceOf<NoWait>());
-			Assert.That(waits.Last().UnpackOr(new WaitMilliSeconds(0)), Is.InstanceOf<NoWait>());
+			_ = Assert.IsType<NoWait>(waits.First().UnpackOr(new WaitMilliSeconds(0)));
+			_ = Assert.IsType<NoWait>(waits.Last().UnpackOr(new WaitMilliSeconds(0)));
 		});
 	}
 
-	[Test]
+	[Fact]
 	public void PlayAnimationWalk() {
 		var target = new Vector3(1, 0, 0);
 		var play = Mock.Of<Func<string, Result>>();
@@ -127,7 +131,7 @@ public class TestAnimatedMove {
 			.Verify(func => func("walk"), Times.Once);
 	}
 
-	[Test]
+	[Fact]
 	public void PlayAnimationRun() {
 		var play = Mock.Of<Func<string, Result>>();
 		var getCoroutine = this.animatedMove.PrepareCoroutineFor(new Entity(), _ => 0f, play).Switch(
@@ -145,7 +149,7 @@ public class TestAnimatedMove {
 			.Verify(func => func("run"), Times.Once);
 	}
 
-	[Test]
+	[Fact]
 	public void PlayAnimationRunError() {
 		var play = (string _) => (Result)Result.PlayerError("ZZZ");
 		var getCoroutine = this.animatedMove.PrepareCoroutineFor(new Entity(), _ => 0f, play).Switch(
@@ -160,12 +164,12 @@ public class TestAnimatedMove {
 
 		var result = runner.Current;
 		result.Switch(
-			errors => Assert.That((string)errors.player.First(), Is.EqualTo("ZZZ")),
+			errors => Assert.Equal("ZZZ", (string)errors.player.First()),
 			_ => Assert.Fail("NO ERRORS")
 		);
 	}
 
-	[Test, Timeout(1000)]
+	[Fact(Timeout = 1000)]
 	public void PlayAnimationIdleOnDone() {
 		var target = new Vector3(0.3f, 0, 0);
 		var play = Mock.Of<Func<string, Result>>();
@@ -183,7 +187,7 @@ public class TestAnimatedMove {
 			.Verify(func => func(AnimatedMove.fallbackAnimationKey), Times.Once);
 	}
 
-	[Test, Timeout(1000)]
+	[Fact(Timeout = 1000)]
 	public void PlayAnimationErrorOnDone() {
 		var target = new Vector3(0.3f, 0, 0);
 		var play = Mock.Of<Func<string, Result>>();
@@ -202,12 +206,12 @@ public class TestAnimatedMove {
 		var waits = run().ToArray();
 
 		waits.Last().Switch(
-			errors => Assert.That((string)errors.player.First(), Is.EqualTo("UUU")),
+			errors => Assert.Equal("UUU", (string)errors.player.First()),
 			_ => Assert.Fail("NO ERRORS")
 		);
 	}
 
-	[Test]
+	[Fact]
 	public void PlayIdleOnCancel() {
 		var target = new Vector3(1, 0, 0);
 		var play = Mock.Of<Func<string, Result>>();
@@ -226,7 +230,7 @@ public class TestAnimatedMove {
 			.Verify(func => func(AnimatedMove.fallbackAnimationKey), Times.Once);
 	}
 
-	[Test]
+	[Fact]
 	public void ReturnInnerCancelResult() {
 		var target = new Vector3(1, 0, 0);
 		var play = Mock.Of<Func<string, Result>>();
@@ -245,10 +249,10 @@ public class TestAnimatedMove {
 			errors => errors.player.First(),
 			() => "no error"
 		);
-		Assert.That(error, Is.EqualTo("AAA"));
+		Assert.Equal("AAA", error);
 	}
 
-	[Test]
+	[Fact]
 	public void ReturnPlayAnimationError() {
 		var target = new Vector3(1, 0, 0);
 		var play = (string _) => (Result)Result.PlayerError("AAA");
@@ -263,25 +267,25 @@ public class TestAnimatedMove {
 			errors => errors.player.First(),
 			() => "no error"
 		);
-		Assert.That(error, Is.EqualTo("AAA"));
+		Assert.Equal("AAA", error);
 	}
 
-	[Test]
+	[Fact]
 	public void NoMoveSet() {
 		this.animatedMove.move = null;
 		var play = Mock.Of<Func<string, Result>>();
 		var (system, _) = this.animatedMove.PrepareCoroutineFor(new Entity(), _ => 0, play).Switch(
 			error => error,
-			value => throw new AssertionException("had a value, but shouldn't have had one")
+			value => throw new XunitException("had a value, but shouldn't have had one")
 		);
 
-		Assert.That(
-			system,
-			Contains.Item((SystemError)this.animatedMove.MissingField(nameof(this.animatedMove.move)))
+		Assert.Contains(
+			(SystemError)this.animatedMove.MissingField(nameof(this.animatedMove.move)),
+			system
 		);
 	}
 
-	[Test]
+	[Fact]
 	public void ReturnMovePrepareErrors() {
 		_ = Mock
 			.Get(this.move)
@@ -293,6 +297,6 @@ public class TestAnimatedMove {
 			errors => $"{(string)errors.system.First()}, {(string)errors.player.First()}",
 			_ => "no errors"
 		);
-		Assert.That(errors, Is.EqualTo("AAA, BBB"));
+		Assert.Equal("AAA, BBB", errors);
 	}
 }

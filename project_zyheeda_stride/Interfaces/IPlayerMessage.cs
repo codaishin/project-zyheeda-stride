@@ -14,6 +14,10 @@ public readonly struct PlayerError {
 	public static implicit operator string(PlayerError value) {
 		return value.value;
 	}
+
+	public override string ToString() {
+		return $"SystemError({this.value})";
+	}
 }
 
 public interface IPlayerMessage {

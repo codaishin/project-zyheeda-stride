@@ -4,27 +4,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Moq;
-using NUnit.Framework;
 using ProjectZyheeda;
 using Stride.Core.Mathematics;
 using Stride.Engine;
+using Xunit;
+using Xunit.Sdk;
 
 public class BehaviorControllerTest : GameTestCollection {
-	private ISystemMessage systemMessage = Mock.Of<ISystemMessage>();
-	private IPlayerMessage playerMessage = Mock.Of<IPlayerMessage>();
-	private BehaviorController controller = new();
+	private readonly ISystemMessage systemMessage;
+	private readonly IPlayerMessage playerMessage;
+	private readonly BehaviorController controller;
 
-	private static (Func<IEnumerable<Result<IWait>>>, Cancel) Fail(
-		(IEnumerable<SystemError> system, IEnumerable<PlayerError> player) errors
-	) {
-		throw new AssertionException((
-			string.Join(", ", errors.system.Select(e => (string)e)),
-			string.Join(", ", errors.player.Select(e => (string)e))
-		).ToString());
-	}
-
-	[SetUp]
-	public void Setup() {
+	public BehaviorControllerTest(GameFixture fixture) : base(fixture) {
 		this.systemMessage = Mock.Of<ISystemMessage>();
 		this.playerMessage = Mock.Of<IPlayerMessage>();
 		this.controller = new();
@@ -34,12 +25,22 @@ public class BehaviorControllerTest : GameTestCollection {
 		this.game.Services.AddService(this.systemMessage);
 		this.game.Services.AddService(this.playerMessage);
 
-		this.Scene.Entities.Add(new Entity { this.controller });
+		this.scene.Entities.Add(new Entity { this.controller });
 
 		this.game.WaitFrames(2);
 	}
 
-	[Test]
+	private static (Func<IEnumerable<Result<IWait>>>, Cancel) Fail(
+		(IEnumerable<SystemError> system, IEnumerable<PlayerError> player) errors
+	) {
+		throw new XunitException((
+			string.Join(", ", errors.system.Select(e => (string)e)),
+			string.Join(", ", errors.player.Select(e => (string)e))
+		).ToString());
+	}
+
+
+	[Fact]
 	public void PassAgentToGetBehaviorFor() {
 		var getCoroutine = Mock.Of<FGetCoroutine>();
 		var equipment = Mock.Of<IEquipment>();
@@ -60,7 +61,7 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Verify(e => e.PrepareCoroutineFor(agent), Times.Once());
 	}
 
-	[Test]
+	[Fact]
 	public void OnRunExecute() {
 		var getCoroutine = Mock.Of<FGetCoroutine>();
 		var equipment = Mock.Of<IEquipment>();
@@ -75,7 +76,7 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Get(getCoroutine)
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
 			.Returns((Func<Vector3> getTarget) => {
-				Assert.That(getTarget(), Is.EqualTo(target));
+				Assert.Equal(target, getTarget());
 				return (() => Array.Empty<Result<IWait>>(), () => Result.Ok());
 			});
 
@@ -89,7 +90,7 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Verify(func => func(It.IsAny<Func<Vector3>>()), Times.Once());
 	}
 
-	[Test]
+	[Fact]
 	public void EquipmentMissingOnUse() {
 		var target = Vector3.UnitX;
 		this.controller.agent = new Entity("Player");
@@ -106,10 +107,10 @@ public class BehaviorControllerTest : GameTestCollection {
 			_ => (PlayerError)"no error"
 		);
 
-		Assert.That(error, Is.EqualTo((PlayerError)"nothing equipped"));
+		Assert.Equal((PlayerError)"nothing equipped", error);
 	}
 
-	[Test]
+	[Fact]
 	public void RequirementsMissing() {
 		var equipment = Mock.Of<IEquipment>();
 		var message = "can't use gun";
@@ -127,10 +128,10 @@ public class BehaviorControllerTest : GameTestCollection {
 			_ => "no errors"
 		);
 
-		Assert.That(error, Is.EqualTo(message));
+		Assert.Equal(message, error);
 	}
 
-	[Test]
+	[Fact]
 	public void AgentMissing() {
 		var equipment = Mock.Of<IEquipment>();
 		var message = this.controller.MissingField(nameof(this.controller.agent));
@@ -143,10 +144,10 @@ public class BehaviorControllerTest : GameTestCollection {
 			_ => "no errors"
 		);
 
-		Assert.That(error, Is.EqualTo(message));
+		Assert.Equal(message, error);
 	}
 
-	[Test]
+	[Fact]
 	public void ReturnBehaviorExecution() {
 		var getCoroutine = Mock.Of<FGetCoroutine>();
 		var equipment = Mock.Of<IEquipment>();
@@ -173,22 +174,18 @@ public class BehaviorControllerTest : GameTestCollection {
 			runAndCancel => runAndCancel
 		);
 
-		Assert.That(gotExecution, Is.EqualTo(execution));
+		Assert.Equal(execution, gotExecution);
 	}
 }
 
-[TestFixture]
 public class BehaviorControllerNonGameTest {
-	[Test]
+	[Fact]
 	public void NoEquipmentAssignErrorWhenNotInRunningGame() {
 		var controller = new BehaviorController();
 		var equipment = Mock.Of<IEquipment>();
 		controller.agent = new Entity();
 
-		Assert.DoesNotThrow(
-			() => {
-				controller.equipment = Maybe.Some(equipment);
-			}
-		);
+		var record = Record.Exception(() => controller.equipment = Maybe.Some(equipment));
+		Assert.Null(record);
 	}
 }

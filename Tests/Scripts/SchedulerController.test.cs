@@ -6,36 +6,35 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
-using NUnit.Framework;
 using ProjectZyheeda;
 using Stride.Engine;
 using Stride.Engine.Processors;
+using Xunit;
 
 public class SchedulerControllerTest : GameTestCollection {
-	private SchedulerController schedulerController = new();
+	private readonly SchedulerController schedulerController;
 
-	[SetUp]
-	public void InitSchedulerController() {
+	public SchedulerControllerTest(GameFixture fixture) : base(fixture) {
 		this.game.Services.RemoveService<ISystemMessage>();
 		this.game.Services.AddService<ISystemMessage>(Mock.Of<ISystemMessage>());
 		this.game.Services.RemoveService<IPlayerMessage>();
 		this.game.Services.AddService<IPlayerMessage>(Mock.Of<IPlayerMessage>());
 
 		this.schedulerController = new();
-		this.Scene.Entities.Add(new Entity { this.schedulerController });
+		this.scene.Entities.Add(new Entity { this.schedulerController });
 	}
 
-	[Test]
+	[Fact]
 	public void IsIScheduler() {
-		Assert.That(this.schedulerController, Is.InstanceOf<IScheduler>());
+		_ = Assert.IsAssignableFrom<IScheduler>(this.schedulerController);
 	}
 
-	[Test]
+	[Fact]
 	public void IsStartupScript() {
-		Assert.That(this.schedulerController, Is.InstanceOf<StartupScript>());
+		_ = Assert.IsAssignableFrom<StartupScript>(this.schedulerController);
 	}
 
-	[Test]
+	[Fact]
 	public void EnqueueOneFunc() {
 		var func = Mock.Of<Func<IEnumerable<Result<IWait>>>>();
 
@@ -44,14 +43,14 @@ public class SchedulerControllerTest : GameTestCollection {
 			() => true
 		);
 
-		Assert.That(ok, Is.True);
+		Assert.True(ok);
 
 		this.game.WaitFrames(1);
 
 		Mock.Get(func).Verify(func => func(), Times.Once);
 	}
 
-	[Test]
+	[Fact]
 	public void EnqueueTwoFunc() {
 		var result = "";
 		IEnumerable<Result<IWait>> funcA() {
@@ -71,19 +70,19 @@ public class SchedulerControllerTest : GameTestCollection {
 		_ = this.schedulerController.Enqueue((funcB, () => Result.Ok()));
 
 		this.game.WaitFrames(1);
-		Assert.That(result, Is.EqualTo("A"));
+		Assert.Equal("A", result);
 
 		this.game.WaitFrames(1);
-		Assert.That(result, Is.EqualTo("AA"));
+		Assert.Equal("AA", result);
 
 		this.game.WaitFrames(1);
-		Assert.That(result, Is.EqualTo("AAB"));
+		Assert.Equal("AAB", result);
 
 		this.game.WaitFrames(1);
-		Assert.That(result, Is.EqualTo("AABB"));
+		Assert.Equal("AABB", result);
 	}
 
-	[Test]
+	[Fact]
 	public void EnqueueAfterPreviousFinished() {
 		var func = Mock.Of<Func<IEnumerable<Result<IWait>>>>();
 		_ = Mock.Get(func).Setup(func => func()).Returns(Array.Empty<Result<IWait>>());
@@ -99,7 +98,7 @@ public class SchedulerControllerTest : GameTestCollection {
 		Mock.Get(func).Verify(func => func(), Times.Exactly(2));
 	}
 
-	[Test]
+	[Fact]
 	public void RunsFunc() {
 		var func = Mock.Of<Func<IEnumerable<Result<IWait>>>>();
 		_ = Mock.Get(func).Setup(func => func()).Returns(Array.Empty<Result<IWait>>());
@@ -109,14 +108,14 @@ public class SchedulerControllerTest : GameTestCollection {
 			() => true
 		);
 
-		Assert.That(ok, Is.True);
+		Assert.True(ok);
 
 		this.game.WaitFrames(1);
 
 		Mock.Get(func).Verify(func => func(), Times.Once);
 	}
 
-	[Test]
+	[Fact]
 	public void RunAndEnqueueFunc() {
 		var result = "";
 		IEnumerable<Result<IWait>> funcA() {
@@ -136,19 +135,19 @@ public class SchedulerControllerTest : GameTestCollection {
 		_ = this.schedulerController.Enqueue((funcB, () => Result.Ok()));
 
 		this.game.WaitFrames(1);
-		Assert.That(result, Is.EqualTo("A"));
+		Assert.Equal("A", result);
 
 		this.game.WaitFrames(1);
-		Assert.That(result, Is.EqualTo("AA"));
+		Assert.Equal("AA", result);
 
 		this.game.WaitFrames(1);
-		Assert.That(result, Is.EqualTo("AAB"));
+		Assert.Equal("AAB", result);
 
 		this.game.WaitFrames(1);
-		Assert.That(result, Is.EqualTo("AABB"));
+		Assert.Equal("AABB", result);
 	}
 
-	[Test]
+	[Fact]
 	public void RunAndWaitSeconds() {
 		var result = "";
 		IEnumerable<Result<IWait>> func() {
@@ -162,13 +161,13 @@ public class SchedulerControllerTest : GameTestCollection {
 		_ = this.schedulerController.Run((func, () => Result.Ok()));
 
 		Thread.Sleep(100);
-		Assert.That(result, Is.EqualTo("A"));
+		Assert.Equal("A", result);
 
 		Thread.Sleep(200);
-		Assert.That(result, Is.EqualTo("AA"));
+		Assert.Equal("AA", result);
 	}
 
-	[Test]
+	[Fact]
 	public void RunAfterEnqueueShouldClear() {
 		var result = "";
 		IEnumerable<Result<IWait>> funcA() {
@@ -184,10 +183,10 @@ public class SchedulerControllerTest : GameTestCollection {
 		_ = this.schedulerController.Run((funcB, () => Result.Ok()));
 
 		this.game.WaitFrames(1);
-		Assert.That(result, Is.EqualTo("B"));
+		Assert.Equal("B", result);
 	}
 
-	[Test]
+	[Fact]
 	public void RunAfterEnqueueShouldCancel() {
 		var result = "";
 		IEnumerable<Result<IWait>> funcA() {
@@ -207,10 +206,10 @@ public class SchedulerControllerTest : GameTestCollection {
 
 		this.game.WaitFrames(2);
 
-		Assert.That(result, Is.EqualTo("B"));
+		Assert.Equal("B", result);
 	}
 
-	[Test]
+	[Fact]
 	public void EnqueueClearEnqueue() {
 		var result = "";
 		IEnumerable<Result<IWait>> funcA() {
@@ -227,20 +226,20 @@ public class SchedulerControllerTest : GameTestCollection {
 		_ = this.schedulerController.Enqueue((funcB, () => Result.Ok()));
 
 		this.game.WaitFrames(1);
-		Assert.That(result, Is.EqualTo("B"));
+		Assert.Equal("B", result);
 	}
 
-	[Test]
+	[Fact]
 	public void CLearOk() {
 		var ok = this.schedulerController.Clear().Switch(
 			_ => false,
 			() => true
 		);
 
-		Assert.That(ok, Is.True);
+		Assert.True(ok);
 	}
 
-	[Test]
+	[Fact]
 	public void EnqueueClearEnqueueCancelFirstEnqueue() {
 		var result = "";
 		IEnumerable<Result<IWait>> funcA() {
@@ -264,10 +263,10 @@ public class SchedulerControllerTest : GameTestCollection {
 
 		this.game.WaitFrames(2);
 
-		Assert.That(result, Is.EqualTo("B"));
+		Assert.Equal("B", result);
 	}
 
-	[Test]
+	[Fact]
 	public void LogRunErrors() {
 		static IEnumerable<Result<IWait>> faultyRun() {
 			yield return Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "BBB" }));
@@ -288,7 +287,7 @@ public class SchedulerControllerTest : GameTestCollection {
 			.Verify(s => s.Log("BBB"), Times.Once);
 	}
 
-	[Test]
+	[Fact]
 	public void CallCancelOnClear() {
 		static IEnumerable<Result<IWait>> idle2Frames() {
 			yield return new WaitFrame();
@@ -306,7 +305,7 @@ public class SchedulerControllerTest : GameTestCollection {
 		Mock.Get(cancel).Verify(cancel => cancel(), Times.Once);
 	}
 
-	[Test]
+	[Fact]
 	public void CallCancelOnRun() {
 		static IEnumerable<Result<IWait>> idle2Frames() {
 			yield return new WaitFrame();
@@ -324,7 +323,7 @@ public class SchedulerControllerTest : GameTestCollection {
 		Mock.Get(cancel).Verify(cancel => cancel(), Times.Once);
 	}
 
-	[Test]
+	[Fact]
 	public void CallCurrentCancel() {
 		static IEnumerable<Result<IWait>> idle2Frames() {
 			yield return new WaitFrame();
@@ -346,7 +345,7 @@ public class SchedulerControllerTest : GameTestCollection {
 		});
 	}
 
-	[Test]
+	[Fact]
 	public void CallCancelOnClearJustOnce() {
 		static IEnumerable<Result<IWait>> idle2Frames() {
 			yield return new WaitFrame();
@@ -365,7 +364,7 @@ public class SchedulerControllerTest : GameTestCollection {
 		Mock.Get(cancel).Verify(cancel => cancel(), Times.Once);
 	}
 
-	[Test]
+	[Fact]
 	public void ReturnClearErrors() {
 		static IEnumerable<Result<IWait>> idle2Frames() {
 			yield return new WaitFrame();
@@ -385,10 +384,10 @@ public class SchedulerControllerTest : GameTestCollection {
 			() => "no errors"
 		);
 
-		Assert.That(errors, Is.EqualTo("AAA, BBB"));
+		Assert.Equal("AAA, BBB", errors);
 	}
 
-	[Test]
+	[Fact]
 	public void ReturnClearErrorsOnRun() {
 		static IEnumerable<Result<IWait>> idle2Frames() {
 			yield return new WaitFrame();
@@ -408,10 +407,10 @@ public class SchedulerControllerTest : GameTestCollection {
 			() => "no errors"
 		);
 
-		Assert.That(errors, Is.EqualTo("AAA, BBB"));
+		Assert.Equal("AAA, BBB", errors);
 	}
 
-	[Test]
+	[Fact]
 	public void EnqueueOnRunEvenIfClearHadErrors() {
 		var count = 0;
 
@@ -434,10 +433,10 @@ public class SchedulerControllerTest : GameTestCollection {
 
 		this.game.WaitFrames(2);
 
-		Assert.That(count, Is.GreaterThan(0));
+		Assert.True(count > 0);
 	}
 
-	[Test]
+	[Fact]
 	public void DoNotCallCancelAfterExecutionFinished() {
 		static IEnumerable<Result<IWait>> doNotWait() {
 			yield break;
@@ -453,7 +452,7 @@ public class SchedulerControllerTest : GameTestCollection {
 		Mock.Get(cancel).Verify(cancel => cancel(), Times.Never);
 	}
 
-	[Test]
+	[Fact]
 	public void LogWaitErrors() {
 		var wait = Mock.Of<IWait>();
 		var errors = (new SystemError[] { "AAA" }, new PlayerError[] { "LLL" });
