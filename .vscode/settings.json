@@ -10,6 +10,7 @@
 		"source.fixAll": true,
 		"source.organizeImports": true,
 	},
+	"dotnet-test-explorer.testProjectPath": "./Tests/Tests.csproj",
 	"files.trimTrailingWhitespace": true,
 	"files.insertFinalNewline": true,
 	"omnisharp.enableEditorConfigSupport": true,
