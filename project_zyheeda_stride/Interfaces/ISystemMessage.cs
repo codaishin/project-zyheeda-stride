@@ -14,6 +14,10 @@ public readonly struct SystemError {
 	public static implicit operator string(SystemError value) {
 		return value.value;
 	}
+
+	public override string ToString() {
+		return $"SystemError({this.value})";
+	}
 }
 
 public interface ISystemMessage {
