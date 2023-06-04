@@ -1,29 +1,29 @@
 namespace Tests;
 
-using NUnit.Framework;
 using ProjectZyheeda;
 using Stride.Engine;
+using Xunit;
 
-public class ReferenceTest : GameTestCollection {
+public class ReferenceTest {
 	public interface IMock { }
 
 	private class MockComponent : StartupScript, IMock { }
 
 	private class MockReference : Reference<MockComponent, IMock> { }
 
-	[Test]
+	[Fact]
 	public void None() {
 		var fallback = new MockComponent();
 		var reference = new MockReference();
-		Assert.That(reference.UnpackOr(fallback), Is.SameAs(fallback));
+		Assert.Same(fallback, reference.UnpackOr(fallback));
 	}
 
-	[Test]
+	[Fact]
 	public void Some() {
 		var fallback = new MockComponent();
 		var reference = new MockReference {
 			target = new(),
 		};
-		Assert.That(reference.UnpackOr(fallback), Is.SameAs(reference.target));
+		Assert.Same(reference.target, reference.UnpackOr(fallback));
 	}
 }

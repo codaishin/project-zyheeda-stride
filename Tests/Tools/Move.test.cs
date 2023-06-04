@@ -4,30 +4,31 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Moq;
-using NUnit.Framework;
 using ProjectZyheeda;
 using Stride.Core.Mathematics;
 using Stride.Engine;
+using Xunit;
+using Xunit.Sdk;
 
-public class TestMove : System.IDisposable {
-	private readonly VectorTolerance tolerance = new(0.001f);
-	private Entity agent = new();
-	private StraightMove move = new();
+public class TestMove : IDisposable {
+	private readonly VectorTolerance tolerance;
+	private readonly Entity agent;
+	private readonly StraightMove move;
 
-	[SetUp]
-	public void SetUp() {
+	public TestMove() {
+		this.tolerance = new(0.001f);
 		this.agent = new();
 		this.move = new();
 	}
 
 	private static FGetCoroutine Fail((IEnumerable<SystemError> system, IEnumerable<PlayerError> player) errors) {
-		throw new AssertionException((
+		throw new XunitException((
 			string.Join(", ", errors.system.Select(e => (string)e)),
 			string.Join(", ", errors.player.Select(e => (string)e))
 		).ToString());
 	}
 
-	[Test]
+	[Fact]
 	public void MoveTowardsTarget() {
 		var target = new Vector3(1, 0, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.1f).Switch(
@@ -41,10 +42,10 @@ public class TestMove : System.IDisposable {
 		_ = runner.MoveNext();
 		_ = runner.MoveNext();
 
-		Assert.That(this.agent.Transform.Position, Is.EqualTo(new Vector3(0.3f, 0, 0)));
+		Assert.Equal(new Vector3(0.3f, 0, 0), this.agent.Transform.Position);
 	}
 
-	[Test, Timeout(1000)]
+	[Fact(Timeout = 1000)]
 	public void YieldsWaitFrames() {
 		var target = new Vector3(1, 0, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.1f).Switch(
@@ -53,10 +54,10 @@ public class TestMove : System.IDisposable {
 		);
 		var (run, _) = getCoroutine(() => target);
 
-		Assert.That(run().Select(w => w.UnpackOr(new WaitMilliSeconds(0))), Is.All.InstanceOf<WaitFrame>());
+		Assert.All(run().Select(w => w.UnpackOr(new WaitMilliSeconds(0))), w => Assert.IsType<WaitFrame>(w));
 	}
 
-	[Test]
+	[Fact]
 	public void UseSpeedToGetDelta() {
 		var target = new Vector3(1, 0, 0);
 		var delta = Mock.Of<FSpeedToDelta>();
@@ -85,7 +86,7 @@ public class TestMove : System.IDisposable {
 			.Verify(func => func(42), Times.Exactly(5));
 	}
 
-	[Test]
+	[Fact]
 	public void UseCurrentSpeedToGetDelta() {
 		var target = new Vector3(1, 0, 0);
 		var delta = Mock.Of<FSpeedToDelta>();
@@ -122,7 +123,7 @@ public class TestMove : System.IDisposable {
 		});
 	}
 
-	[Test]
+	[Fact]
 	public void MoveTowardsTargetEntityAfterChangingTargetPosition() {
 		var target = new Entity();
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.1f).Switch(
@@ -143,10 +144,10 @@ public class TestMove : System.IDisposable {
 		_ = runner.MoveNext();
 		_ = runner.MoveNext();
 
-		Assert.That(this.agent.Transform.Position, Is.EqualTo(new Vector3(0.2f, 0.3f, 0)));
+		Assert.Equal(new Vector3(0.2f, 0.3f, 0), this.agent.Transform.Position);
 	}
 
-	[Test]
+	[Fact]
 	public void MoveTowardsTargetWithChangingDeltas() {
 		var target = new Vector3(1, 0, 0);
 		var delta = Mock.Of<FSpeedToDelta>();
@@ -174,10 +175,10 @@ public class TestMove : System.IDisposable {
 		_ = runner.MoveNext();
 		_ = runner.MoveNext();
 
-		Assert.That(this.agent.Transform.Position, Is.EqualTo(new Vector3(0.8f, 0f, 0)));
+		Assert.Equal(new Vector3(0.8f, 0f, 0), this.agent.Transform.Position);
 	}
 
-	[Test]
+	[Fact]
 	public void MoveTowardsTarget0Neg10() {
 		var target = new Vector3(0, -1, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.2f).Switch(
@@ -191,11 +192,11 @@ public class TestMove : System.IDisposable {
 		_ = runner.MoveNext();
 
 		var position = this.agent.Transform.Position;
-		Assert.That(position, Is.EqualTo(new Vector3(0, -0.4f, 0)).Using(this.tolerance));
+		Assert.Equal(new Vector3(0, -0.4f, 0), position, this.tolerance);
 	}
 
 
-	[Test]
+	[Fact]
 	public void MoveTowardsTargetFromOffsetPosition() {
 		var target = new Vector3(1, 1, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.3f).Switch(
@@ -210,10 +211,10 @@ public class TestMove : System.IDisposable {
 		_ = runner.MoveNext();
 
 		var position = this.agent.Transform.Position;
-		Assert.That(position, Is.EqualTo(new Vector3(1, 0.6f, 0)).Using(this.tolerance));
+		Assert.Equal(new Vector3(1, 0.6f, 0), position, this.tolerance);
 	}
 
-	[Test]
+	[Fact]
 	public void MoveTowardsTargetWithNotNormalizedInitialDistance() {
 		var target = new Vector3(1, 1, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.3f).Switch(
@@ -228,13 +229,14 @@ public class TestMove : System.IDisposable {
 
 		var direction = Vector3.Normalize(target);
 
-		Assert.That(
+		Assert.Equal(
+			direction * 0.6f,
 			this.agent.Transform.Position,
-			Is.EqualTo(direction * 0.6f).Using(this.tolerance)
+			this.tolerance
 		);
 	}
 
-	[Test]
+	[Fact]
 	public void DoNotOvershoot() {
 		var target = new Vector3(1, 0, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.8f).Switch(
@@ -247,11 +249,11 @@ public class TestMove : System.IDisposable {
 		_ = runner.MoveNext();
 		_ = runner.MoveNext();
 
-		Assert.That(this.agent.Transform.Position, Is.EqualTo(new Vector3(1, 0, 0)));
+		Assert.Equal(new Vector3(1, 0, 0), this.agent.Transform.Position);
 	}
 
 
-	[Test]
+	[Fact]
 	public void LookAtTarget() {
 		var target = new Vector3(1, 0, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0f).Switch(
@@ -263,13 +265,13 @@ public class TestMove : System.IDisposable {
 
 		_ = runner.MoveNext();
 
-		Assert.That(
-			this.agent.Transform.Rotation,
-			Is.EqualTo(Quaternion.LookRotation(Vector3.UnitX, Vector3.UnitY))
+		Assert.Equal(
+			Quaternion.LookRotation(Vector3.UnitX, Vector3.UnitY),
+			this.agent.Transform.Rotation
 		);
 	}
 
-	[Test]
+	[Fact]
 	public void LookAtTargetFromOffset() {
 		var target = new Vector3(1, 0, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0f).Switch(
@@ -282,13 +284,13 @@ public class TestMove : System.IDisposable {
 		this.agent.Transform.Position = new Vector3(3, 0, 0);
 		_ = runner.MoveNext();
 
-		Assert.That(
-			this.agent.Transform.Rotation,
-			Is.EqualTo(Quaternion.LookRotation(-Vector3.UnitX, Vector3.UnitY))
+		Assert.Equal(
+			Quaternion.LookRotation(-Vector3.UnitX, Vector3.UnitY),
+			this.agent.Transform.Rotation
 		);
 	}
 
-	[Test]
+	[Fact]
 	public void NoRotationChangeWhenTargetIsCurrentPosition() {
 		var target = new Vector3(1, 0, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0f).Switch(
@@ -302,7 +304,7 @@ public class TestMove : System.IDisposable {
 		this.agent.Transform.Position = new Vector3(1, 0, 0);
 		_ = runner.MoveNext();
 
-		Assert.That(this.agent.Transform.Rotation, Is.EqualTo(expectedRotation));
+		Assert.Equal(expectedRotation, this.agent.Transform.Rotation);
 	}
 
 	public void Dispose() {

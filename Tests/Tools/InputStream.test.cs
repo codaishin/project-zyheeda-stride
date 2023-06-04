@@ -1,11 +1,11 @@
 namespace Tests;
 
 using System.Threading.Tasks;
-using NUnit.Framework;
 using ProjectZyheeda;
+using Xunit;
 
 public class TestInputStream {
-	[Test]
+	[Fact]
 	public async Task NewAction() {
 		var stream = new InputStream {
 			activationKey = InputKeys.ShiftLeft,
@@ -14,21 +14,21 @@ public class TestInputStream {
 
 		var task = stream.NewAction();
 
-		Assert.That(task.IsCompletedSuccessfully, Is.False);
+		Assert.False(task.IsCompletedSuccessfully);
 
 		var result = stream.ProcessEvent(InputKeys.ShiftLeft, isDown: true);
 
 		Assert.Multiple(() => {
-			Assert.That(result.Switch(_ => false, () => true), Is.True);
-			Assert.That(task.IsCompletedSuccessfully, Is.True);
+			Assert.True(result.Switch(_ => false, () => true));
+			Assert.True(task.IsCompletedSuccessfully);
 		});
 
 		var action = await task;
 
-		Assert.That(action.UnpackOr(InputAction.Chain), Is.EqualTo(InputAction.Run));
+		Assert.Equal(InputAction.Run, action.UnpackOr(InputAction.Chain));
 	}
 
-	[Test]
+	[Fact]
 	public void NewActionCorrectKey() {
 		var stream = new InputStream {
 			activationKey = InputKeys.MouseRight,
@@ -40,19 +40,19 @@ public class TestInputStream {
 		var result = stream.ProcessEvent(InputKeys.ShiftLeft, isDown: true);
 
 		Assert.Multiple(() => {
-			Assert.That(result.Switch(_ => false, () => true), Is.True);
-			Assert.That(task.IsCompletedSuccessfully, Is.False);
+			Assert.True(result.Switch(_ => false, () => true));
+			Assert.False(task.IsCompletedSuccessfully);
 		});
 
 		result = stream.ProcessEvent(InputKeys.MouseRight, isDown: true);
 
 		Assert.Multiple(() => {
-			Assert.That(result.Switch(_ => false, () => true), Is.True);
-			Assert.That(task.IsCompletedSuccessfully, Is.True);
+			Assert.True(result.Switch(_ => false, () => true));
+			Assert.True(task.IsCompletedSuccessfully);
 		});
 	}
 
-	[Test]
+	[Fact]
 	public void NewActionCorrectAction() {
 		var stream = new InputStream {
 			activationKey = InputKeys.MouseRight,
@@ -64,8 +64,8 @@ public class TestInputStream {
 		var result = stream.ProcessEvent(InputKeys.MouseRight, isDown: true);
 
 		Assert.Multiple(() => {
-			Assert.That(result.Switch(_ => false, () => true), Is.True);
-			Assert.That(task.IsCompletedSuccessfully, Is.False);
+			Assert.True(result.Switch(_ => false, () => true));
+			Assert.False(task.IsCompletedSuccessfully);
 		});
 
 		stream.activation = InputActivation.OnPress;
@@ -73,12 +73,12 @@ public class TestInputStream {
 		result = stream.ProcessEvent(InputKeys.MouseRight, isDown: false);
 
 		Assert.Multiple(() => {
-			Assert.That(result.Switch(_ => false, () => true), Is.True);
-			Assert.That(task.IsCompletedSuccessfully, Is.False);
+			Assert.True(result.Switch(_ => false, () => true));
+			Assert.False(task.IsCompletedSuccessfully);
 		});
 	}
 
-	[Test]
+	[Fact]
 	public void NewActionChain() {
 		var stream = new InputStream {
 			activationKey = InputKeys.MouseRight,
@@ -90,19 +90,19 @@ public class TestInputStream {
 
 		var result = stream.ProcessEvent(InputKeys.ShiftLeft, isDown: true);
 
-		Assert.That(result.Switch(_ => false, () => true), Is.True);
+		Assert.True(result.Switch(_ => false, () => true));
 
 		result = stream.ProcessEvent(InputKeys.MouseRight, isDown: true);
 
 		Assert.Multiple(async () => {
-			Assert.That(result.Switch(_ => false, () => true), Is.True);
-			Assert.That(task.IsCompletedSuccessfully, Is.True);
+			Assert.True(result.Switch(_ => false, () => true));
+			Assert.True(task.IsCompletedSuccessfully);
 			var action = await task;
-			Assert.That(action.UnpackOr(InputAction.Run), Is.EqualTo(InputAction.Chain));
+			Assert.Equal(InputAction.Chain, action.UnpackOr(InputAction.Run));
 		});
 	}
 
-	[Test]
+	[Fact]
 	public void NewActionRunWhenChainKeyUp() {
 		var stream = new InputStream {
 			activationKey = InputKeys.MouseRight,
@@ -114,20 +114,20 @@ public class TestInputStream {
 
 		var result = stream.ProcessEvent(InputKeys.ShiftLeft, isDown: false);
 
-		Assert.That(result.Switch(_ => false, () => true), Is.True);
+		Assert.True(result.Switch(_ => false, () => true));
 
 		result = stream.ProcessEvent(InputKeys.MouseRight, isDown: true);
 
 		Assert.Multiple(async () => {
-			Assert.That(result.Switch(_ => false, () => true), Is.True);
-			Assert.That(task.IsCompletedSuccessfully, Is.True);
+			Assert.True(result.Switch(_ => false, () => true));
+			Assert.True(task.IsCompletedSuccessfully);
 			var action = await task;
-			Assert.That(action.UnpackOr(InputAction.Chain), Is.EqualTo(InputAction.Run));
+			Assert.Equal(InputAction.Run, action.UnpackOr(InputAction.Chain));
 		});
 
 	}
 
-	[Test]
+	[Fact]
 	public void NewTaskAfterProcessEvent() {
 		var stream = new InputStream {
 			activationKey = InputKeys.ShiftLeft,
@@ -138,9 +138,9 @@ public class TestInputStream {
 
 		var result = stream.ProcessEvent(InputKeys.ShiftLeft, isDown: true);
 
-		Assert.That(result.Switch(_ => false, () => true), Is.True);
+		Assert.True(result.Switch(_ => false, () => true));
 		var taskB = stream.NewAction();
 
-		Assert.That(taskA, Is.Not.SameAs(taskB));
+		Assert.NotSame(taskB, taskA);
 	}
 }

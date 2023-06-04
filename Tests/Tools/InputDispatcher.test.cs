@@ -2,23 +2,22 @@ namespace Tests;
 
 using System.Linq;
 using Moq;
-using NUnit.Framework;
 using ProjectZyheeda;
 using Stride.Input;
+using Xunit;
 
 public class TestInputDispatcher {
-	private IInputStream stream = Mock.Of<IInputStream>();
-	private InputDispatcher dispatcher = new(new InputManager(), Mock.Of<ISystemMessage>());
-	private ISystemMessage systemMessage = Mock.Of<ISystemMessage>();
+	private readonly IInputStream stream;
+	private readonly InputDispatcher dispatcher;
+	private readonly ISystemMessage systemMessage;
 
-	[SetUp]
-	public void SetUp() {
+	public TestInputDispatcher() {
 		this.stream = Mock.Of<IInputStream>();
 		this.systemMessage = Mock.Of<ISystemMessage>();
 		this.dispatcher = new(new InputManager(), this.systemMessage);
 	}
 
-	[Test]
+	[Fact]
 	public void DispatchKeyInput() {
 		_ = this.dispatcher.Add(this.stream);
 
@@ -33,7 +32,7 @@ public class TestInputDispatcher {
 			.Verify(s => s.ProcessEvent(InputKeys.ShiftLeft, true), Times.Once);
 	}
 
-	[Test]
+	[Fact]
 	public void DispatchUnmappedKeyInput() {
 		_ = this.dispatcher.Add(this.stream);
 
@@ -44,7 +43,7 @@ public class TestInputDispatcher {
 			.Verify(m => m.Log(new SystemError($"{Keys.Home} is not mapped to InputKeys")));
 	}
 
-	[Test]
+	[Fact]
 	public void DispatchMouseInput() {
 		_ = this.dispatcher.Add(this.stream);
 
@@ -59,7 +58,7 @@ public class TestInputDispatcher {
 			.Verify(s => s.ProcessEvent(InputKeys.MouseRight, true), Times.Once);
 	}
 
-	[Test]
+	[Fact]
 	public void DispatchUnmappedMouseInput() {
 		_ = this.dispatcher.Add(this.stream);
 
@@ -70,7 +69,7 @@ public class TestInputDispatcher {
 			.Verify(m => m.Log(new SystemError($"{MouseButton.Extended1} is not mapped to InputKeys")));
 	}
 
-	[Test]
+	[Fact]
 	public void MultipleAddsAreProcessedJustOnce() {
 		_ = this.dispatcher.Add(this.stream);
 		_ = this.dispatcher.Add(this.stream);
@@ -83,19 +82,19 @@ public class TestInputDispatcher {
 			.Verify(s => s.ProcessEvent(InputKeys.MouseLeft, false), Times.Once);
 	}
 
-	[Test]
+	[Fact]
 	public void AddResults() {
 		var ok = this.dispatcher.Add(this.stream).Switch(_ => false, () => true);
-		Assert.That(ok, Is.True);
+		Assert.True(ok);
 
 		var error = this.dispatcher.Add(this.stream).Switch<string>(
 			errors => errors.system.First(),
 			() => "no error"
 		);
-		Assert.That(error, Is.EqualTo($"{this.stream}: Can only add one input stream once"));
+		Assert.Equal($"{this.stream}: Can only add one input stream once", error);
 	}
 
-	[Test]
+	[Fact]
 	public void RemoveStream() {
 		_ = this.dispatcher.Add(this.stream);
 		_ = this.dispatcher.Remove(this.stream);
@@ -107,16 +106,16 @@ public class TestInputDispatcher {
 			.Verify(s => s.ProcessEvent(InputKeys.MouseLeft, false), Times.Never);
 	}
 
-	[Test]
+	[Fact]
 	public void RemoveResults() {
 		_ = this.dispatcher.Add(this.stream).Switch(_ => false, () => true);
 		var ok = this.dispatcher.Remove(this.stream).Switch(_ => false, () => true);
-		Assert.That(ok, Is.True);
+		Assert.True(ok);
 
 		var error = this.dispatcher.Remove(this.stream).Switch<string>(
 			errors => errors.system.First(),
 			() => "no error"
 		);
-		Assert.That(error, Is.EqualTo($"{this.stream}: Could not be removed, due to not being in the set"));
+		Assert.Equal($"{this.stream}: Could not be removed, due to not being in the set", error);
 	}
 }

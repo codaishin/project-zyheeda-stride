@@ -18,6 +18,7 @@
 		"Gamepad",
 		"notnull",
 		"Raycast",
+		"Xunit",
 		"Zyheeda"
 	],
 }

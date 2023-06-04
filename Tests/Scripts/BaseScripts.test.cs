@@ -1,18 +1,18 @@
 namespace Tests;
 
 using Moq;
-using NUnit.Framework;
 using ProjectZyheeda;
 using Stride.Core;
 using Stride.Engine.Processors;
 using Stride.Games;
 using Stride.Input;
+using Xunit;
 
 public class TestEssentialServices {
-	private readonly IGame game = Mock.Of<IGame>();
+	private readonly IGame game;
 
-	[SetUp]
-	public void Setup() {
+	public TestEssentialServices() {
+		this.game = Mock.Of<IGame>();
 		var service = new ServiceRegistry();
 		_ = Mock
 			.Get(this.game)
@@ -29,77 +29,77 @@ public class TestEssentialServices {
 		service.AddService(new ScriptSystem(service));
 	}
 
-	[Test]
+	[Fact]
 	public void GetEssentialServices() {
 		var essentialServices = new EssentialServices(this.game);
 
 		Assert.Multiple(() => {
-			Assert.That(essentialServices.inputWrapper, Is.SameAs(this.game.Services.GetService<IInputWrapper>()));
-			Assert.That(essentialServices.animation, Is.SameAs(this.game.Services.GetService<IAnimation>()));
-			Assert.That(essentialServices.systemMessage, Is.SameAs(this.game.Services.GetService<ISystemMessage>()));
-			Assert.That(essentialServices.playerMessage, Is.SameAs(this.game.Services.GetService<IPlayerMessage>()));
-			Assert.That(essentialServices.prefabLoader, Is.SameAs(this.game.Services.GetService<IPrefabLoader>()));
-			Assert.That(essentialServices.inputDispatcher, Is.SameAs(this.game.Services.GetService<IInputDispatcher>()));
+			Assert.Same(this.game.Services.GetService<IInputWrapper>(), essentialServices.inputWrapper);
+			Assert.Same(this.game.Services.GetService<IAnimation>(), essentialServices.animation);
+			Assert.Same(this.game.Services.GetService<ISystemMessage>(), essentialServices.systemMessage);
+			Assert.Same(this.game.Services.GetService<IPlayerMessage>(), essentialServices.playerMessage);
+			Assert.Same(this.game.Services.GetService<IPrefabLoader>(), essentialServices.prefabLoader);
+			Assert.Same(this.game.Services.GetService<IInputDispatcher>(), essentialServices.inputDispatcher);
 		});
 	}
 
-	[Test]
+	[Fact]
 	public void MissingInputManager() {
 		this.game.Services.RemoveService<IInputWrapper>();
 		var essentialServices = new EssentialServices(this.game);
 		Assert.Multiple(() => {
-			Assert.That(essentialServices.inputWrapper, Is.InstanceOf<InputWrapper>());
-			Assert.That(this.game.Services.GetSafeServiceAs<IInputWrapper>, Is.SameAs(essentialServices.inputWrapper));
+			_ = Assert.IsType<InputWrapper>(essentialServices.inputWrapper);
+			Assert.Same(essentialServices.inputWrapper, this.game.Services.GetSafeServiceAs<IInputWrapper>());
 		});
 	}
 
-	[Test]
+	[Fact]
 	public void MissingAnimation() {
 		this.game.Services.RemoveService<IAnimation>();
 		var essentialServices = new EssentialServices(this.game);
 		Assert.Multiple(() => {
-			Assert.That(essentialServices.animation, Is.InstanceOf<Animation>());
-			Assert.That(this.game.Services.GetSafeServiceAs<IAnimation>, Is.SameAs(essentialServices.animation));
+			_ = Assert.IsType<Animation>(essentialServices.animation);
+			Assert.Same(essentialServices.animation, this.game.Services.GetSafeServiceAs<IAnimation>());
 		});
 	}
 
-	[Test]
+	[Fact]
 	public void MissingSystemMessage() {
 		this.game.Services.RemoveService<ISystemMessage>();
 		var essentialServices = new EssentialServices(this.game);
 		Assert.Multiple(() => {
-			Assert.That(essentialServices.systemMessage, Is.InstanceOf<ISystemMessage>());
-			Assert.That(this.game.Services.GetSafeServiceAs<ISystemMessage>, Is.SameAs(essentialServices.systemMessage));
+			_ = Assert.IsAssignableFrom<ISystemMessage>(essentialServices.systemMessage);
+			Assert.Same(essentialServices.systemMessage, this.game.Services.GetSafeServiceAs<ISystemMessage>());
 		});
 	}
 
-	[Test]
+	[Fact]
 	public void MissingPlayerMessage() {
 		this.game.Services.RemoveService<IPlayerMessage>();
 		var essentialServices = new EssentialServices(this.game);
 		Assert.Multiple(() => {
-			Assert.That(essentialServices.playerMessage, Is.InstanceOf<IPlayerMessage>());
-			Assert.That(this.game.Services.GetSafeServiceAs<IPlayerMessage>, Is.SameAs(essentialServices.playerMessage));
+			_ = Assert.IsAssignableFrom<IPlayerMessage>(essentialServices.playerMessage);
+			Assert.Same(essentialServices.playerMessage, this.game.Services.GetSafeServiceAs<IPlayerMessage>());
 		});
 	}
 
-	[Test]
+	[Fact]
 	public void MissingPrefabLoader() {
 		this.game.Services.RemoveService<IPrefabLoader>();
 		var essentialServices = new EssentialServices(this.game);
 		Assert.Multiple(() => {
-			Assert.That(essentialServices.prefabLoader, Is.InstanceOf<IPrefabLoader>());
-			Assert.That(this.game.Services.GetSafeServiceAs<IPrefabLoader>, Is.SameAs(essentialServices.prefabLoader));
+			_ = Assert.IsAssignableFrom<IPrefabLoader>(essentialServices.prefabLoader);
+			Assert.Same(essentialServices.prefabLoader, this.game.Services.GetSafeServiceAs<IPrefabLoader>());
 		});
 	}
 
-	[Test]
+	[Fact]
 	public void MissingInputDispatcher() {
 		this.game.Services.RemoveService<IPrefabLoader>();
 		var essentialServices = new EssentialServices(this.game);
 		Assert.Multiple(() => {
-			Assert.That(essentialServices.inputDispatcher, Is.InstanceOf<IInputDispatcher>());
-			Assert.That(this.game.Services.GetSafeServiceAs<IInputDispatcher>, Is.SameAs(essentialServices.inputDispatcher));
+			_ = Assert.IsAssignableFrom<IInputDispatcher>(essentialServices.inputDispatcher);
+			Assert.Same(essentialServices.inputDispatcher, this.game.Services.GetSafeServiceAs<IInputDispatcher>());
 		});
 	}
 }

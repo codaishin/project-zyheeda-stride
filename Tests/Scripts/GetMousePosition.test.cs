@@ -1,25 +1,19 @@
 namespace Tests;
 
-using System;
 using System.Linq;
 using Moq;
-using NUnit.Framework;
 using ProjectZyheeda;
 using Stride.Core.Mathematics;
 using Stride.Engine;
 using Stride.Physics;
+using Xunit;
 
-public class TestGetMousePosition : GameTestCollection, System.IDisposable {
-	private CameraComponent cameraComponent = new();
-	private GetMousePosition getMousePosition = new();
-	private IInputWrapper inputManagerWrapper = Mock.Of<IInputWrapper>();
+public class TestGetMousePosition : GameTestCollection {
+	private readonly CameraComponent cameraComponent;
+	private readonly GetMousePosition getMousePosition;
+	private readonly IInputWrapper inputManagerWrapper;
 
-	public void Dispose() {
-		GC.SuppressFinalize(this);
-	}
-
-	[SetUp]
-	public void SetUp() {
+	public TestGetMousePosition(GameFixture fixture) : base(fixture) {
 		// Uses the following view matrix (copied from a running game) to mock
 		// standardized camera view port:
 		// 	[M11:0.2 M12:0 M13:0 M14:0]
@@ -57,15 +51,15 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 		var box = new Entity { colliderComponent };
 		box.Transform.Position = new Vector3(0, 0, -10);
 
-		this.Scene.Entities.Add(box);
+		this.scene.Entities.Add(box);
 
 		this.game.WaitFrames(2);
 
-		this.Scene.Entities.Add(new Entity { this.cameraComponent });
-		this.Scene.Entities.Add(new Entity { this.getMousePosition });
+		this.scene.Entities.Add(new Entity { this.cameraComponent });
+		this.scene.Entities.Add(new Entity { this.getMousePosition });
 	}
 
-	[Test]
+	[Fact]
 	public void ProofOfConcept() {
 		var invViewProj = Matrix.Invert(this.cameraComponent.ViewProjectionMatrix);
 
@@ -91,12 +85,12 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 			.Raycast(nearVector.XYZ(), farVector.XYZ());
 
 		Assert.Multiple(() => {
-			Assert.That(hit.Succeeded, Is.True);
-			Assert.That(hit.Point, Is.EqualTo(new Vector3(0, 0, -7.5f)));
+			Assert.True(hit.Succeeded);
+			Assert.Equal(new Vector3(0, 0, -7.5f), hit.Point);
 		});
 	}
 
-	[Test]
+	[Fact]
 	public void Get00N5() {
 		_ = Mock.Get(this.game.Services.GetService<IInputWrapper>())
 			.SetupGet(i => i.MousePosition)
@@ -108,14 +102,11 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 			.GetTarget()
 			.Switch(
 				errors => Assert.Fail(string.Join(", ", errors)),
-				getTarget => Assert.That(
-					getTarget(),
-					Is.EqualTo(new Vector3(0, 0, -7.5f))
-				)
+				getTarget => Assert.Equal(new Vector3(0, 0, -7.5f), getTarget())
 			);
 	}
 
-	[Test]
+	[Fact]
 	public void GetN55N5() {
 		_ = Mock.Get(this.game.Services.GetService<IInputWrapper>())
 			.SetupGet(i => i.MousePosition)
@@ -127,14 +118,15 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 			.GetTarget()
 			.Switch(
 				errors => Assert.Fail(string.Join(", ", errors)),
-				getTarget => Assert.That(
+				getTarget => Assert.Equal(
+					new Vector3(-2, 2, -7.5f),
 					getTarget(),
-					Is.EqualTo(new Vector3(-2, 2, -7.5f)).Using(new VectorTolerance(0.0001f))
+					new VectorTolerance(0.0001f)
 				)
 			);
 	}
 
-	[Test]
+	[Fact]
 	public void NoHit() {
 		_ = Mock.Get(this.game.Services.GetService<IInputWrapper>())
 			.SetupGet(i => i.MousePosition)
@@ -145,12 +137,17 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 		this.getMousePosition
 			.GetTarget()
 			.Switch(
-				errors => Assert.That(errors, Is.EqualTo((Enumerable.Empty<SystemError>(), new PlayerError[] { GetMousePosition.invalidTarget }))),
+				errors => {
+					Assert.Multiple(() => {
+						Assert.Empty(errors.system);
+						Assert.Contains(GetMousePosition.invalidTarget, errors.player);
+					});
+				},
 				target => Assert.Fail($"Should not have hit something, but hit {target}")
 			);
 	}
 
-	[Test]
+	[Fact]
 	public void MousePositionError() {
 		_ = Mock.Get(this.game.Services.GetService<IInputWrapper>())
 			.SetupGet(i => i.MousePosition)
@@ -165,10 +162,10 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 				target => "no errors"
 			);
 
-		Assert.That(errors, Is.EqualTo("AAA, aaa"));
+		Assert.Equal("AAA, aaa", errors);
 	}
 
-	[Test]
+	[Fact]
 	public void MissingCamera() {
 		this.getMousePosition.camera = null;
 
@@ -180,6 +177,6 @@ public class TestGetMousePosition : GameTestCollection, System.IDisposable {
 			errors => (string)errors.system.First(),
 			_ => "okay"
 		);
-		Assert.That(error, Is.EqualTo(this.getMousePosition.MissingField(nameof(this.getMousePosition.camera))));
+		Assert.Equal(this.getMousePosition.MissingField(nameof(this.getMousePosition.camera)), error);
 	}
 }
