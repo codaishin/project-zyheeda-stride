@@ -55,7 +55,7 @@ Hierarchy:
                     74ca53bf10b979fccda28376174d91ea: !ProjectZyheeda.BehaviorController,project_zyheeda_stride
                         Id: cd6e3c0f-8bb1-4757-9dc1-f2f6c1143f2d
                         equipment: !ProjectZyheeda.ReferenceMoveController,project_zyheeda_stride
-                            target: ref!! 93319efb-06d3-41db-8335-064b07dbeafb
+                            Target: ref!! 93319efb-06d3-41db-8335-064b07dbeafb
                         agent: ref!! a70e6895-7fd3-4135-9869-1e5eb430a3c8
         -   Entity:
                 Id: 2f887163-c6c3-43ba-a199-ba751de9193c
