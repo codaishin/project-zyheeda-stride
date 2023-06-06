@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 public class InputController : ProjectZyheedaAsyncScript {
 	public IInputStream? input;
-	public IMaybe<IGetTarget>? getTarget;
+	public IGetTargetEditor? getTarget;
 	public IMaybe<IBehavior>? behavior;
 	public IMaybe<IScheduler>? scheduler;
 
@@ -17,7 +17,7 @@ public class InputController : ProjectZyheedaAsyncScript {
 		return Task.CompletedTask;
 	}
 
-	private Action<InputAction> RunBehavior(IGetTarget getTarget, IBehavior behavior, IScheduler scheduler) {
+	private Action<InputAction> RunBehavior(IGetTargetEditor getTarget, IBehavior behavior, IScheduler scheduler) {
 		return action => {
 			Func<(Func<Coroutine>, Cancel), Result> runOrEnqueue =
 				action is InputAction.Run
@@ -33,13 +33,13 @@ public class InputController : ProjectZyheedaAsyncScript {
 
 	private (IInputStream, Action<InputAction>)? GetInputAndRun() {
 		var getInputAndRun =
-			(IGetTarget getTarget) =>
+			(IGetTargetEditor getTarget) =>
 			(IBehavior behavior) =>
 			(IScheduler scheduler) =>
 			(IInputStream input) => (input, this.RunBehavior(getTarget, behavior, scheduler));
 
 		return getInputAndRun
-			.Apply(this.getTarget.ToMaybe().Flatten().ToOkOrSystemError(this.MissingField(nameof(this.getTarget))))
+			.Apply(this.getTarget.OkOrSystemError(this.MissingField(nameof(this.getTarget))))
 			.Apply(this.behavior.ToMaybe().Flatten().ToOkOrSystemError(this.MissingField(nameof(this.behavior))))
 			.Apply(this.scheduler.ToMaybe().Flatten().ToOkOrSystemError(this.MissingField(nameof(this.scheduler))))
 			.Apply(this.input.ToMaybe().ToOkOrSystemError(this.MissingField(nameof(this.input))))

@@ -14,7 +14,7 @@ public class TestInputController : GameTestCollection {
 	private readonly InputController controller;
 	private readonly IInputStream inputStream;
 	private readonly IBehavior behavior;
-	private readonly IGetTarget getTarget;
+	private readonly IGetTargetEditor getTarget;
 	private readonly IScheduler scheduler;
 	private readonly List<TaskCompletionSource<Result<InputAction>>> newActionFnTaskTokens;
 	private readonly ISystemMessage systemMessage;
@@ -26,7 +26,7 @@ public class TestInputController : GameTestCollection {
 		this.controller = new InputController {
 			input = this.inputStream = Mock.Of<IInputStream>(),
 			behavior = Maybe.Some(this.behavior = Mock.Of<IBehavior>()),
-			getTarget = Maybe.Some(this.getTarget = Mock.Of<IGetTarget>()),
+			getTarget = this.getTarget = Mock.Of<IGetTargetEditor>(),
 			scheduler = Maybe.Some(this.scheduler = Mock.Of<IScheduler>())
 		};
 
@@ -207,7 +207,7 @@ public class TestInputController : GameTestCollection {
 	public void MissingGetTarget() {
 		_ = this.scene.Entities.Remove(this.controller.Entity);
 
-		this.controller.getTarget = Maybe.None<IGetTarget>();
+		this.controller.getTarget = null;
 
 		this.scene.Entities.Add(this.controller.Entity);
 
@@ -269,7 +269,7 @@ public class TestInputController : GameTestCollection {
 		_ = this.scene.Entities.Remove(this.controller.Entity);
 
 		this.controller.input = null;
-		this.controller.getTarget = Maybe.None<IGetTarget>();
+		this.controller.getTarget = null;
 		this.controller.behavior = Maybe.None<IBehavior>();
 		this.controller.scheduler = Maybe.None<IScheduler>();
 
