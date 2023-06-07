@@ -30,7 +30,7 @@ public class InputDispatcher :
 			return;
 		}
 		foreach (var stream in this.streams) {
-			stream.ProcessEvent(key, inputEvent.IsDown);
+			_ = stream.ProcessEvent(key, inputEvent.IsDown);
 		}
 	}
 
@@ -40,7 +40,7 @@ public class InputDispatcher :
 			return;
 		}
 		foreach (var stream in this.streams) {
-			stream.ProcessEvent(button, inputEvent.IsDown);
+			_ = stream.ProcessEvent(button, inputEvent.IsDown);
 		}
 	}
 

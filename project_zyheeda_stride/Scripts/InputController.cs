@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 public class InputController : ProjectZyheedaAsyncScript {
-	public IInputStream? input;
+	public IInputStreamEditor? input;
 	public IGetTargetEditor? getTarget;
 	public IMaybe<IBehavior>? behavior;
 	public IMaybe<IScheduler>? scheduler;
@@ -31,19 +31,19 @@ public class InputController : ProjectZyheedaAsyncScript {
 		};
 	}
 
-	private (IInputStream, Action<InputAction>)? GetInputAndRun() {
+	private (IInputStreamEditor, Action<InputAction>)? GetInputAndRun() {
 		var getInputAndRun =
 			(IGetTargetEditor getTarget) =>
 			(IBehavior behavior) =>
 			(IScheduler scheduler) =>
-			(IInputStream input) => (input, this.RunBehavior(getTarget, behavior, scheduler));
+			(IInputStreamEditor input) => (input, this.RunBehavior(getTarget, behavior, scheduler));
 
 		return getInputAndRun
 			.Apply(this.getTarget.OkOrSystemError(this.MissingField(nameof(this.getTarget))))
 			.Apply(this.behavior.ToMaybe().Flatten().ToOkOrSystemError(this.MissingField(nameof(this.behavior))))
 			.Apply(this.scheduler.ToMaybe().Flatten().ToOkOrSystemError(this.MissingField(nameof(this.scheduler))))
 			.Apply(this.input.ToMaybe().ToOkOrSystemError(this.MissingField(nameof(this.input))))
-			.Switch<(IInputStream, Action<InputAction>)?>(
+			.Switch<(IInputStreamEditor, Action<InputAction>)?>(
 				errors => {
 					this.EssentialServices.systemMessage.Log(errors.system.ToArray());
 					return null;
