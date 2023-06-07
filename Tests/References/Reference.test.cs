@@ -2,32 +2,9 @@ namespace Tests;
 
 using System.Linq;
 using ProjectZyheeda;
-using Stride.Engine;
 using Xunit;
 
 public class ReferenceTests {
-	public interface IMock { }
-
-	private class MockComponent : StartupScript, IMock { }
-
-	private class MockReference : Reference<MockComponent, IMock> { }
-
-	[Fact]
-	public void None() {
-		var fallback = new MockComponent();
-		var reference = new MockReference();
-		Assert.Same(fallback, reference.UnpackOr(fallback));
-	}
-
-	[Fact]
-	public void Some() {
-		var fallback = new MockComponent();
-		var reference = new MockReference {
-			target = new(),
-		};
-		Assert.Same(reference.target, reference.UnpackOr(fallback));
-	}
-
 	private class StringReference : Reference<string> {
 		public string? Target {
 			get => this.GetRef();
