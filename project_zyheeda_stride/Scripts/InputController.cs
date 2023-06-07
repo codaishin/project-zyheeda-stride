@@ -6,10 +6,10 @@ using System.Linq;
 using System.Threading.Tasks;
 
 public class InputController : ProjectZyheedaAsyncScript {
-	public IInputStream? input;
-	public IMaybe<IGetTarget>? getTarget;
-	public IMaybe<IBehavior>? behavior;
-	public IMaybe<IScheduler>? scheduler;
+	public IInputStreamEditor? input;
+	public IGetTargetEditor? getTarget;
+	public IBehaviorEditor? behavior;
+	public ISchedulerEditor? scheduler;
 
 	private Task LogErrors((IEnumerable<SystemError> system, IEnumerable<PlayerError> player) errors) {
 		this.EssentialServices.systemMessage.Log(errors.system.ToArray());
@@ -17,7 +17,7 @@ public class InputController : ProjectZyheedaAsyncScript {
 		return Task.CompletedTask;
 	}
 
-	private Action<InputAction> RunBehavior(IGetTarget getTarget, IBehavior behavior, IScheduler scheduler) {
+	private Action<InputAction> RunBehavior(IGetTargetEditor getTarget, IBehavior behavior, IScheduler scheduler) {
 		return action => {
 			Func<(Func<Coroutine>, Cancel), Result> runOrEnqueue =
 				action is InputAction.Run
@@ -31,19 +31,19 @@ public class InputController : ProjectZyheedaAsyncScript {
 		};
 	}
 
-	private (IInputStream, Action<InputAction>)? GetInputAndRun() {
+	private (IInputStreamEditor, Action<InputAction>)? GetInputAndRun() {
 		var getInputAndRun =
-			(IGetTarget getTarget) =>
-			(IBehavior behavior) =>
-			(IScheduler scheduler) =>
-			(IInputStream input) => (input, this.RunBehavior(getTarget, behavior, scheduler));
+			(IGetTargetEditor getTarget) =>
+			(IBehaviorEditor behavior) =>
+			(ISchedulerEditor scheduler) =>
+			(IInputStreamEditor input) => (input, this.RunBehavior(getTarget, behavior, scheduler));
 
 		return getInputAndRun
-			.Apply(this.getTarget.ToMaybe().Flatten().ToOkOrSystemError(this.MissingField(nameof(this.getTarget))))
-			.Apply(this.behavior.ToMaybe().Flatten().ToOkOrSystemError(this.MissingField(nameof(this.behavior))))
-			.Apply(this.scheduler.ToMaybe().Flatten().ToOkOrSystemError(this.MissingField(nameof(this.scheduler))))
+			.Apply(this.getTarget.OkOrSystemError(this.MissingField(nameof(this.getTarget))))
+			.Apply(this.behavior.OkOrSystemError(this.MissingField(nameof(this.behavior))))
+			.Apply(this.scheduler.OkOrSystemError(this.MissingField(nameof(this.scheduler))))
 			.Apply(this.input.ToMaybe().ToOkOrSystemError(this.MissingField(nameof(this.input))))
-			.Switch<(IInputStream, Action<InputAction>)?>(
+			.Switch<(IInputStreamEditor, Action<InputAction>)?>(
 				errors => {
 					this.EssentialServices.systemMessage.Log(errors.system.ToArray());
 					return null;

@@ -6,3 +6,5 @@ using Stride.Core.Mathematics;
 public interface IBehavior {
 	Result<(Func<Coroutine>, Cancel)> GetCoroutine(Func<Vector3> getTarget);
 }
+
+public interface IBehaviorEditor : IBehavior { }

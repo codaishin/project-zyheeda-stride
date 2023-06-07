@@ -12,10 +12,10 @@ using Xunit;
 
 public class TestInputController : GameTestCollection {
 	private readonly InputController controller;
-	private readonly IInputStream inputStream;
-	private readonly IBehavior behavior;
-	private readonly IGetTarget getTarget;
-	private readonly IScheduler scheduler;
+	private readonly IInputStreamEditor inputStream;
+	private readonly IBehaviorEditor behavior;
+	private readonly IGetTargetEditor getTarget;
+	private readonly ISchedulerEditor scheduler;
 	private readonly List<TaskCompletionSource<Result<InputAction>>> newActionFnTaskTokens;
 	private readonly ISystemMessage systemMessage;
 	private readonly IPlayerMessage playerMessage;
@@ -24,10 +24,10 @@ public class TestInputController : GameTestCollection {
 	public TestInputController(GameFixture fixture) : base(fixture) {
 		var newActionCallCount = 0;
 		this.controller = new InputController {
-			input = this.inputStream = Mock.Of<IInputStream>(),
-			behavior = Maybe.Some(this.behavior = Mock.Of<IBehavior>()),
-			getTarget = Maybe.Some(this.getTarget = Mock.Of<IGetTarget>()),
-			scheduler = Maybe.Some(this.scheduler = Mock.Of<IScheduler>())
+			input = this.inputStream = Mock.Of<IInputStreamEditor>(),
+			behavior = this.behavior = Mock.Of<IBehaviorEditor>(),
+			getTarget = this.getTarget = Mock.Of<IGetTargetEditor>(),
+			scheduler = this.scheduler = Mock.Of<ISchedulerEditor>(),
 		};
 
 		this.newActionFnTaskTokens = new List<TaskCompletionSource<Result<InputAction>>> {
@@ -207,7 +207,7 @@ public class TestInputController : GameTestCollection {
 	public void MissingGetTarget() {
 		_ = this.scene.Entities.Remove(this.controller.Entity);
 
-		this.controller.getTarget = Maybe.None<IGetTarget>();
+		this.controller.getTarget = null;
 
 		this.scene.Entities.Add(this.controller.Entity);
 
@@ -222,7 +222,7 @@ public class TestInputController : GameTestCollection {
 	public void MissingBehavior() {
 		_ = this.scene.Entities.Remove(this.controller.Entity);
 
-		this.controller.behavior = Maybe.None<IBehavior>();
+		this.controller.behavior = null;
 
 		this.scene.Entities.Add(this.controller.Entity);
 
@@ -237,7 +237,7 @@ public class TestInputController : GameTestCollection {
 	public void MissingScheduler() {
 		_ = this.scene.Entities.Remove(this.controller.Entity);
 
-		this.controller.scheduler = Maybe.None<IScheduler>();
+		this.controller.scheduler = null;
 
 		this.scene.Entities.Add(this.controller.Entity);
 
@@ -269,9 +269,9 @@ public class TestInputController : GameTestCollection {
 		_ = this.scene.Entities.Remove(this.controller.Entity);
 
 		this.controller.input = null;
-		this.controller.getTarget = Maybe.None<IGetTarget>();
-		this.controller.behavior = Maybe.None<IBehavior>();
-		this.controller.scheduler = Maybe.None<IScheduler>();
+		this.controller.getTarget = null;
+		this.controller.behavior = null;
+		this.controller.scheduler = null;
 
 		this.scene.Entities.Add(this.controller.Entity);
 
@@ -377,7 +377,7 @@ public class TestInputController : GameTestCollection {
 	public void LogInputDispatcherAddErrors() {
 		_ = Mock
 			.Get(this.dispatcher)
-			.Setup(d => d.Add(It.IsAny<IInputStream>()))
+			.Setup(d => d.Add(It.IsAny<IInputStreamEditor>()))
 			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
 
 		_ = this.scene.Entities.Remove(this.controller.Entity);
@@ -397,7 +397,7 @@ public class TestInputController : GameTestCollection {
 	public void LogInputDispatcherRemoveErrors() {
 		_ = Mock
 			.Get(this.dispatcher)
-			.Setup(d => d.Remove(It.IsAny<IInputStream>()))
+			.Setup(d => d.Remove(It.IsAny<IInputStreamEditor>()))
 			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
 
 		this.game.WaitFrames(1);

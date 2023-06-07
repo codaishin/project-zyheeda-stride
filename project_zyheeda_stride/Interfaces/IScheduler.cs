@@ -7,3 +7,5 @@ public interface IScheduler {
 	Result Enqueue((Func<Coroutine>, Cancel) execution);
 	Result Clear();
 }
+
+public interface ISchedulerEditor : IScheduler { }

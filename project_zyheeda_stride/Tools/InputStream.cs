@@ -13,7 +13,7 @@ public enum InputKeys {
 }
 
 [DataContract]
-public class InputStream : IInputStream {
+public class InputStream : IInputStreamEditor {
 	public InputKeys activationKey = InputKeys.None;
 	public InputActivation activation = InputActivation.OnPress;
 	public InputKeys chainKey = InputKeys.None;

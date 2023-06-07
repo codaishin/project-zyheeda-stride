@@ -5,7 +5,7 @@ using Stride.Core.Mathematics;
 using Stride.Engine;
 
 public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
-	public IMaybe<IEquipment>? equipment;
+	public IEquipmentEditor? equipment;
 	public Entity? agent;
 
 	private static Result<FGetCoroutine> NothingEquipped() {
@@ -20,11 +20,10 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 		return Result.Ok<FGetCoroutine>((Func<Vector3> _) => (Run, Cancel));
 	}
 
-	private static Func<Entity, Result<FGetCoroutine>> GetBehaviorFn(IMaybe<IEquipment>? equipment) {
+	private static Func<Entity, Result<FGetCoroutine>> GetBehaviorFn(IEquipmentEditor? equipment) {
 		return (Entity agent) =>
 			equipment
 				.ToMaybe()
-				.Flatten()
 				.Switch(
 					equipment => equipment.PrepareCoroutineFor(agent),
 					BehaviorController.NothingEquipped

@@ -13,7 +13,7 @@ using Xunit;
 using Xunit.Sdk;
 
 public class TestAnimatedMove {
-	private readonly IMove move;
+	private readonly IMoveEditor move;
 	private readonly AnimatedMove animatedMove;
 	private readonly FGetCoroutine getCoroutine;
 	private readonly Func<IEnumerable<Result<IWait>>> run;
@@ -33,7 +33,7 @@ public class TestAnimatedMove {
 	}
 
 	public TestAnimatedMove() {
-		this.animatedMove = new() { move = this.move = Mock.Of<IMove>() };
+		this.animatedMove = new() { move = this.move = Mock.Of<IMoveEditor>() };
 		this.getCoroutine = Mock.Of<FGetCoroutine>();
 		this.run = Mock.Of<Func<IEnumerable<Result<IWait>>>>();
 		this.cancel = Mock.Of<Cancel>();

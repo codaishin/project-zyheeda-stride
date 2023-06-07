@@ -43,7 +43,7 @@ public class BehaviorControllerTest : GameTestCollection {
 	[Fact]
 	public void PassAgentToGetBehaviorFor() {
 		var getCoroutine = Mock.Of<FGetCoroutine>();
-		var equipment = Mock.Of<IEquipment>();
+		var equipment = Mock.Of<IEquipmentEditor>();
 		var agent = new Entity();
 
 		_ = Mock
@@ -52,7 +52,7 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Returns(Result.Ok(getCoroutine));
 
 		this.controller.agent = agent;
-		this.controller.equipment = Maybe.Some(equipment);
+		this.controller.equipment = equipment;
 
 		_ = this.controller.GetCoroutine(() => Vector3.Zero);
 
@@ -64,7 +64,7 @@ public class BehaviorControllerTest : GameTestCollection {
 	[Fact]
 	public void OnRunExecute() {
 		var getCoroutine = Mock.Of<FGetCoroutine>();
-		var equipment = Mock.Of<IEquipment>();
+		var equipment = Mock.Of<IEquipmentEditor>();
 		var target = new Vector3(1, 2, 3);
 
 		_ = Mock
@@ -81,7 +81,7 @@ public class BehaviorControllerTest : GameTestCollection {
 			});
 
 		this.controller.agent = new();
-		this.controller.equipment = Maybe.Some(equipment);
+		this.controller.equipment = equipment;
 
 		_ = this.controller.GetCoroutine(() => target);
 
@@ -112,7 +112,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 	[Fact]
 	public void RequirementsMissing() {
-		var equipment = Mock.Of<IEquipment>();
+		var equipment = Mock.Of<IEquipmentEditor>();
 		var message = "can't use gun";
 
 		_ = Mock
@@ -121,7 +121,7 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Returns(Result.PlayerError(message));
 
 		this.controller.agent = new();
-		this.controller.equipment = Maybe.Some(equipment);
+		this.controller.equipment = equipment;
 
 		var error = this.controller.GetCoroutine(() => Vector3.Zero).Switch<string>(
 			errors => errors.player.First(),
@@ -133,11 +133,11 @@ public class BehaviorControllerTest : GameTestCollection {
 
 	[Fact]
 	public void AgentMissing() {
-		var equipment = Mock.Of<IEquipment>();
+		var equipment = Mock.Of<IEquipmentEditor>();
 		var message = this.controller.MissingField(nameof(this.controller.agent));
 
 		this.controller.agent = null;
-		this.controller.equipment = Maybe.Some(equipment);
+		this.controller.equipment = equipment;
 
 		var error = this.controller.GetCoroutine(() => Vector3.Zero).Switch<string>(
 			errors => errors.system.First(),
@@ -150,7 +150,7 @@ public class BehaviorControllerTest : GameTestCollection {
 	[Fact]
 	public void ReturnBehaviorExecution() {
 		var getCoroutine = Mock.Of<FGetCoroutine>();
-		var equipment = Mock.Of<IEquipment>();
+		var equipment = Mock.Of<IEquipmentEditor>();
 		var target = new Vector3(1, 2, 3);
 		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (
 			() => Array.Empty<Result<IWait>>(),
@@ -167,7 +167,7 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Returns(execution);
 
 		this.controller.agent = new();
-		this.controller.equipment = Maybe.Some(equipment);
+		this.controller.equipment = equipment;
 
 		var gotExecution = this.controller.GetCoroutine(() => target).Switch(
 			errors => BehaviorControllerTest.Fail(errors),
@@ -182,10 +182,10 @@ public class BehaviorControllerNonGameTest {
 	[Fact]
 	public void NoEquipmentAssignErrorWhenNotInRunningGame() {
 		var controller = new BehaviorController();
-		var equipment = Mock.Of<IEquipment>();
+		var equipment = Mock.Of<IEquipmentEditor>();
 		controller.agent = new Entity();
 
-		var record = Record.Exception(() => controller.equipment = Maybe.Some(equipment));
+		var record = Record.Exception(() => controller.equipment = equipment);
 		Assert.Null(record);
 	}
 }
