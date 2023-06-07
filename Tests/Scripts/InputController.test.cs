@@ -13,7 +13,7 @@ using Xunit;
 public class TestInputController : GameTestCollection {
 	private readonly InputController controller;
 	private readonly IInputStreamEditor inputStream;
-	private readonly IBehavior behavior;
+	private readonly IBehaviorEditor behavior;
 	private readonly IGetTargetEditor getTarget;
 	private readonly IScheduler scheduler;
 	private readonly List<TaskCompletionSource<Result<InputAction>>> newActionFnTaskTokens;
@@ -25,7 +25,7 @@ public class TestInputController : GameTestCollection {
 		var newActionCallCount = 0;
 		this.controller = new InputController {
 			input = this.inputStream = Mock.Of<IInputStreamEditor>(),
-			behavior = Maybe.Some(this.behavior = Mock.Of<IBehavior>()),
+			behavior = this.behavior = Mock.Of<IBehaviorEditor>(),
 			getTarget = this.getTarget = Mock.Of<IGetTargetEditor>(),
 			scheduler = Maybe.Some(this.scheduler = Mock.Of<IScheduler>())
 		};
@@ -222,7 +222,7 @@ public class TestInputController : GameTestCollection {
 	public void MissingBehavior() {
 		_ = this.scene.Entities.Remove(this.controller.Entity);
 
-		this.controller.behavior = Maybe.None<IBehavior>();
+		this.controller.behavior = null;
 
 		this.scene.Entities.Add(this.controller.Entity);
 
@@ -270,7 +270,7 @@ public class TestInputController : GameTestCollection {
 
 		this.controller.input = null;
 		this.controller.getTarget = null;
-		this.controller.behavior = Maybe.None<IBehavior>();
+		this.controller.behavior = null;
 		this.controller.scheduler = Maybe.None<IScheduler>();
 
 		this.scene.Entities.Add(this.controller.Entity);

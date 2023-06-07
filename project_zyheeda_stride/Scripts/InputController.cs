@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 public class InputController : ProjectZyheedaAsyncScript {
 	public IInputStreamEditor? input;
 	public IGetTargetEditor? getTarget;
-	public IMaybe<IBehavior>? behavior;
+	public IBehaviorEditor? behavior;
 	public IMaybe<IScheduler>? scheduler;
 
 	private Task LogErrors((IEnumerable<SystemError> system, IEnumerable<PlayerError> player) errors) {
@@ -34,13 +34,13 @@ public class InputController : ProjectZyheedaAsyncScript {
 	private (IInputStreamEditor, Action<InputAction>)? GetInputAndRun() {
 		var getInputAndRun =
 			(IGetTargetEditor getTarget) =>
-			(IBehavior behavior) =>
+			(IBehaviorEditor behavior) =>
 			(IScheduler scheduler) =>
 			(IInputStreamEditor input) => (input, this.RunBehavior(getTarget, behavior, scheduler));
 
 		return getInputAndRun
 			.Apply(this.getTarget.OkOrSystemError(this.MissingField(nameof(this.getTarget))))
-			.Apply(this.behavior.ToMaybe().Flatten().ToOkOrSystemError(this.MissingField(nameof(this.behavior))))
+			.Apply(this.behavior.OkOrSystemError(this.MissingField(nameof(this.behavior))))
 			.Apply(this.scheduler.ToMaybe().Flatten().ToOkOrSystemError(this.MissingField(nameof(this.scheduler))))
 			.Apply(this.input.ToMaybe().ToOkOrSystemError(this.MissingField(nameof(this.input))))
 			.Switch<(IInputStreamEditor, Action<InputAction>)?>(
