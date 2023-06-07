@@ -35,7 +35,7 @@ Hierarchy:
                         behavior: !ProjectZyheeda.ReferenceBehaviorController,project_zyheeda_stride
                             Target: ref!! cd6e3c0f-8bb1-4757-9dc1-f2f6c1143f2d
                         scheduler: !ProjectZyheeda.ReferenceSchedularController,project_zyheeda_stride
-                            target: ref!! a585c668-e48f-42e3-ba34-c0e88883834e
+                            Target: ref!! a585c668-e48f-42e3-ba34-c0e88883834e
         -   Entity:
                 Id: 2b3d03a5-6086-452d-af65-8a103c8713eb
                 Name: Move

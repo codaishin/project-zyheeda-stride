@@ -9,7 +9,7 @@ public class InputController : ProjectZyheedaAsyncScript {
 	public IInputStreamEditor? input;
 	public IGetTargetEditor? getTarget;
 	public IBehaviorEditor? behavior;
-	public IMaybe<IScheduler>? scheduler;
+	public ISchedulerEditor? scheduler;
 
 	private Task LogErrors((IEnumerable<SystemError> system, IEnumerable<PlayerError> player) errors) {
 		this.EssentialServices.systemMessage.Log(errors.system.ToArray());
@@ -35,13 +35,13 @@ public class InputController : ProjectZyheedaAsyncScript {
 		var getInputAndRun =
 			(IGetTargetEditor getTarget) =>
 			(IBehaviorEditor behavior) =>
-			(IScheduler scheduler) =>
+			(ISchedulerEditor scheduler) =>
 			(IInputStreamEditor input) => (input, this.RunBehavior(getTarget, behavior, scheduler));
 
 		return getInputAndRun
 			.Apply(this.getTarget.OkOrSystemError(this.MissingField(nameof(this.getTarget))))
 			.Apply(this.behavior.OkOrSystemError(this.MissingField(nameof(this.behavior))))
-			.Apply(this.scheduler.ToMaybe().Flatten().ToOkOrSystemError(this.MissingField(nameof(this.scheduler))))
+			.Apply(this.scheduler.OkOrSystemError(this.MissingField(nameof(this.scheduler))))
 			.Apply(this.input.ToMaybe().ToOkOrSystemError(this.MissingField(nameof(this.input))))
 			.Switch<(IInputStreamEditor, Action<InputAction>)?>(
 				errors => {

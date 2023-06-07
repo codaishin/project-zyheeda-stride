@@ -15,7 +15,7 @@ public class TestInputController : GameTestCollection {
 	private readonly IInputStreamEditor inputStream;
 	private readonly IBehaviorEditor behavior;
 	private readonly IGetTargetEditor getTarget;
-	private readonly IScheduler scheduler;
+	private readonly ISchedulerEditor scheduler;
 	private readonly List<TaskCompletionSource<Result<InputAction>>> newActionFnTaskTokens;
 	private readonly ISystemMessage systemMessage;
 	private readonly IPlayerMessage playerMessage;
@@ -27,7 +27,7 @@ public class TestInputController : GameTestCollection {
 			input = this.inputStream = Mock.Of<IInputStreamEditor>(),
 			behavior = this.behavior = Mock.Of<IBehaviorEditor>(),
 			getTarget = this.getTarget = Mock.Of<IGetTargetEditor>(),
-			scheduler = Maybe.Some(this.scheduler = Mock.Of<IScheduler>())
+			scheduler = this.scheduler = Mock.Of<ISchedulerEditor>(),
 		};
 
 		this.newActionFnTaskTokens = new List<TaskCompletionSource<Result<InputAction>>> {
@@ -237,7 +237,7 @@ public class TestInputController : GameTestCollection {
 	public void MissingScheduler() {
 		_ = this.scene.Entities.Remove(this.controller.Entity);
 
-		this.controller.scheduler = Maybe.None<IScheduler>();
+		this.controller.scheduler = null;
 
 		this.scene.Entities.Add(this.controller.Entity);
 
@@ -271,7 +271,7 @@ public class TestInputController : GameTestCollection {
 		this.controller.input = null;
 		this.controller.getTarget = null;
 		this.controller.behavior = null;
-		this.controller.scheduler = Maybe.None<IScheduler>();
+		this.controller.scheduler = null;
 
 		this.scene.Entities.Add(this.controller.Entity);
 
