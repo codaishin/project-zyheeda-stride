@@ -5,7 +5,7 @@ using Stride.Engine;
 
 
 public class MoveController : ProjectZyheedaStartupScript, IEquipment {
-	public IAnimatedMove? move;
+	public IAnimatedMoveEditor? move;
 
 	private static Result<AnimationComponent> AnimatorOnChildOf(Entity agent) {
 		return agent
@@ -15,7 +15,7 @@ public class MoveController : ProjectZyheedaStartupScript, IEquipment {
 			.OkOrSystemError($"Missing AnimationComponent on {agent.Name}");
 	}
 
-	private Result<IAnimatedMove> EitherMoveOrError() {
+	private Result<IAnimatedMoveEditor> EitherMoveOrError() {
 		return this.move is null
 			? Result.SystemError(this.MissingField(nameof(this.move)))
 			: Result.Ok(this.move);
@@ -23,7 +23,7 @@ public class MoveController : ProjectZyheedaStartupScript, IEquipment {
 
 	public Result<FGetCoroutine> PrepareCoroutineFor(Entity agent) {
 		var prepareCoroutine =
-			(IAnimatedMove move) =>
+			(IAnimatedMoveEditor move) =>
 			(AnimationComponent agentAnimator) =>
 				move.PrepareCoroutineFor(
 					agent,

@@ -10,3 +10,5 @@ public interface IAnimatedMove {
 		Func<string, Result> playAnimation
 	);
 }
+
+public interface IAnimatedMoveEditor : IAnimatedMove { }

@@ -6,7 +6,7 @@ using Stride.Core.Mathematics;
 using Stride.Engine;
 
 [DataContract]
-public class StraightMove : IMove {
+public class StraightMove : IMoveEditor {
 	public float speed;
 
 	private Coroutine MoveTowards(TransformComponent agent, Func<Vector3> getTarget, FSpeedToDelta delta) {

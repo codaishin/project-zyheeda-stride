@@ -6,10 +6,10 @@ using Stride.Core.Mathematics;
 using Stride.Engine;
 
 [DataContract]
-public class AnimatedMove : IAnimatedMove {
+public class AnimatedMove : IAnimatedMoveEditor {
 	public static readonly string fallbackAnimationKey = "default";
 
-	public IMove? move;
+	public IMoveEditor? move;
 	public string animationKey = "";
 
 	private static Func<string, Result<IWait>> RunAnimation(Func<string, Result> playAnimation) {

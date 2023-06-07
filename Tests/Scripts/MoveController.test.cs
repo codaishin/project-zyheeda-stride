@@ -12,7 +12,7 @@ using Xunit.Sdk;
 public class TestMoveController : GameTestCollection {
 	private readonly Entity agent;
 	private readonly MoveController moveController;
-	private readonly IAnimatedMove move;
+	private readonly IAnimatedMoveEditor move;
 	private readonly IAnimation animation;
 
 	public TestMoveController(GameFixture fixture) : base(fixture) {
@@ -28,7 +28,7 @@ public class TestMoveController : GameTestCollection {
 
 		this.agent = new Entity();
 		this.agent.AddChild(new Entity { new AnimationComponent() });
-		this.move = Mock.Of<IAnimatedMove>();
+		this.move = Mock.Of<IAnimatedMoveEditor>();
 		this.moveController = new() { move = this.move };
 
 		Mock
