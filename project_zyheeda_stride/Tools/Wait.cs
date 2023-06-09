@@ -11,7 +11,7 @@ public readonly struct WaitFrame : IWait {
 }
 
 public readonly struct WaitMilliSeconds : IWait {
-	private readonly int milliSeconds;
+	public readonly int milliSeconds;
 
 	public WaitMilliSeconds(int milliseconds) {
 		this.milliSeconds = milliseconds;
