@@ -15,6 +15,10 @@ public abstract class ReferenceBehavior<TBehavior> : Reference<TBehavior>, IBeha
 	public Result<(Func<Coroutine>, Cancel)> GetCoroutine(Func<Vector3> getTarget) {
 		return this.target.FlatMap(b => b.GetCoroutine(getTarget));
 	}
+
+	public Result<(Func<Coroutine>, Cancel)> GetCoroutine() {
+		return this.target.FlatMap(b => b.GetCoroutine());
+	}
 }
 
 public class ReferenceBehaviorController : ReferenceBehavior<BehaviorController> { }
