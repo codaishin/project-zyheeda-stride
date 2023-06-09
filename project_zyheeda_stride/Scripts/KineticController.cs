@@ -7,23 +7,14 @@ using Stride.Core.Mathematics;
 using Stride.Core.MicroThreading;
 using Stride.Engine;
 
-public abstract class BaseKineticController<TMove> :
-	ProjectZyheedaAsyncScript,
-	IProjectile
-	where TMove : IMove {
-
+public class KineticController : ProjectZyheedaAsyncScript, IProjectile {
 	public PhysicsComponent? collider;
 	public float baseRange;
-
-	public readonly TMove move;
+	public IMoveEditor? move;
 	public event Action<PhysicsComponent>? OnHit;
 
 	private MicroThread? thread;
 	private Cancel cancel = () => Result.Ok();
-
-	public BaseKineticController(TMove move) : base() {
-		this.move = move;
-	}
 
 	private Task LogErrors((SystemErrors system, PlayerErrors player) errors) {
 		this.EssentialServices.playerMessage.Log(errors.player.ToArray());
@@ -74,11 +65,8 @@ public abstract class BaseKineticController<TMove> :
 
 	public Result Follow(Vector3 start, Func<Vector3> getTarget, float rangeMultiplier) {
 		return this.move
-			.PrepareCoroutineFor(this.Entity, this.Delta)
+			.OkOrSystemError(this.MissingField(nameof(this.move)))
+			.FlatMap(m => m.PrepareCoroutineFor(this.Entity, this.Delta))
 			.FlatMap(getCoroutine => this.Follow(start, getTarget, rangeMultiplier, getCoroutine));
 	}
-}
-
-public class KineticController : BaseKineticController<StraightMove> {
-	public KineticController() : base(new StraightMove()) { }
 }

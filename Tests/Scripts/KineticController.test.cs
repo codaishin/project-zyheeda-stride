@@ -11,11 +11,8 @@ using Stride.Physics;
 using Xunit;
 
 public class TestKineticController : GameTestCollection {
-	private class MockKineticController : BaseKineticController<IMove> {
-		public MockKineticController(IMove move) : base(move) { }
-	}
-
-	private readonly MockKineticController kineticController;
+	private readonly KineticController kineticController;
+	private readonly IMoveEditor move;
 	private readonly PhysicsComponent collider;
 	private readonly FGetCoroutine getCoroutine;
 	private readonly ISystemMessage systemMessage;
@@ -36,7 +33,8 @@ public class TestKineticController : GameTestCollection {
 			IsKinematic = true,
 			ColliderShape = new SphereColliderShape(is2D: false, radiusParam: 1f)
 		};
-		this.kineticController = new(move: Mock.Of<IMove>()) {
+		this.kineticController = new() {
+			move = this.move = Mock.Of<IMoveEditor>(),
 			collider = this.collider,
 		};
 		this.getCoroutine = Mock.Of<FGetCoroutine>();
@@ -62,8 +60,20 @@ public class TestKineticController : GameTestCollection {
 		_ = this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(1, 1, 1), 42f);
 
 		Mock
-			.Get(this.kineticController.move)
+			.Get(this.move)
 			.Verify(m => m.PrepareCoroutineFor(this.kineticController.Entity, It.IsAny<FSpeedToDelta>()), Times.Once);
+	}
+
+	[Fact]
+	public void PreparedCoroutineMissingMove() {
+		this.kineticController.move = null;
+		var result = this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(1, 1, 1), 42f);
+
+		var errors = result.Switch(
+			errors => (string)errors.system.FirstOrDefault(),
+			() => "no error"
+		);
+		Assert.Equal(this.kineticController.MissingField(nameof(this.kineticController.move)), errors);
 	}
 
 	[Fact]
@@ -71,7 +81,7 @@ public class TestKineticController : GameTestCollection {
 		var speedToDelta = null as FSpeedToDelta;
 
 		_ = Mock
-			.Get(this.kineticController.move)
+			.Get(this.move)
 			.Setup(m => m.PrepareCoroutineFor(It.IsAny<Entity>(), It.IsAny<FSpeedToDelta>()))
 			.Returns<Entity, FSpeedToDelta>((_, _speedToDelta) => {
 				speedToDelta = _speedToDelta;
@@ -89,7 +99,7 @@ public class TestKineticController : GameTestCollection {
 		var speedToDelta = null as FSpeedToDelta;
 
 		_ = Mock
-			.Get(this.kineticController.move)
+			.Get(this.move)
 			.Setup(m => m.PrepareCoroutineFor(It.IsAny<Entity>(), It.IsAny<FSpeedToDelta>()))
 			.Returns<Entity, FSpeedToDelta>((_, _speedToDelta) => {
 				speedToDelta = _speedToDelta;
@@ -378,7 +388,7 @@ public class TestKineticController : GameTestCollection {
 	[Fact]
 	public void ReturnMovePrepareCoroutineErrors() {
 		_ = Mock
-			.Get(this.kineticController.move)
+			.Get(this.move)
 			.Setup(m => m.PrepareCoroutineFor(It.IsAny<Entity>(), It.IsAny<FSpeedToDelta>()))
 			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "BBB" })));
 
