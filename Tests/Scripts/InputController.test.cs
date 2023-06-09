@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Moq;
 using ProjectZyheeda;
-using Stride.Core.Mathematics;
 using Stride.Engine;
 using Xunit;
 
@@ -14,7 +13,6 @@ public class TestInputController : GameTestCollection {
 	private readonly InputController controller;
 	private readonly IInputStreamEditor inputStream;
 	private readonly IBehaviorEditor behavior;
-	private readonly IGetTargetEditor getTarget;
 	private readonly ISchedulerEditor scheduler;
 	private readonly List<TaskCompletionSource<Result<InputAction>>> newActionFnTaskTokens;
 	private readonly ISystemMessage systemMessage;
@@ -26,7 +24,6 @@ public class TestInputController : GameTestCollection {
 		this.controller = new InputController {
 			input = this.inputStream = Mock.Of<IInputStreamEditor>(),
 			behavior = this.behavior = Mock.Of<IBehaviorEditor>(),
-			getTarget = this.getTarget = Mock.Of<IGetTargetEditor>(),
 			scheduler = this.scheduler = Mock.Of<ISchedulerEditor>(),
 		};
 
@@ -42,11 +39,6 @@ public class TestInputController : GameTestCollection {
 			.Get(this.controller.input)
 			.Setup(i => i.NewAction())
 			.Returns(() => this.newActionFnTaskTokens[newActionCallCount++].Task);
-
-		_ = Mock
-			.Get(this.getTarget)
-			.Setup(c => c.GetTarget())
-			.Returns(Result.Ok(() => Vector3.One));
 
 		this.game.Services.RemoveService<ISystemMessage>();
 		this.game.Services.AddService(this.systemMessage = Mock.Of<ISystemMessage>());
@@ -87,44 +79,36 @@ public class TestInputController : GameTestCollection {
 	}
 
 	[Fact]
-	public void RunBehaviorWithTarget() {
+	public void RunBehavior() {
 		static IEnumerable<Result<IWait>> run() {
 			yield break;
 		}
 
 		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (run, () => Result.Ok());
 
-		_ = Mock.Get(this.getTarget)
-			.Setup(c => c.GetTarget())
-			.Returns(Result.Ok(() => new Vector3(1, 2, 3)));
 		_ = Mock.Get(this.behavior)
-			.Setup(c => c.GetCoroutine(It.IsAny<Func<Vector3>>()))
-			.Returns((Func<Vector3> getTarget) => {
-				Assert.Equal(new Vector3(1, 2, 3), getTarget());
-				return execution;
-			});
+			.Setup(c => c.GetCoroutine())
+			.Returns(execution);
+
 		this.newActionFnTaskTokens[0].SetResult(InputAction.Run);
 
 		this.game.WaitFrames(1);
 
 		Mock
 			.Get(this.behavior)
-			.Verify(b => b.GetCoroutine(It.IsAny<Func<Vector3>>()), Times.Once);
+			.Verify(b => b.GetCoroutine(), Times.Once);
 	}
 
 	[Fact]
-	public void RunBehaviorWithTargetTwice() {
+	public void RunBehaviorTwice() {
 		static IEnumerable<Result<IWait>> run() {
 			yield break;
 		}
 
 		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (run, () => Result.Ok());
 
-		_ = Mock.Get(this.getTarget)
-			.Setup(c => c.GetTarget())
-			.Returns(Result.Ok(() => new Vector3(1, 2, 3)));
 		_ = Mock.Get(this.behavior)
-			.Setup(c => c.GetCoroutine(It.IsAny<Func<Vector3>>()))
+			.Setup(c => c.GetCoroutine())
 			.Returns(execution);
 		this.newActionFnTaskTokens[0].SetResult(InputAction.Run);
 		this.newActionFnTaskTokens[1].SetResult(InputAction.Run);
@@ -144,11 +128,8 @@ public class TestInputController : GameTestCollection {
 
 		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (run, () => Result.Ok());
 
-		_ = Mock.Get(this.getTarget)
-			.Setup(c => c.GetTarget())
-			.Returns(Result.Ok(() => new Vector3(1, 2, 3)));
 		_ = Mock.Get(this.behavior)
-			.Setup(c => c.GetCoroutine(It.IsAny<Func<Vector3>>()))
+			.Setup(c => c.GetCoroutine())
 			.Returns(execution);
 		this.newActionFnTaskTokens[0].SetResult(InputAction.Chain);
 
@@ -157,65 +138,6 @@ public class TestInputController : GameTestCollection {
 		Mock
 			.Get(this.scheduler)
 			.Verify(b => b.Enqueue(execution), Times.Once);
-	}
-
-	[Fact]
-	public void DoNotRunBehaviorWithNoTarget() {
-		_ = Mock.Get(this.getTarget)
-			.Setup(c => c.GetTarget())
-			.Returns(Result.SystemError("ERROR"));
-		this.newActionFnTaskTokens[0].SetResult(InputAction.Chain);
-
-		this.game.WaitFrames(1);
-
-		Mock
-			.Get(this.behavior)
-			.Verify(b => b.GetCoroutine(It.IsAny<Func<Vector3>>()), Times.Never);
-	}
-
-	[Fact]
-	public void LogGetTargetSystemError() {
-		_ = Mock
-			.Get(this.getTarget)
-			.Setup(c => c.GetTarget())
-			.Returns(Result.SystemError("ERROR"));
-
-		this.newActionFnTaskTokens[0].SetResult(InputAction.Chain);
-
-		this.game.WaitFrames(2);
-
-		Mock
-			.Get(this.systemMessage)
-			.Verify(m => m.Log("ERROR"), Times.Once);
-	}
-
-	[Fact]
-	public void LogGetTargetPlayerError() {
-		_ = Mock.Get(this.getTarget)
-			.Setup(c => c.GetTarget())
-			.Returns(Result.PlayerError("ERROR"));
-		this.newActionFnTaskTokens[0].SetResult(InputAction.Chain);
-
-		this.game.WaitFrames(1);
-
-		Mock
-			.Get(this.playerMessage)
-			.Verify(m => m.Log("ERROR"), Times.Once);
-	}
-
-	[Fact]
-	public void MissingGetTarget() {
-		_ = this.scene.Entities.Remove(this.controller.Entity);
-
-		this.controller.getTarget = null;
-
-		this.scene.Entities.Add(this.controller.Entity);
-
-		this.game.WaitFrames(2);
-
-		Mock
-			.Get(this.systemMessage)
-			.Verify(s => s.Log(this.controller.MissingField(nameof(this.controller.getTarget))), Times.Once);
 	}
 
 	[Fact]
@@ -269,7 +191,6 @@ public class TestInputController : GameTestCollection {
 		_ = this.scene.Entities.Remove(this.controller.Entity);
 
 		this.controller.input = null;
-		this.controller.getTarget = null;
 		this.controller.behavior = null;
 		this.controller.scheduler = null;
 
@@ -280,7 +201,6 @@ public class TestInputController : GameTestCollection {
 		Mock
 			.Get(this.systemMessage)
 			.Verify(s => s.Log(
-				this.controller.MissingField(nameof(this.controller.getTarget)),
 				this.controller.MissingField(nameof(this.controller.behavior)),
 				this.controller.MissingField(nameof(this.controller.scheduler)),
 				this.controller.MissingField(nameof(this.controller.input))
@@ -291,7 +211,7 @@ public class TestInputController : GameTestCollection {
 	public void LogCoroutineError() {
 		_ = Mock
 			.Get(this.behavior)
-			.Setup(b => b.GetCoroutine(It.IsAny<Func<Vector3>>()))
+			.Setup(b => b.GetCoroutine())
 			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
 
 		this.newActionFnTaskTokens[0].SetResult(InputAction.Run);
@@ -310,7 +230,7 @@ public class TestInputController : GameTestCollection {
 	public void LogActionError() {
 		_ = Mock
 			.Get(this.behavior)
-			.Setup(b => b.GetCoroutine(It.IsAny<Func<Vector3>>()))
+			.Setup(b => b.GetCoroutine())
 			.Returns((() => Enumerable.Empty<Result<IWait>>(), () => Result.Ok()));
 
 		this.newActionFnTaskTokens[0].SetResult(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
@@ -329,7 +249,7 @@ public class TestInputController : GameTestCollection {
 	public void LogCoroutineRunError() {
 		_ = Mock
 			.Get(this.behavior)
-			.Setup(b => b.GetCoroutine(It.IsAny<Func<Vector3>>()))
+			.Setup(b => b.GetCoroutine())
 			.Returns((() => Enumerable.Empty<Result<IWait>>(), () => Result.Ok()));
 
 		_ = Mock
@@ -353,7 +273,7 @@ public class TestInputController : GameTestCollection {
 	public void LogCoroutineEnqueError() {
 		_ = Mock
 			.Get(this.behavior)
-			.Setup(b => b.GetCoroutine(It.IsAny<Func<Vector3>>()))
+			.Setup(b => b.GetCoroutine())
 			.Returns((() => Enumerable.Empty<Result<IWait>>(), () => Result.Ok()));
 
 		_ = Mock

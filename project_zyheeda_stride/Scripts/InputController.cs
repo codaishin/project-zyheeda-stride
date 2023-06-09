@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 
 public class InputController : ProjectZyheedaAsyncScript {
 	public IInputStreamEditor? input;
-	public IGetTargetEditor? getTarget;
 	public IBehaviorEditor? behavior;
 	public ISchedulerEditor? scheduler;
 
@@ -17,15 +16,14 @@ public class InputController : ProjectZyheedaAsyncScript {
 		return Task.CompletedTask;
 	}
 
-	private Action<InputAction> RunBehavior(IGetTargetEditor getTarget, IBehavior behavior, IScheduler scheduler) {
+	private Action<InputAction> RunBehavior(IBehavior behavior, IScheduler scheduler) {
 		return action => {
 			Func<(Func<Coroutine>, Cancel), Result> runOrEnqueue =
 				action is InputAction.Run
 					? scheduler.Run
 					: scheduler.Enqueue;
-			getTarget
-				.GetTarget()
-				.FlatMap(behavior.GetCoroutine)
+			behavior
+				.GetCoroutine()
 				.FlatMap(runOrEnqueue)
 				.Switch(errors => this.LogErrors(errors), () => { });
 		};
@@ -33,19 +31,18 @@ public class InputController : ProjectZyheedaAsyncScript {
 
 	private (IInputStreamEditor, Action<InputAction>)? GetInputAndRun() {
 		var getInputAndRun =
-			(IGetTargetEditor getTarget) =>
 			(IBehaviorEditor behavior) =>
 			(ISchedulerEditor scheduler) =>
-			(IInputStreamEditor input) => (input, this.RunBehavior(getTarget, behavior, scheduler));
+			(IInputStreamEditor input) =>
+				(input, this.RunBehavior(behavior, scheduler));
 
 		return getInputAndRun
-			.Apply(this.getTarget.OkOrSystemError(this.MissingField(nameof(this.getTarget))))
 			.Apply(this.behavior.OkOrSystemError(this.MissingField(nameof(this.behavior))))
 			.Apply(this.scheduler.OkOrSystemError(this.MissingField(nameof(this.scheduler))))
-			.Apply(this.input.ToMaybe().ToOkOrSystemError(this.MissingField(nameof(this.input))))
+			.Apply(this.input.OkOrSystemError(this.MissingField(nameof(this.input))))
 			.Switch<(IInputStreamEditor, Action<InputAction>)?>(
 				errors => {
-					this.EssentialServices.systemMessage.Log(errors.system.ToArray());
+					_ = this.LogErrors(errors);
 					return null;
 				},
 				run => run

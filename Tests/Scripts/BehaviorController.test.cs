@@ -11,21 +11,20 @@ using Xunit;
 using Xunit.Sdk;
 
 public class BehaviorControllerTest : GameTestCollection {
-	private readonly ISystemMessage systemMessage;
-	private readonly IPlayerMessage playerMessage;
+
 	private readonly BehaviorController controller;
+	private readonly IGetTargetEditor getTarget;
 
 	public BehaviorControllerTest(GameFixture fixture) : base(fixture) {
-		this.systemMessage = Mock.Of<ISystemMessage>();
-		this.playerMessage = Mock.Of<IPlayerMessage>();
-		this.controller = new();
-
-		this.game.Services.RemoveService<ISystemMessage>();
-		this.game.Services.RemoveService<IPlayerMessage>();
-		this.game.Services.AddService(this.systemMessage);
-		this.game.Services.AddService(this.playerMessage);
-
+		this.controller = new BehaviorController {
+			getTarget = this.getTarget = Mock.Of<IGetTargetEditor>()
+		};
 		this.scene.Entities.Add(new Entity { this.controller });
+
+		_ = Mock
+			.Get(this.getTarget)
+			.Setup(g => g.GetTarget())
+			.Returns(Result.Ok(() => Vector3.Zero));
 
 		this.game.WaitFrames(2);
 	}
@@ -54,7 +53,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		this.controller.agent = agent;
 		this.controller.equipment = equipment;
 
-		_ = this.controller.GetCoroutine(() => Vector3.Zero);
+		_ = this.controller.GetCoroutine();
 
 		Mock
 			.Get(equipment)
@@ -62,10 +61,15 @@ public class BehaviorControllerTest : GameTestCollection {
 	}
 
 	[Fact]
-	public void OnRunExecute() {
+	public void ExecuteWithTarget() {
 		var getCoroutine = Mock.Of<FGetCoroutine>();
 		var equipment = Mock.Of<IEquipmentEditor>();
 		var target = new Vector3(1, 2, 3);
+
+		_ = Mock
+			.Get(this.getTarget)
+			.Setup(g => g.GetTarget())
+			.Returns(Result.Ok(() => target));
 
 		_ = Mock
 			.Get(equipment)
@@ -83,7 +87,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		this.controller.agent = new();
 		this.controller.equipment = equipment;
 
-		_ = this.controller.GetCoroutine(() => target);
+		_ = this.controller.GetCoroutine();
 
 		Mock
 			.Get(getCoroutine)
@@ -91,14 +95,53 @@ public class BehaviorControllerTest : GameTestCollection {
 	}
 
 	[Fact]
+	public void MissingGetTarget() {
+		this.controller.agent = new Entity();
+		this.controller.equipment = Mock.Of<IEquipmentEditor>();
+		this.controller.getTarget = null;
+
+		var result = this.controller.GetCoroutine();
+		var error = result.Switch(
+			errors => (string)errors.system.FirstOrDefault(),
+			_ => "no error"
+		);
+
+		Assert.Equal(this.controller.MissingField(nameof(this.controller.getTarget)), error);
+	}
+
+	[Fact]
+	public void GetTargetError() {
+		this.controller.agent = new Entity();
+		this.controller.equipment = Mock.Of<IEquipmentEditor>();
+
+		_ = Mock
+			.Get(this.controller.equipment)
+			.Setup(e => e.PrepareCoroutineFor(It.IsAny<Entity>()))
+			.Returns(Result.Ok(Mock.Of<FGetCoroutine>()));
+
+		_ = Mock
+			.Get(this.getTarget)
+			.Setup(g => g.GetTarget())
+			.Returns(Result.SystemError("AAA"));
+
+		var result = this.controller.GetCoroutine();
+		var error = result.Switch(
+			errors => (string)errors.system.FirstOrDefault(),
+			_ => "no error"
+		);
+
+		Assert.Equal("AAA", error);
+	}
+
+	[Fact]
 	public void EquipmentMissingOnUse() {
 		var target = Vector3.UnitX;
 		this.controller.agent = new Entity("Player");
 
-		var (run, _) = this.controller.GetCoroutine(() => target).Switch(
+		var (run, _) = this.controller.GetCoroutine().Switch(
 			errors => BehaviorControllerTest.Fail(errors),
 			runAndCancel => runAndCancel
-		); ;
+		);
 		var coroutine = run().GetEnumerator();
 
 		_ = coroutine.MoveNext();
@@ -123,7 +166,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		this.controller.agent = new();
 		this.controller.equipment = equipment;
 
-		var error = this.controller.GetCoroutine(() => Vector3.Zero).Switch<string>(
+		var error = this.controller.GetCoroutine().Switch<string>(
 			errors => errors.player.First(),
 			_ => "no errors"
 		);
@@ -139,7 +182,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		this.controller.agent = null;
 		this.controller.equipment = equipment;
 
-		var error = this.controller.GetCoroutine(() => Vector3.Zero).Switch<string>(
+		var error = this.controller.GetCoroutine().Switch<string>(
 			errors => errors.system.First(),
 			_ => "no errors"
 		);
@@ -169,7 +212,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		this.controller.agent = new();
 		this.controller.equipment = equipment;
 
-		var gotExecution = this.controller.GetCoroutine(() => target).Switch(
+		var gotExecution = this.controller.GetCoroutine().Switch(
 			errors => BehaviorControllerTest.Fail(errors),
 			runAndCancel => runAndCancel
 		);
