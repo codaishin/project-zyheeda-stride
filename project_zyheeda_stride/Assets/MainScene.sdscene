@@ -7,6 +7,7 @@ Offset: {X: 0.0, Y: 0.0, Z: 0.0}
 Hierarchy:
     RootParts:
         - ref!! 96a3fb43-e76c-456f-a87b-cb71a2b3bd33
+        - ref!! 9eea4c41-a449-4a76-8b7f-e7d5631647e7
         - ref!! 01a2d2a4-6e9b-4028-81a6-59542f289931
         - ref!! 47529c61-f3f5-4e6a-996e-35d7833bb089
         - ref!! 82a62d82-93ee-4b76-abd5-e8ca57e3b7fb
@@ -114,6 +115,32 @@ Hierarchy:
                             7b49924f11cc9b2db72770e729b52f88~walk: cf335415-587a-4533-b128-e84db5f55420:walkHoldRifle
                             922aa77c255c3670fd8d17ba9b434555~default: 9b805952-a55c-4da3-81b4-d956810deced:holdRifle
         -   Entity:
+                Id: 5ef30111-7bd0-404e-bb88-ffcac054dc6a
+                Name: ChestTargetPlane
+                Components:
+                    6266cc39aaf4b60694f963cf2d86cf09: !TransformComponent
+                        Id: 34a3887f-8310-44d5-902e-cd9db6cc8854
+                        Position: {X: 0.0, Y: 1.5, Z: 0.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    bce4b872884d6214dce116c417a70717: !StaticColliderComponent
+                        Id: 7914727a-e991-4254-a65b-331848669262
+                        CollisionGroup: CustomFilter2
+                        CanCollideWith: DefaultFilter
+                        CanSleep: false
+                        Restitution: 0.0
+                        Friction: 0.5
+                        RollingFriction: 0.0
+                        CcdMotionThreshold: 0.0
+                        CcdSweptSphereRadius: 0.0
+                        IsTrigger: false
+                        AlwaysUpdateNaviMeshCache: false
+                        ColliderShapes:
+                            b1287bf8a40a1d3b607af587ef463f0c: !StaticPlaneColliderShapeDesc
+                                Normal: {X: 0.0, Y: 1.0, Z: 0.0}
+                                Offset: 0.0
+        -   Entity:
                 Id: 7dcac667-fdfd-46ab-80e1-ffb0a2e4edab
                 Name: rifle
                 Components:
@@ -143,6 +170,8 @@ Hierarchy:
                         Materials: {}
                     fda03e76a9de8f8d30a6dab067709993: !StaticColliderComponent
                         Id: 9a72e989-e802-4a7b-b8ca-9785a309cce1
+                        CollisionGroup: CustomFilter1
+                        CanCollideWith: DefaultFilter
                         CanSleep: false
                         Restitution: 0.0
                         Friction: 0.5
@@ -197,7 +226,7 @@ Hierarchy:
                         NodeName: gun.R
         -   Entity:
                 Id: 96a3fb43-e76c-456f-a87b-cb71a2b3bd33
-                Name: GetMousePosition
+                Name: GetMousePositionGround
                 Components:
                     2488513b735f9ce83715c85405394465: !TransformComponent
                         Id: 9ca23f46-15c0-4f98-9586-73d7eac0b58e
@@ -208,6 +237,22 @@ Hierarchy:
                     0a7508d2f6629a366b59c673da9d4e80: !ProjectZyheeda.GetMousePosition,project_zyheeda_stride
                         Id: 7d51016a-d614-4104-a392-31d63207bd35
                         camera: ref!! 3383a41f-1f72-4e4b-9693-3be1e9d658d5
+                        collideWith: CustomFilter1
+        -   Entity:
+                Id: 9eea4c41-a449-4a76-8b7f-e7d5631647e7
+                Name: GetMousePositionChestHeight
+                Components:
+                    2488513b735f9ce83715c85405394465: !TransformComponent
+                        Id: bed36a99-a04e-4428-ae9d-5ad007ac1ab2
+                        Position: {X: 0.0, Y: 0.0, Z: 0.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children:
+                            e54ad3d9aa1dc0e6bdea131ae2f2becc: ref!! 34a3887f-8310-44d5-902e-cd9db6cc8854
+                    0a7508d2f6629a366b59c673da9d4e80: !ProjectZyheeda.GetMousePosition,project_zyheeda_stride
+                        Id: 8f400ba3-9a14-4a86-b36b-f3083fddc5df
+                        camera: ref!! 3383a41f-1f72-4e4b-9693-3be1e9d658d5
+                        collideWith: CustomFilter2
         -   Entity:
                 Id: a70e6895-7fd3-4135-9869-1e5eb430a3c8
                 Name: Player
