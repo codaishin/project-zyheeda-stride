@@ -19,6 +19,29 @@ public static class Messages {
 		return $"{obj}: '{fieldName}' not assigned";
 	}
 
+	public static string MissingComponentOnPrefab(this EntityComponent component, string prefabField, string componentName) {
+		var name = Messages.EntityName(component.Entity);
+		var type = component.GetType().Name;
+		return $"{name} ({type}): '{prefabField}' misses component of type {componentName}";
+	}
+
+	public static string MissingEntitiesOnPrefab(this EntityComponent component, string prefabField) {
+		var name = Messages.EntityName(component.Entity);
+		var type = component.GetType().Name;
+		return $"{name} ({type}): '{prefabField}' has no entities";
+	}
+
+	public static string EntitiesCountMismatchOnPrefab(
+		this EntityComponent component,
+		string prefabField,
+		int expected,
+		int actual
+	) {
+		var name = Messages.EntityName(component.Entity);
+		var type = component.GetType().Name;
+		return $"{name} ({type}): '{prefabField}' had {actual} number of entities, but we expected only {expected}";
+	}
+
 	public static string MissingService<T>(this EntityComponent component) {
 		var name = Messages.EntityName(component.Entity);
 		var type = component.GetType().Name;
