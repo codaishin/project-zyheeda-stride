@@ -1,0 +1,82 @@
+namespace ProjectZyheeda;
+
+using Stride.Engine;
+
+public class LauncherController : ProjectZyheedaStartupScript, IEquipment {
+	public static readonly string fallbackAnimationKey = "default";
+
+	public TransformComponent? spawnProjectileAt;
+	public IMagazineEditor? magazine;
+	public string animationKey = "";
+	public float rangeModifier = 1f;
+	public int preCastMilliseconds;
+	public int afterCastMilliseconds;
+
+	private static WaitMilliSeconds Delay(int milliSeconds) {
+		return new WaitMilliSeconds(milliSeconds);
+	}
+
+	private static IWait NoDelay(IPlayingAnimation _) {
+		return new NoWait();
+	}
+
+	private static IWait NoDelay() {
+		return new NoWait();
+	}
+
+	private FGetCoroutine PrepareCoroutine(
+		AnimationComponent agentAnimator,
+		IMagazine magazine,
+		TransformComponent spawnTransform
+	) {
+		return target => {
+			Coroutine Run() {
+				yield return this.EssentialServices.animation
+					.Play(agentAnimator, this.animationKey)
+					.Map(LauncherController.NoDelay);
+
+				yield return LauncherController
+					.Delay(this.preCastMilliseconds);
+
+				yield return magazine
+					.GetProjectile()
+					.FlatMap(projectile => projectile.Follow(spawnTransform.Position, target, this.rangeModifier))
+					.Map(LauncherController.NoDelay);
+
+				yield return LauncherController
+					.Delay(this.afterCastMilliseconds);
+
+				yield return this.EssentialServices.animation
+					.Play(agentAnimator, LauncherController.fallbackAnimationKey)
+					.Map(LauncherController.NoDelay);
+			}
+
+			Result Cancel() {
+				return this.EssentialServices.animation
+					.Play(agentAnimator, LauncherController.fallbackAnimationKey);
+			}
+
+			return (Run, Cancel);
+		};
+	}
+
+	public Result<FGetCoroutine> PrepareCoroutineFor(Entity agent) {
+		var prepareCoroutine =
+			(AnimationComponent agentAnimator) =>
+			(IMagazineEditor magazine) =>
+			(TransformComponent spawnTransform) =>
+				this.PrepareCoroutine(agentAnimator, magazine, spawnTransform);
+
+		var agentAnimator = agent.Get<AnimationComponent>()
+			.OkOrSystemError(agent.MissingComponent(nameof(AnimationComponent)));
+		var magazine = this.magazine
+			.OkOrSystemError(this.MissingField(nameof(this.magazine)));
+		var spawnTransform = this.spawnProjectileAt
+			.OkOrSystemError(this.MissingField(nameof(this.spawnProjectileAt)));
+
+		return prepareCoroutine
+			.Apply(agentAnimator)
+			.Apply(magazine)
+			.Apply(spawnTransform);
+	}
+}

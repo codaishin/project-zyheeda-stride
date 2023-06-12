@@ -9,10 +9,11 @@ public class GetMousePosition : ProjectZyheedaStartupScript, IGetTarget {
 	public static readonly string invalidTarget = "Invalid target";
 
 	public CameraComponent? camera;
+	public CollisionFilterGroupFlags collideWith = CollisionFilterGroupFlags.DefaultFilter;
 
 	private Result<Simulation> simulation = Result.SystemError("NOT STARTED");
 
-	private static Result<Func<Vector3>> WorldPosition(
+	private Result<Func<Vector3>> WorldPosition(
 		Vector2 mousePos,
 		Simulation simulation,
 		CameraComponent camera
@@ -27,7 +28,7 @@ public class GetMousePosition : ProjectZyheedaStartupScript, IGetTarget {
 		var farVector = Vector3.Transform(farPos, invViewProj);
 		farVector /= farVector.W;
 
-		var hit = simulation.Raycast(nearVector.XYZ(), farVector.XYZ());
+		var hit = simulation.Raycast(nearVector.XYZ(), farVector.XYZ(), filterFlags: this.collideWith);
 
 		return hit.Succeeded
 			? Result.Ok(() => hit.Point)
@@ -44,7 +45,7 @@ public class GetMousePosition : ProjectZyheedaStartupScript, IGetTarget {
 		var getTarget =
 			(Simulation simulation) =>
 			(CameraComponent camera) =>
-			(Vector2 mousePos) => GetMousePosition.WorldPosition(mousePos, simulation, camera);
+			(Vector2 mousePos) => this.WorldPosition(mousePos, simulation, camera);
 
 		return getTarget
 			.Apply(this.simulation)

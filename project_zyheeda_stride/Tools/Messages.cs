@@ -19,6 +19,11 @@ public static class Messages {
 		return $"{obj}: '{fieldName}' not assigned";
 	}
 
+	public static string MissingComponent(this Entity entity, string componentName) {
+		var name = Messages.EntityName(entity);
+		return $"{name}: misses component of type {componentName}";
+	}
+
 	public static string MissingComponentOnPrefab(this EntityComponent component, string prefabField, string componentName) {
 		var name = Messages.EntityName(component.Entity);
 		var type = component.GetType().Name;

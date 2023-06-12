@@ -12,6 +12,7 @@ public class TestGetMousePosition : GameTestCollection {
 	private readonly CameraComponent cameraComponent;
 	private readonly GetMousePosition getMousePosition;
 	private readonly IInputWrapper inputManagerWrapper;
+	private readonly StaticColliderComponent collisionTarget;
 
 	public TestGetMousePosition(GameFixture fixture) : base(fixture) {
 		// Uses the following view matrix (copied from a running game) to mock
@@ -44,11 +45,11 @@ public class TestGetMousePosition : GameTestCollection {
 
 		this.getMousePosition = new GetMousePosition { camera = this.cameraComponent };
 
-		var colliderComponent = new StaticColliderComponent();
-		colliderComponent
+		this.collisionTarget = new StaticColliderComponent { CanCollideWith = CollisionFilterGroupFlags.AllFilter };
+		this.collisionTarget
 			.ColliderShapes
 			.Add(new BoxColliderShapeDesc { Size = new(5, 5, 5) });
-		var box = new Entity { colliderComponent };
+		var box = new Entity { this.collisionTarget };
 		box.Transform.Position = new Vector3(0, 0, -10);
 
 		this.scene.Entities.Add(box);
@@ -178,5 +179,23 @@ public class TestGetMousePosition : GameTestCollection {
 			_ => "okay"
 		);
 		Assert.Equal(this.getMousePosition.MissingField(nameof(this.getMousePosition.camera)), error);
+	}
+
+	[Fact]
+	public void NoHitOnFilterMismatch() {
+		_ = Mock.Get(this.game.Services.GetService<IInputWrapper>())
+			.SetupGet(i => i.MousePosition)
+			.Returns(new Vector2(0.5f, 0.5f));
+
+		this.getMousePosition.collideWith = CollisionFilterGroupFlags.CustomFilter2;
+
+		this.game.WaitFrames(2);
+
+		this.getMousePosition
+			.GetTarget()
+			.Switch(
+				errors => Assert.Equal(GetMousePosition.invalidTarget, (string)errors.player.FirstOrDefault()),
+				getTarget => Assert.Fail("hit something, should have hit nothing")
+			);
 	}
 }
