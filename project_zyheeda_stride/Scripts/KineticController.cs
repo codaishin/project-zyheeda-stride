@@ -12,6 +12,7 @@ public class KineticController : ProjectZyheedaAsyncScript, IProjectile {
 	public float baseRange;
 	public IMoveEditor? move;
 	public event Action<PhysicsComponent>? OnHit;
+	public event Action? OnRangeLimit;
 
 	private MicroThread? thread;
 	private Cancel cancel = () => Result.Ok();
@@ -49,15 +50,21 @@ public class KineticController : ProjectZyheedaAsyncScript, IProjectile {
 		return (float)this.Game.UpdateTime.Elapsed.TotalSeconds * speed;
 	}
 
+	private Vector3 AdjustTargetByRange(Vector3 start, Func<Vector3> getTarget, float rangeMultiplier) {
+		var direction = Vector3.Normalize(getTarget() - start);
+		return start + (direction * this.baseRange * rangeMultiplier);
+	}
+
 	private Result Follow(Vector3 start, Func<Vector3> getTarget, float rangeMultiplier, FGetCoroutine getCoroutine) {
-		var scaledDirection = (getTarget() - start) * this.baseRange * rangeMultiplier;
-		(var run, this.cancel) = getCoroutine(() => start + scaledDirection);
+		var target = this.AdjustTargetByRange(start, getTarget, rangeMultiplier);
+		(var run, this.cancel) = getCoroutine(() => target);
 
 		this.thread?.Cancel();
 		this.thread = this.Script.AddTask(async () => {
 			foreach (var pause in run()) {
 				await pause.Switch(this.LogErrors, this.WaitPause);
 			}
+			this.OnRangeLimit?.Invoke();
 		});
 		this.Entity.Transform.Position = start;
 		return Result.Ok();

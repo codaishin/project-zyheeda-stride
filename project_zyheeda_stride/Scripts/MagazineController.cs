@@ -24,6 +24,7 @@ public class MagazineController : ProjectZyheedaStartupScript, IMagazine {
 	private void ManageInstanceLifetime(Entity instance, IProjectile projectile) {
 		this.Entity.Scene.Entities.Add(instance);
 		projectile.OnHit += _ => this.Entity.Scene.Entities.Remove(instance);
+		projectile.OnRangeLimit += () => this.Entity.Scene.Entities.Remove(instance);
 	}
 
 	private Result<IProjectile> GetInstanceProjectileComponent(Entity instance) {

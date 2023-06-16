@@ -55,8 +55,9 @@ public class MagazineControllerTests : GameTestCollection {
 		Assert.Contains(this.projectileInstance, this.scene.Entities);
 	}
 
-	private class MockProjectileComponent : StartupScript, IProjectile {
+	private class MockProjectileOnHitComponent : StartupScript, IProjectile {
 		public event Action<PhysicsComponent>? OnHit;
+		public event Action? OnRangeLimit { add { } remove { } }
 
 		public Result Follow(Vector3 start, Func<Vector3> getTarget, float rangeMultiplier) {
 			this.OnHit?.Invoke(new RigidbodyComponent());
@@ -64,9 +65,36 @@ public class MagazineControllerTests : GameTestCollection {
 		}
 	}
 
+	private class MockProjectileOnRangeLimitComponent : StartupScript, IProjectile {
+		public event Action<PhysicsComponent>? OnHit { add { } remove { } }
+		public event Action? OnRangeLimit;
+
+		public Result Follow(Vector3 start, Func<Vector3> getTarget, float rangeMultiplier) {
+			this.OnRangeLimit?.Invoke();
+			return Result.Ok();
+		}
+	}
+
 	[Fact]
 	public void OnHitRemovesEntity() {
-		var projectileInstance = new Entity { new MockProjectileComponent() };
+		var projectileInstance = new Entity { new MockProjectileOnHitComponent() };
+
+		_ = Mock
+			.Get(this.prefabLoader)
+			.Setup(l => l.Instantiate(It.IsAny<Prefab>()))
+			.Returns(new List<Entity> { projectileInstance });
+
+		_ = this.controller
+			.GetProjectile()
+			.UnpackOr(Mock.Of<IProjectile>())
+			.Follow(Vector3.Zero, () => Vector3.Zero, 1f);
+
+		Assert.DoesNotContain(projectileInstance, this.scene.Entities);
+	}
+
+	[Fact]
+	public void OnRangeLimitRemovesEntity() {
+		var projectileInstance = new Entity { new MockProjectileOnRangeLimitComponent() };
 
 		_ = Mock
 			.Get(this.prefabLoader)
