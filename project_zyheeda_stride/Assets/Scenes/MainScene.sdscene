@@ -184,9 +184,9 @@ Hierarchy:
                         magazine: !ProjectZyheeda.ReferenceMagazineController,project_zyheeda_stride
                             Target: ref!! ea5e9f1f-4dd7-415c-b851-306c2dbf927c
                         animationKey: aim rifle
-                        rangeModifier: 1.0
-                        preCastMilliseconds: 500
-                        afterCastMilliseconds: 500
+                        rangeModifier: 20.0
+                        preCastMilliseconds: 200
+                        afterCastMilliseconds: 200
                     17c2901cace07d9dbf9ea0fabfd99992: !ProjectZyheeda.BehaviorController,project_zyheeda_stride
                         Id: f23cde4b-fdf3-4964-91e9-f5367b2c40ed
                         getTarget: !ProjectZyheeda.ReferenceGetMousePosition,project_zyheeda_stride
