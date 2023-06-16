@@ -14,11 +14,13 @@ public class LauncherControllerTests : GameTestCollection {
 	private readonly IProjectile projectile = Mock.Of<IProjectile>();
 	private readonly IMagazineEditor magazine = Mock.Of<IMagazineEditor>();
 	private readonly IAnimation animation = Mock.Of<IAnimation>();
-	private readonly Entity agent = new() { new AnimationComponent() };
+	private readonly Entity agent = new();
+	private readonly AnimationComponent agentAnimator = new();
 
 	public LauncherControllerTests(GameFixture fixture) : base(fixture) {
 		this.controller.magazine = this.magazine;
 		this.controller.spawnProjectileAt = new Entity().Transform;
+		this.agent.AddChild(new Entity { this.agentAnimator });
 
 		this.scene.Entities.Add(new Entity { this.controller });
 
@@ -100,7 +102,7 @@ public class LauncherControllerTests : GameTestCollection {
 
 		Mock
 			.Get(this.animation)
-			.Verify(a => a.Play(this.agent.Get<AnimationComponent>(), "shoot"));
+			.Verify(a => a.Play(this.agentAnimator, "shoot"));
 	}
 
 	[Fact]
@@ -142,7 +144,7 @@ public class LauncherControllerTests : GameTestCollection {
 
 		Mock
 			.Get(this.animation)
-			.Verify(a => a.Play(this.agent.Get<AnimationComponent>(), LauncherController.fallbackAnimationKey));
+			.Verify(a => a.Play(this.agentAnimator, LauncherController.fallbackAnimationKey));
 		_ = Assert.IsType<NoWait>(last.UnpackOr(new WaitFrame()));
 	}
 
@@ -184,7 +186,7 @@ public class LauncherControllerTests : GameTestCollection {
 
 		Mock
 			.Get(this.animation)
-			.Verify(a => a.Play(this.agent.Get<AnimationComponent>(), LauncherController.fallbackAnimationKey));
+			.Verify(a => a.Play(this.agentAnimator, LauncherController.fallbackAnimationKey));
 		Assert.Equal(Result.Ok(), result);
 	}
 
@@ -297,4 +299,17 @@ public class LauncherControllerTests : GameTestCollection {
 		Assert.Equal(agent.MissingComponent(nameof(AnimationComponent)), error);
 	}
 
+	[Fact]
+	public void CanHandleAnimationComponentNotFirstChildOfAgent() {
+		var agent = new Entity();
+		agent.AddChild(new Entity());
+		agent.AddChild(new Entity { new AnimationComponent() });
+
+		var ok = this.controller.PrepareCoroutineFor(agent).Switch(
+			_ => false,
+			_ => true
+		);
+
+		Assert.True(ok);
+	}
 }

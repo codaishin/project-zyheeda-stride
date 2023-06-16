@@ -1,5 +1,6 @@
 namespace ProjectZyheeda;
 
+using System.Linq;
 using Stride.Engine;
 
 public class LauncherController : ProjectZyheedaStartupScript, IEquipment {
@@ -67,7 +68,9 @@ public class LauncherController : ProjectZyheedaStartupScript, IEquipment {
 			(TransformComponent spawnTransform) =>
 				this.PrepareCoroutine(agentAnimator, magazine, spawnTransform);
 
-		var agentAnimator = agent.Get<AnimationComponent>()
+		var agentAnimator = agent.GetChildren()
+			.Select(c => c.Get<AnimationComponent>())
+			.FirstOrDefault(e => e is not null)
 			.OkOrSystemError(agent.MissingComponent(nameof(AnimationComponent)));
 		var magazine = this.magazine
 			.OkOrSystemError(this.MissingField(nameof(this.magazine)));
