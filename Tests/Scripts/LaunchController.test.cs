@@ -277,6 +277,77 @@ public class LauncherControllerTests : GameTestCollection {
 	}
 
 	[Fact]
+	public void LookAtTargetXZ() {
+		var target = () => new Vector3(1, 2, 3);
+		this.controller.rangeModifier = 2f;
+
+		var getCoroutine = this.controller.PrepareCoroutineFor(this.agent).Switch(
+			_ => LauncherControllerTests.Fail("got errors"),
+			v => v
+		);
+		var (run, _) = getCoroutine(target);
+
+		var enumerator = run().GetEnumerator();
+		_ = enumerator.MoveNext();
+
+		var lookVector = new Vector3(1, 0, 3);
+		lookVector.Normalize();
+
+		Assert.Equal(
+			Quaternion.LookRotation(lookVector, Vector3.UnitY),
+			this.agent.Transform.Rotation
+		);
+	}
+
+	[Fact]
+	public void LookAtTargetXZWithAgentY() {
+		var target = () => new Vector3(1, 2, 3);
+		this.controller.rangeModifier = 2f;
+		this.agent.Transform.Position = Vector3.UnitY;
+
+		var getCoroutine = this.controller.PrepareCoroutineFor(this.agent).Switch(
+			_ => LauncherControllerTests.Fail("got errors"),
+			v => v
+		);
+		var (run, _) = getCoroutine(target);
+
+		var enumerator = run().GetEnumerator();
+		_ = enumerator.MoveNext();
+
+		var lookVector = new Vector3(1, 0, 3);
+		lookVector.Normalize();
+
+		Assert.Equal(
+			Quaternion.LookRotation(lookVector, Vector3.UnitY),
+			this.agent.Transform.Rotation
+		);
+	}
+
+	[Fact]
+	public void LookAtTargetXZWithAgentNotAtZero() {
+		var target = () => new Vector3(5, 6, 7);
+		this.controller.rangeModifier = 2f;
+		this.agent.Transform.Position = Vector3.One;
+
+		var getCoroutine = this.controller.PrepareCoroutineFor(this.agent).Switch(
+			_ => LauncherControllerTests.Fail("got errors"),
+			v => v
+		);
+		var (run, _) = getCoroutine(target);
+
+		var enumerator = run().GetEnumerator();
+		_ = enumerator.MoveNext();
+
+		var lookVector = new Vector3(4, 0, 6);
+		lookVector.Normalize();
+
+		Assert.Equal(
+			Quaternion.LookRotation(lookVector, Vector3.UnitY),
+			this.agent.Transform.Rotation
+		);
+	}
+
+	[Fact]
 	public void FollowTargetError() {
 		_ = Mock
 			.Get(this.projectile)

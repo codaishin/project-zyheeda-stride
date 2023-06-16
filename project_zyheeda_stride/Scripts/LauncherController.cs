@@ -1,7 +1,9 @@
 namespace ProjectZyheeda;
 
+using System;
 using System.Linq;
 using Stride.Core;
+using Stride.Core.Mathematics;
 using Stride.Engine;
 
 public class LauncherController : ProjectZyheedaStartupScript, IEquipment {
@@ -26,13 +28,24 @@ public class LauncherController : ProjectZyheedaStartupScript, IEquipment {
 		return new NoWait();
 	}
 
+	private static Vector3 LookDirection(TransformComponent agent, Func<Vector3> target) {
+		var targetPosition = target();
+		var lookTarget = new Vector3(targetPosition.X, agent.Position.Y, targetPosition.Z);
+		var lookDirection = lookTarget - agent.Position;
+		lookDirection.Normalize();
+		return lookDirection;
+	}
+
 	private FGetCoroutine PrepareCoroutine(
+		TransformComponent agent,
 		AnimationComponent agentAnimator,
 		IMagazine magazine,
 		TransformComponent spawnTransform
 	) {
 		return target => {
 			Coroutine Run() {
+				var lookDirection = LauncherController.LookDirection(agent, target);
+				agent.Rotation = Quaternion.LookRotation(lookDirection, Vector3.UnitY);
 				yield return this.EssentialServices.animation
 					.Play(agentAnimator, this.animationKey)
 					.Map(LauncherController.NoDelay);
@@ -68,7 +81,7 @@ public class LauncherController : ProjectZyheedaStartupScript, IEquipment {
 			(AnimationComponent agentAnimator) =>
 			(IMagazineEditor magazine) =>
 			(TransformComponent spawnTransform) =>
-				this.PrepareCoroutine(agentAnimator, magazine, spawnTransform);
+				this.PrepareCoroutine(agent.Transform, agentAnimator, magazine, spawnTransform);
 
 		var agentAnimator = agent.GetChildren()
 			.Select(c => c.Get<AnimationComponent>())
