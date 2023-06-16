@@ -1,0 +1,7 @@
+!Texture
+Id: 89f6be41-78cf-4ec5-9172-763924127783
+SerializedVersion: {Stride: 2.0.0.0}
+Tags: []
+Source: !file ../../../Textures/Blue.png
+Type: !ColorTextureType
+    ColorKeyColor: {R: 255, G: 0, B: 255, A: 255}
