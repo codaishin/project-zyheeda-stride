@@ -23,6 +23,7 @@ public class LauncherControllerTests : GameTestCollection {
 		this.agent.AddChild(new Entity { this.agentAnimator });
 
 		this.scene.Entities.Add(new Entity { this.controller });
+		this.scene.Entities.Add(this.controller.spawnProjectileAt.Entity);
 
 		this.game.Services.RemoveService<IAnimation>();
 		this.game.Services.AddService<IAnimation>(this.animation);
@@ -217,6 +218,43 @@ public class LauncherControllerTests : GameTestCollection {
 		var spawn = new Vector3(5, 6, 7);
 		this.controller.rangeModifier = 2f;
 		this.controller.spawnProjectileAt!.Position = spawn;
+
+		this.game.WaitFrames(1);
+
+		var getCoroutine = this.controller.PrepareCoroutineFor(this.agent).Switch(
+			_ => LauncherControllerTests.Fail("got errors"),
+			v => v
+		);
+		var (run, _) = getCoroutine(target);
+
+		var enumerator = run().GetEnumerator();
+		_ = enumerator.MoveNext();
+		_ = enumerator.MoveNext();
+		_ = enumerator.MoveNext();
+
+		Mock
+			.Get(this.projectile)
+			.Verify(p => p.Follow(spawn, target, this.controller.rangeModifier), Times.Once);
+
+		var noWait = enumerator.Current.UnpackOr(new WaitFrame());
+
+		_ = Assert.IsType<NoWait>(noWait);
+	}
+
+	[Fact]
+	public void FollowTargetSpawnWorldPosition() {
+		var target = () => new Vector3(1, 2, 3);
+		var spawn = new Vector3(5, 6, 7);
+		var spawnEntityParent = new Entity();
+		spawnEntityParent.AddChild(new Entity());
+
+		this.scene.Entities.Add(spawnEntityParent);
+
+		this.controller.rangeModifier = 2f;
+		this.controller.spawnProjectileAt = spawnEntityParent.GetChild(0).Transform;
+		spawnEntityParent.Transform.Position = spawn;
+
+		this.game.WaitFrames(1);
 
 		var getCoroutine = this.controller.PrepareCoroutineFor(this.agent).Switch(
 			_ => LauncherControllerTests.Fail("got errors"),

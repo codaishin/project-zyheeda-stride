@@ -1,17 +1,18 @@
 namespace ProjectZyheeda;
 
 using System.Linq;
+using Stride.Core;
 using Stride.Engine;
 
 public class LauncherController : ProjectZyheedaStartupScript, IEquipment {
 	public static readonly string fallbackAnimationKey = "default";
 
-	public TransformComponent? spawnProjectileAt;
-	public IMagazineEditor? magazine;
-	public string animationKey = "";
-	public float rangeModifier = 1f;
-	public int preCastMilliseconds;
-	public int afterCastMilliseconds;
+	[DataMember(0)] public TransformComponent? spawnProjectileAt;
+	[DataMember(1)] public IMagazineEditor? magazine;
+	[DataMember(2)] public string animationKey = "";
+	[DataMember(3)] public float rangeModifier = 1f;
+	[DataMember(3)] public int preCastMilliseconds;
+	[DataMember(4)] public int afterCastMilliseconds;
 
 	private static WaitMilliSeconds Delay(int milliSeconds) {
 		return new WaitMilliSeconds(milliSeconds);
@@ -39,9 +40,10 @@ public class LauncherController : ProjectZyheedaStartupScript, IEquipment {
 				yield return LauncherController
 					.Delay(this.preCastMilliseconds);
 
+				var spawn = spawnTransform.WorldMatrix.TranslationVector;
 				yield return magazine
 					.GetProjectile()
-					.FlatMap(projectile => projectile.Follow(spawnTransform.Position, target, this.rangeModifier))
+					.FlatMap(projectile => projectile.Follow(spawn, target, this.rangeModifier))
 					.Map(LauncherController.NoDelay);
 
 				yield return LauncherController
