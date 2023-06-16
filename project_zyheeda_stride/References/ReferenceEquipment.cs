@@ -17,3 +17,4 @@ public abstract class ReferenceEquipment<TEquipment> : Reference<TEquipment>, IE
 }
 
 public class ReferenceMoveController : ReferenceEquipment<MoveController> { }
+public class ReferenceLaunchController : ReferenceEquipment<LauncherController> { }
