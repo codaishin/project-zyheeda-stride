@@ -2,7 +2,7 @@
 Id: 75895eb1-08a6-41b0-bbdc-17a0d3b5b727
 SerializedVersion: {Stride: 2.0.0.0}
 Tags: []
-Source: !file ../../models/dummy.fbx
+Source: !file ../../../../models/dummy.fbx
 PivotPosition: {X: 0.0, Y: 0.0, Z: 0.0}
 Nodes:
     1a29809d060ec267524ac50cf092003e: {Name: RootNode, Depth: 0}
@@ -72,4 +72,4 @@ Nodes:
     fa598763060cb985ffb17aeaac0c8813: {Name: upper_armIK.R, Depth: 3}
     03da6bb1375ddd0502379be5e30ca818: {Name: upper_armIK.R_end, Depth: 4}
 ~SourceHashes:
-    feb7699c9cdadc4e61c10ab09a729106~../../models/dummy.fbx: a507fba60540f57ce34c54c4fe27d505
+    3b4dea010fb6618ab24691309087ee55~../../../../models/dummy.fbx: a507fba60540f57ce34c54c4fe27d505

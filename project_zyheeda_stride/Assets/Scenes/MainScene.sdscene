@@ -35,6 +35,16 @@ Hierarchy:
                             Target: ref!! cd6e3c0f-8bb1-4757-9dc1-f2f6c1143f2d
                         scheduler: !ProjectZyheeda.ReferenceSchedularController,project_zyheeda_stride
                             Target: ref!! a585c668-e48f-42e3-ba34-c0e88883834e
+                    fe30bf0d79e5310638f10cf1c389984c: !ProjectZyheeda.InputController,project_zyheeda_stride
+                        Id: 3e58509c-00e9-4dda-b8aa-92f91495a993
+                        input: !ProjectZyheeda.InputStream,project_zyheeda_stride
+                            activationKey: MouseRight
+                            activation: OnPress
+                            chainKey: None
+                        behavior: !ProjectZyheeda.ReferenceBehaviorController,project_zyheeda_stride
+                            Target: ref!! f23cde4b-fdf3-4964-91e9-f5367b2c40ed
+                        scheduler: !ProjectZyheeda.ReferenceSchedularController,project_zyheeda_stride
+                            Target: ref!! a585c668-e48f-42e3-ba34-c0e88883834e
         -   Entity:
                 Id: 2b3d03a5-6086-452d-af65-8a103c8713eb
                 Name: Move
@@ -71,13 +81,23 @@ Hierarchy:
                     b70cb45919deaf5ba2baaa96dbf30e72: !ProjectZyheeda.SchedulerController,project_zyheeda_stride
                         Id: a585c668-e48f-42e3-ba34-c0e88883834e
         -   Entity:
+                Id: 3f4909c5-2f98-4c04-b65f-7d5c1cb9b368
+                Name: ForwardProjictileSpawn
+                Components:
+                    01150ed267773c0f71b3e543049d1ce9: !TransformComponent
+                        Id: ced314a0-83c4-41d2-a0ed-82da86c4fbdf
+                        Position: {X: 0.0, Y: 1.5, Z: 1.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+        -   Entity:
                 Id: 47529c61-f3f5-4e6a-996e-35d7833bb089
                 Name: Camera
                 Components:
                     d00e07ff586d6d7cf248ebd5edf3f5af: !TransformComponent
                         Id: 5cc5e608-ca18-4092-92ba-0c36a856337b
-                        Position: {X: 6.1952677, Y: 2.376318, Z: -2.4525821}
-                        Rotation: {X: -0.062812164, Y: 0.82379085, Z: 0.09312285, W: 0.555654}
+                        Position: {X: 6.1952677, Y: 10.698876, Z: -2.4525821}
+                        Rotation: {X: -0.27621835, Y: 0.7208359, Z: 0.40951043, W: 0.48621}
                         Scale: {X: 1.0, Y: 1.0, Z: 1.0}
                         Children: {}
                     2174bf14446d2409bf324502442eee01: !CameraComponent
@@ -106,14 +126,15 @@ Hierarchy:
                         Children: {}
                     9b1605e368427ae0f704ab15b271c1b7: !ModelComponent
                         Id: 132eb10e-a1cc-4a3b-86a2-5cb7b19e319f
-                        Model: 45748d85-2eef-411a-9b7e-1bbda1beda94:dummy
+                        Model: 45748d85-2eef-411a-9b7e-1bbda1beda94:Models/Dummy/dummy
                         Materials: {}
                     c320984b256f275a13d5e222ebdf03b8: !AnimationComponent
                         Id: e9c60005-fe76-4c32-95e3-e88a99f47527
                         Animations:
-                            0188dfc3d419d32837434088df9604af~run: b1d901ba-2513-4f4e-a848-3a240d8ec261:runHoldRifle
-                            7b49924f11cc9b2db72770e729b52f88~walk: cf335415-587a-4533-b128-e84db5f55420:walkHoldRifle
-                            922aa77c255c3670fd8d17ba9b434555~default: 9b805952-a55c-4da3-81b4-d956810deced:holdRifle
+                            0188dfc3d419d32837434088df9604af~run: b1d901ba-2513-4f4e-a848-3a240d8ec261:Animations/runHoldRifle
+                            7b49924f11cc9b2db72770e729b52f88~walk: cf335415-587a-4533-b128-e84db5f55420:Animations/walkHoldRifle
+                            922aa77c255c3670fd8d17ba9b434555~default: 9b805952-a55c-4da3-81b4-d956810deced:Animations/holdRifle
+                            f80ffe471882c68c10f22f9402640de3~aim rifle: 66d2c5c1-cee3-4e6c-8ca2-f51c32b1c22f:Animations/aimRifle
         -   Entity:
                 Id: 5ef30111-7bd0-404e-bb88-ffcac054dc6a
                 Name: ChestTargetPlane
@@ -142,18 +163,37 @@ Hierarchy:
                                 Offset: 0.0
         -   Entity:
                 Id: 7dcac667-fdfd-46ab-80e1-ffb0a2e4edab
-                Name: rifle
+                Name: Rifle
                 Components:
                     cb4d5eee30a7286fd96cf462e9931890: !TransformComponent
                         Id: cf0eaf33-0d3d-4852-a2be-61922150eba8
-                        Position: {X: -0.01758459, Y: 0.25032148, Z: 0.088884175}
-                        Rotation: {X: -0.050593626, Y: 0.7666758, Z: 0.63864887, W: 0.042144876}
+                        Position: {X: 0.0, Y: 0.24, Z: 0.2}
+                        Rotation: {X: -3.9055985E-07, Y: -0.70710677, Z: -0.70710677, W: 3.9055985E-07}
                         Scale: {X: 1.0, Y: 1.0, Z: 1.0}
                         Children: {}
                     4f7e9b62d8fcd1f03a18e49ffb7ccb27: !ModelComponent
                         Id: b4f50447-c34f-42c3-bd4b-6cd67371466b
-                        Model: 18428c98-d86f-490d-96c4-b5711f4c47dc:dummyRifle
+                        Model: 18428c98-d86f-490d-96c4-b5711f4c47dc:Models/Dummy/dummyRifle
                         Materials: {}
+                    760ae1394ee06b1c52106be750fdc9d8: !ProjectZyheeda.MagazineController,project_zyheeda_stride
+                        Id: ea5e9f1f-4dd7-415c-b851-306c2dbf927c
+                        prefab: 9443d269-6572-402c-b824-798a19b82e35:Prefabs/Projectiles/Projectile
+                    0a3189e6d751cfb4405c0c7a7410cefe: !ProjectZyheeda.LauncherController,project_zyheeda_stride
+                        Id: 32c043d9-0b9c-4580-ba20-2b8c69f0fd59
+                        spawnProjectileAt: ref!! ced314a0-83c4-41d2-a0ed-82da86c4fbdf
+                        magazine: !ProjectZyheeda.ReferenceMagazineController,project_zyheeda_stride
+                            Target: ref!! ea5e9f1f-4dd7-415c-b851-306c2dbf927c
+                        animationKey: aim rifle
+                        rangeModifier: 1.0
+                        preCastMilliseconds: 500
+                        afterCastMilliseconds: 500
+                    17c2901cace07d9dbf9ea0fabfd99992: !ProjectZyheeda.BehaviorController,project_zyheeda_stride
+                        Id: f23cde4b-fdf3-4964-91e9-f5367b2c40ed
+                        getTarget: !ProjectZyheeda.ReferenceGetMousePosition,project_zyheeda_stride
+                            Target: ref!! 8f400ba3-9a14-4a86-b36b-f3083fddc5df
+                        equipment: !ProjectZyheeda.ReferenceLaunchController,project_zyheeda_stride
+                            Target: ref!! 32c043d9-0b9c-4580-ba20-2b8c69f0fd59
+                        agent: ref!! a70e6895-7fd3-4135-9869-1e5eb430a3c8
         -   Entity:
                 Id: 80d8012c-51e0-4aed-b36a-ed018b98fb37
                 Name: Ground
@@ -166,7 +206,7 @@ Hierarchy:
                         Children: {}
                     62f5f84cfe9249f056933f2ec00884d5: !ModelComponent
                         Id: 1a289e28-5b76-43bd-88e1-9bf9a853a607
-                        Model: d419514b-33fb-4f51-a295-e2299280ec23:Ground
+                        Model: d419514b-33fb-4f51-a295-e2299280ec23:Models/Landscape/Ground
                         Materials: {}
                     fda03e76a9de8f8d30a6dab067709993: !StaticColliderComponent
                         Id: 9a72e989-e802-4a7b-b8ca-9785a309cce1
@@ -263,6 +303,7 @@ Hierarchy:
                         Rotation: {X: -0.0, Y: 0.0, Z: 0.0, W: 1.0}
                         Scale: {X: 1.0, Y: 1.0, Z: 1.0}
                         Children:
+                            c44c707cfc178d55811203942789a263: ref!! ced314a0-83c4-41d2-a0ed-82da86c4fbdf
                             b329a86c998c57ebdeb79970d6e58e6c: ref!! f1c858c7-525a-42ac-a4c0-61a573304c45
                             7a37a32e0ab6a26dd536f337271b5b54: ref!! 5e3d5ab5-cfd6-4ca2-a0d1-2c6759e8d5f1
                             daca0c3b51f7344181e239d408cb9e9b: ref!! a57b22ef-dc9e-4b26-bb84-83e73155678c
@@ -283,4 +324,4 @@ Hierarchy:
                     9779a5cbe1b1f5811b72b96bcf605491: !LightComponent
                         Id: 10645d24-63df-4082-ab76-8bfd4e6e25d1
                         Type: !LightSkybox
-                            Skybox: ca5698db-d108-4273-be8d-712598e31593:Skybox
+                            Skybox: ca5698db-d108-4273-be8d-712598e31593:Skyboxes/Skybox

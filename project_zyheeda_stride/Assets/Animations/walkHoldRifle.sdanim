@@ -2,7 +2,7 @@
 Id: cf335415-587a-4533-b128-e84db5f55420
 SerializedVersion: {Stride: 2.0.0.0}
 Tags: []
-Source: !file ../../models/walkHoldRifle.fbx
+Source: !file ../../../models/walkHoldRifle.fbx
 ClipDuration:
     Enabled: false
     StartAnimationTime: 0:00:00:00.0000000
@@ -10,10 +10,10 @@ ClipDuration:
 PivotPosition: {X: 0.0, Y: 0.0, Z: 0.0}
 RepeatMode: LoopInfinite
 Type: !StandardAnimationAssetType {}
-Skeleton: 75895eb1-08a6-41b0-bbdc-17a0d3b5b727:dummy Skeleton
+Skeleton: 75895eb1-08a6-41b0-bbdc-17a0d3b5b727:Models/Dummy/dummy Skeleton
 RootMotion: false
-PreviewModel: 45748d85-2eef-411a-9b7e-1bbda1beda94:dummy
+PreviewModel: 45748d85-2eef-411a-9b7e-1bbda1beda94:Models/Dummy/dummy
 AnimationTimeMinimum: 0:00:00:00.0000000
 AnimationTimeMaximum: 0:00:00:00.8333300
 ~SourceHashes:
-    bf7f2d98d290d34220ea4a2c1ea2c41a~../../models/walkHoldRifle.fbx: 72c9cac567dfb1ef49eac4f7d2740ab4
+    7e10881d66eae148f74ca1742dfb8957~../../../models/walkHoldRifle.fbx: 72c9cac567dfb1ef49eac4f7d2740ab4

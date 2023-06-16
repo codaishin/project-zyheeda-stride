@@ -1,0 +1,19 @@
+!Animation
+Id: 66d2c5c1-cee3-4e6c-8ca2-f51c32b1c22f
+SerializedVersion: {Stride: 2.0.0.0}
+Tags: []
+Source: !file ../../../models/aimRifle.fbx
+ClipDuration:
+    Enabled: false
+    StartAnimationTime: 0:00:00:00.0000000
+    EndAnimationTime: 0:00:30:00.0000000
+PivotPosition: {X: 0.0, Y: 0.0, Z: 0.0}
+RepeatMode: LoopInfinite
+Type: !StandardAnimationAssetType {}
+Skeleton: 75895eb1-08a6-41b0-bbdc-17a0d3b5b727:Models/Dummy/dummy Skeleton
+RootMotion: false
+PreviewModel: 45748d85-2eef-411a-9b7e-1bbda1beda94:Models/Dummy/dummy
+AnimationTimeMinimum: 0:00:00:00.0000000
+AnimationTimeMaximum: 0:00:00:00.0416600
+~SourceHashes:
+    84b8792bd8a7ba145e821d75a22332ec~../../../models/aimRifle.fbx: 3ab100c8d91cd56f3e2aeb514dda6409

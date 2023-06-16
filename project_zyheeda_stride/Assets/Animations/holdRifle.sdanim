@@ -2,7 +2,7 @@
 Id: 9b805952-a55c-4da3-81b4-d956810deced
 SerializedVersion: {Stride: 2.0.0.0}
 Tags: []
-Source: !file ../../models/holdRifle.fbx
+Source: !file ../../../models/holdRifle.fbx
 ClipDuration:
     Enabled: false
     StartAnimationTime: 0:00:00:00.0000000
@@ -10,10 +10,10 @@ ClipDuration:
 PivotPosition: {X: 0.0, Y: 0.0, Z: 0.0}
 RepeatMode: LoopInfinite
 Type: !StandardAnimationAssetType {}
-Skeleton: 75895eb1-08a6-41b0-bbdc-17a0d3b5b727:dummy Skeleton
+Skeleton: 75895eb1-08a6-41b0-bbdc-17a0d3b5b727:Models/Dummy/dummy Skeleton
 RootMotion: false
-PreviewModel: 45748d85-2eef-411a-9b7e-1bbda1beda94:dummy
+PreviewModel: 45748d85-2eef-411a-9b7e-1bbda1beda94:Models/Dummy/dummy
 AnimationTimeMinimum: 0:00:00:00.0000000
 AnimationTimeMaximum: 0:00:00:00.0416600
 ~SourceHashes:
-    a878e9a505bcc8ba7c83579753cff17b~../../models/holdRifle.fbx: d4a43675349ee152394d2607ad2807f0
+    520a91065400a82f2954102655ccc0c6~../../../models/holdRifle.fbx: d4a43675349ee152394d2607ad2807f0
