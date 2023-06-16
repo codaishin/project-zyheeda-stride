@@ -11,7 +11,7 @@ public class MoveController : ProjectZyheedaStartupScript, IEquipment {
 		return agent
 			.GetChildren()
 			.Select(c => c.Get<AnimationComponent>())
-			.FirstOrDefault()
+			.FirstOrDefault(a => a is not null)
 			.OkOrSystemError($"Missing AnimationComponent on {agent.Name}");
 	}
 

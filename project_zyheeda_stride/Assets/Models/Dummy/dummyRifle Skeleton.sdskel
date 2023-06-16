@@ -2,7 +2,7 @@
 Id: 6699ad32-ce46-4c3c-a82c-be140e4d831d
 SerializedVersion: {Stride: 2.0.0.0}
 Tags: []
-Source: !file ../../models/dummyRifle.fbx
+Source: !file ../../../../models/dummyRifle.fbx
 PivotPosition: {X: 0.0, Y: 0.0, Z: 0.0}
 Nodes:
     81732ab6278a2a7617edaadfbdf49547: {Name: RootNode, Depth: 0}
@@ -13,4 +13,4 @@ Nodes:
     534b14ea2fae4425e0843cd10864d72d: {Name: Bone.002, Depth: 4}
     58ef964159b7513809cf2da802ce5f72: {Name: Bone.002_end, Depth: 5}
 ~SourceHashes:
-    d9624daa2c9e8162cdf30293d09b46c3~../../models/dummyRifle.fbx: 77ffc635a0785c23e08901b4ffa123db
+    2f6f3720fd6350d914922787a0341d46~../../../../models/dummyRifle.fbx: 77ffc635a0785c23e08901b4ffa123db

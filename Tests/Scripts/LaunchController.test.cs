@@ -14,13 +14,16 @@ public class LauncherControllerTests : GameTestCollection {
 	private readonly IProjectile projectile = Mock.Of<IProjectile>();
 	private readonly IMagazineEditor magazine = Mock.Of<IMagazineEditor>();
 	private readonly IAnimation animation = Mock.Of<IAnimation>();
-	private readonly Entity agent = new() { new AnimationComponent() };
+	private readonly Entity agent = new();
+	private readonly AnimationComponent agentAnimator = new();
 
 	public LauncherControllerTests(GameFixture fixture) : base(fixture) {
 		this.controller.magazine = this.magazine;
 		this.controller.spawnProjectileAt = new Entity().Transform;
+		this.agent.AddChild(new Entity { this.agentAnimator });
 
 		this.scene.Entities.Add(new Entity { this.controller });
+		this.scene.Entities.Add(this.controller.spawnProjectileAt.Entity);
 
 		this.game.Services.RemoveService<IAnimation>();
 		this.game.Services.AddService<IAnimation>(this.animation);
@@ -100,7 +103,7 @@ public class LauncherControllerTests : GameTestCollection {
 
 		Mock
 			.Get(this.animation)
-			.Verify(a => a.Play(this.agent.Get<AnimationComponent>(), "shoot"));
+			.Verify(a => a.Play(this.agentAnimator, "shoot"));
 	}
 
 	[Fact]
@@ -142,7 +145,7 @@ public class LauncherControllerTests : GameTestCollection {
 
 		Mock
 			.Get(this.animation)
-			.Verify(a => a.Play(this.agent.Get<AnimationComponent>(), LauncherController.fallbackAnimationKey));
+			.Verify(a => a.Play(this.agentAnimator, LauncherController.fallbackAnimationKey));
 		_ = Assert.IsType<NoWait>(last.UnpackOr(new WaitFrame()));
 	}
 
@@ -184,7 +187,7 @@ public class LauncherControllerTests : GameTestCollection {
 
 		Mock
 			.Get(this.animation)
-			.Verify(a => a.Play(this.agent.Get<AnimationComponent>(), LauncherController.fallbackAnimationKey));
+			.Verify(a => a.Play(this.agentAnimator, LauncherController.fallbackAnimationKey));
 		Assert.Equal(Result.Ok(), result);
 	}
 
@@ -216,6 +219,8 @@ public class LauncherControllerTests : GameTestCollection {
 		this.controller.rangeModifier = 2f;
 		this.controller.spawnProjectileAt!.Position = spawn;
 
+		this.game.WaitFrames(1);
+
 		var getCoroutine = this.controller.PrepareCoroutineFor(this.agent).Switch(
 			_ => LauncherControllerTests.Fail("got errors"),
 			v => v
@@ -234,6 +239,112 @@ public class LauncherControllerTests : GameTestCollection {
 		var noWait = enumerator.Current.UnpackOr(new WaitFrame());
 
 		_ = Assert.IsType<NoWait>(noWait);
+	}
+
+	[Fact]
+	public void FollowTargetSpawnWorldPosition() {
+		var target = () => new Vector3(1, 2, 3);
+		var spawn = new Vector3(5, 6, 7);
+		var spawnEntityParent = new Entity();
+		spawnEntityParent.AddChild(new Entity());
+
+		this.scene.Entities.Add(spawnEntityParent);
+
+		this.controller.rangeModifier = 2f;
+		this.controller.spawnProjectileAt = spawnEntityParent.GetChild(0).Transform;
+		spawnEntityParent.Transform.Position = spawn;
+
+		this.game.WaitFrames(1);
+
+		var getCoroutine = this.controller.PrepareCoroutineFor(this.agent).Switch(
+			_ => LauncherControllerTests.Fail("got errors"),
+			v => v
+		);
+		var (run, _) = getCoroutine(target);
+
+		var enumerator = run().GetEnumerator();
+		_ = enumerator.MoveNext();
+		_ = enumerator.MoveNext();
+		_ = enumerator.MoveNext();
+
+		Mock
+			.Get(this.projectile)
+			.Verify(p => p.Follow(spawn, target, this.controller.rangeModifier), Times.Once);
+
+		var noWait = enumerator.Current.UnpackOr(new WaitFrame());
+
+		_ = Assert.IsType<NoWait>(noWait);
+	}
+
+	[Fact]
+	public void LookAtTargetXZ() {
+		var target = () => new Vector3(1, 2, 3);
+		this.controller.rangeModifier = 2f;
+
+		var getCoroutine = this.controller.PrepareCoroutineFor(this.agent).Switch(
+			_ => LauncherControllerTests.Fail("got errors"),
+			v => v
+		);
+		var (run, _) = getCoroutine(target);
+
+		var enumerator = run().GetEnumerator();
+		_ = enumerator.MoveNext();
+
+		var lookVector = new Vector3(1, 0, 3);
+		lookVector.Normalize();
+
+		Assert.Equal(
+			Quaternion.LookRotation(lookVector, Vector3.UnitY),
+			this.agent.Transform.Rotation
+		);
+	}
+
+	[Fact]
+	public void LookAtTargetXZWithAgentY() {
+		var target = () => new Vector3(1, 2, 3);
+		this.controller.rangeModifier = 2f;
+		this.agent.Transform.Position = Vector3.UnitY;
+
+		var getCoroutine = this.controller.PrepareCoroutineFor(this.agent).Switch(
+			_ => LauncherControllerTests.Fail("got errors"),
+			v => v
+		);
+		var (run, _) = getCoroutine(target);
+
+		var enumerator = run().GetEnumerator();
+		_ = enumerator.MoveNext();
+
+		var lookVector = new Vector3(1, 0, 3);
+		lookVector.Normalize();
+
+		Assert.Equal(
+			Quaternion.LookRotation(lookVector, Vector3.UnitY),
+			this.agent.Transform.Rotation
+		);
+	}
+
+	[Fact]
+	public void LookAtTargetXZWithAgentNotAtZero() {
+		var target = () => new Vector3(5, 6, 7);
+		this.controller.rangeModifier = 2f;
+		this.agent.Transform.Position = Vector3.One;
+
+		var getCoroutine = this.controller.PrepareCoroutineFor(this.agent).Switch(
+			_ => LauncherControllerTests.Fail("got errors"),
+			v => v
+		);
+		var (run, _) = getCoroutine(target);
+
+		var enumerator = run().GetEnumerator();
+		_ = enumerator.MoveNext();
+
+		var lookVector = new Vector3(4, 0, 6);
+		lookVector.Normalize();
+
+		Assert.Equal(
+			Quaternion.LookRotation(lookVector, Vector3.UnitY),
+			this.agent.Transform.Rotation
+		);
 	}
 
 	[Fact]
@@ -297,4 +408,17 @@ public class LauncherControllerTests : GameTestCollection {
 		Assert.Equal(agent.MissingComponent(nameof(AnimationComponent)), error);
 	}
 
+	[Fact]
+	public void CanHandleAnimationComponentNotFirstChildOfAgent() {
+		var agent = new Entity();
+		agent.AddChild(new Entity());
+		agent.AddChild(new Entity { new AnimationComponent() });
+
+		var ok = this.controller.PrepareCoroutineFor(agent).Switch(
+			_ => false,
+			_ => true
+		);
+
+		Assert.True(ok);
+	}
 }

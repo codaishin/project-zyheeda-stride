@@ -144,6 +144,19 @@ public class TestMoveController : GameTestCollection {
 	}
 
 	[Fact]
+	public void CanHandleAnimationComponentWhenNotOnFirstChild() {
+		this.agent.Name = "Agent";
+		this.agent.GetChild(0).RemoveAll<AnimationComponent>();
+		this.agent.AddChild(new Entity { new AnimationComponent() });
+
+		var ok = this.moveController
+			.PrepareCoroutineFor(this.agent)
+			.Switch(_ => false, _ => true);
+
+		Assert.True(ok);
+	}
+
+	[Fact]
 	public void MissingMoveComponent() {
 		this.moveController.move = null;
 		var error = this.moveController
