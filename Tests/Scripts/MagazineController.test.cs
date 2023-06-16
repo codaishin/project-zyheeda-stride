@@ -57,6 +57,7 @@ public class MagazineControllerTests : GameTestCollection {
 
 	private class MockProjectileComponent : StartupScript, IProjectile {
 		public event Action<PhysicsComponent>? OnHit;
+		public event Action? OnRangeLimit;
 
 		public Result Follow(Vector3 start, Func<Vector3> getTarget, float rangeMultiplier) {
 			this.OnHit?.Invoke(new RigidbodyComponent());

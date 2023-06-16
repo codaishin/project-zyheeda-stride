@@ -137,42 +137,50 @@ public class TestKineticController : GameTestCollection {
 
 	[Fact]
 	public void UseGetCoroutineWithAdjustedTarget() {
-		this.kineticController.baseRange = 10;
-		_ = this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(2, 3, 4), 1);
+		var target = new Vector3(2, 3, 4);
+		var start = new Vector3(1, 2, 3);
+		var adjustedTarget = Vector3.Zero;
 
 		_ = Mock
 			.Get(this.getCoroutine)
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
 			.Returns((Func<Vector3> getTarget) => {
-				Assert.Equal(new Vector3(1, 2, 3) + new Vector3(10, 10, 10), getTarget());
+				adjustedTarget = getTarget();
 				return (() => Array.Empty<Result<IWait>>(), Mock.Of<Cancel>());
 			});
 
+		this.kineticController.baseRange = 10;
+		_ = this.kineticController.Follow(start, () => target, 1);
+
 		this.game.WaitFrames(1);
 
-		Mock
-			.Get(this.getCoroutine)
-			.Verify(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()), Times.Once);
+		var normalizedDirection = target - start;
+		normalizedDirection.Normalize();
+		Assert.Equal(start + (normalizedDirection * 10), adjustedTarget);
 	}
 
 	[Fact]
 	public void UseGetCoroutineWithAdjustedTargetScaledByRangeMultiplier() {
-		this.kineticController.baseRange = 10;
-		_ = this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(2, 3, 4), 5);
+		var target = new Vector3(2, 3, 4);
+		var start = new Vector3(1, 2, 3);
+		var adjustedTarget = Vector3.Zero;
 
 		_ = Mock
 			.Get(this.getCoroutine)
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
 			.Returns((Func<Vector3> getTarget) => {
-				Assert.Equal(new Vector3(1, 2, 3) + new Vector3(50, 50, 50), getTarget());
+				adjustedTarget = getTarget();
 				return (() => Array.Empty<Result<IWait>>(), Mock.Of<Cancel>());
 			});
 
+		this.kineticController.baseRange = 10;
+		_ = this.kineticController.Follow(start, () => target, 5);
+
 		this.game.WaitFrames(1);
 
-		Mock
-			.Get(this.getCoroutine)
-			.Verify(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()), Times.Once);
+		var normalizedDirection = target - start;
+		normalizedDirection.Normalize();
+		Assert.Equal(start + (normalizedDirection * 10 * 5), adjustedTarget);
 	}
 
 	[Fact]
@@ -296,6 +304,35 @@ public class TestKineticController : GameTestCollection {
 		Mock
 			.Get(cancel)
 			.Verify(cancel => cancel(), Times.Once);
+	}
+
+	[Fact]
+	public void CallOnRangeLimitWhenReachingMaxRange() {
+		static IEnumerable<Result<IWait>> run() {
+			yield return new WaitFrame();
+		}
+		_ = Mock
+			.Get(this.getCoroutine)
+			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
+			.Returns((run, Mock.Of<Cancel>()));
+
+		var onRangeLimit = Mock.Of<Action>();
+		this.kineticController.OnRangeLimit += onRangeLimit;
+		this.kineticController.baseRange = 1;
+
+		_ = this.kineticController.Follow(Vector3.Zero, () => Vector3.UnitX, 1);
+
+		this.game.WaitFrames(1);
+
+		Mock
+			.Get(onRangeLimit)
+			.Verify(onRangeLimit => onRangeLimit(), Times.Never);
+
+		this.game.WaitFrames(1);
+
+		Mock
+			.Get(onRangeLimit)
+			.Verify(onRangeLimit => onRangeLimit(), Times.Once);
 	}
 
 	[Fact]
