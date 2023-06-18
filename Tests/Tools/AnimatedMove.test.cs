@@ -49,6 +49,10 @@ public class TestAnimatedMove {
 		Mock
 			.Get(this.run)
 			.SetReturnsDefault<IEnumerable<Result<IWait>>>(new Result<IWait>[] { new MockWait(), new MockWait() });
+
+		Mock
+			.Get(this.cancel)
+			.SetReturnsDefault<Result<IWait>>(Result.Ok<IWait>(new NoWait()));
 	}
 
 	[Fact]
@@ -247,7 +251,7 @@ public class TestAnimatedMove {
 
 		var error = cancel().Switch<string>(
 			errors => errors.player.First(),
-			() => "no error"
+			_ => "no error"
 		);
 		Assert.Equal("AAA", error);
 	}
@@ -265,7 +269,7 @@ public class TestAnimatedMove {
 
 		var error = cancel().Switch<string>(
 			errors => errors.player.First(),
-			() => "no error"
+			_ => "no error"
 		);
 		Assert.Equal("AAA", error);
 	}

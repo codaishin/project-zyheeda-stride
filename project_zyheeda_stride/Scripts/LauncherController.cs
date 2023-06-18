@@ -67,9 +67,10 @@ public class LauncherController : ProjectZyheedaStartupScript, IEquipment {
 					.Map(LauncherController.NoDelay);
 			}
 
-			Result Cancel() {
+			Result<IWait> Cancel() {
 				return this.EssentialServices.animation
-					.Play(agentAnimator, LauncherController.fallbackAnimationKey);
+					.Play(agentAnimator, LauncherController.fallbackAnimationKey)
+					.Map(_ => (IWait)new NoWait());
 			}
 
 			return (Run, Cancel);

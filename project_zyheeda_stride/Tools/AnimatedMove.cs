@@ -28,9 +28,9 @@ public class AnimatedMove : IAnimatedMoveEditor {
 				yield return play(AnimatedMove.fallbackAnimationKey);
 			};
 
-			Result cancel() {
+			Result<IWait> cancel() {
 				return cancelMove()
-					.FlatMap(() => play(AnimatedMove.fallbackAnimationKey));
+					.FlatMap(_ => play(AnimatedMove.fallbackAnimationKey));
 			};
 
 			return (run, cancel);

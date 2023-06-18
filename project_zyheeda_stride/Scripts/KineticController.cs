@@ -15,12 +15,16 @@ public class KineticController : ProjectZyheedaAsyncScript, IProjectile {
 	public event Action? OnRangeLimit;
 
 	private MicroThread? thread;
-	private Cancel cancel = () => Result.Ok();
+	private Cancel cancel = () => new NoWait();
 
 	private Task LogErrors((SystemErrors system, PlayerErrors player) errors) {
 		this.EssentialServices.playerMessage.Log(errors.player.ToArray());
 		this.EssentialServices.systemMessage.Log(errors.system.ToArray());
 		return Task.CompletedTask;
+	}
+
+	private Task WaitCancelFinish(IWait cancel) {
+		return cancel.Wait(this.Script);
 	}
 
 	private Task WaitPause(IWait pause) {
@@ -39,9 +43,9 @@ public class KineticController : ProjectZyheedaAsyncScript, IProjectile {
 			var collision = await this.collider.NewCollision();
 			this.thread?.Cancel();
 			this.OnHit?.Invoke(collision.Other(this.collider));
-			this.cancel().Switch(
-				errors => this.LogErrors(errors),
-				() => { }
+			await this.cancel().Switch(
+				this.LogErrors,
+				this.WaitCancelFinish
 			);
 		}
 	}

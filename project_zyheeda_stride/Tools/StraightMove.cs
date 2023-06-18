@@ -31,8 +31,8 @@ public class StraightMove : IMoveEditor {
 				}
 			};
 
-			Result cancel() {
-				return Result.Ok();
+			Result<IWait> cancel() {
+				return Result.Ok<IWait>(new NoWait());
 			}
 
 			return (run, cancel);

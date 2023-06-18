@@ -38,7 +38,10 @@ public class TestKineticController : GameTestCollection {
 			collider = this.collider,
 		};
 		this.getCoroutine = Mock.Of<FGetCoroutine>();
-		(Func<IEnumerable<Result<IWait>>>, Cancel) coroutine = (() => Array.Empty<Result<IWait>>(), Mock.Of<Cancel>());
+		(Func<IEnumerable<Result<IWait>>>, Cancel) coroutine = (
+			() => Array.Empty<Result<IWait>>(),
+			() => Result.Ok<IWait>(new NoWait())
+		);
 
 		Mock
 			.Get(this.getCoroutine)
@@ -85,7 +88,7 @@ public class TestKineticController : GameTestCollection {
 			.Setup(m => m.PrepareCoroutineFor(It.IsAny<Entity>(), It.IsAny<FSpeedToDelta>()))
 			.Returns<Entity, FSpeedToDelta>((_, _speedToDelta) => {
 				speedToDelta = _speedToDelta;
-				return (FGetCoroutine)(_ => (() => Array.Empty<Result<IWait>>(), Mock.Of<Cancel>()));
+				return (FGetCoroutine)(_ => (() => Array.Empty<Result<IWait>>(), () => Result.Ok<IWait>(new NoWait())));
 			});
 
 		_ = this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(1, 1, 1), 42f);
@@ -103,7 +106,7 @@ public class TestKineticController : GameTestCollection {
 			.Setup(m => m.PrepareCoroutineFor(It.IsAny<Entity>(), It.IsAny<FSpeedToDelta>()))
 			.Returns<Entity, FSpeedToDelta>((_, _speedToDelta) => {
 				speedToDelta = _speedToDelta;
-				return (FGetCoroutine)(_ => (() => Array.Empty<Result<IWait>>(), Mock.Of<Cancel>()));
+				return (FGetCoroutine)(_ => (() => Array.Empty<Result<IWait>>(), () => Result.Ok<IWait>(new NoWait())));
 			});
 
 		_ = this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(1, 1, 1), 42f);
@@ -146,7 +149,7 @@ public class TestKineticController : GameTestCollection {
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
 			.Returns((Func<Vector3> getTarget) => {
 				adjustedTarget = getTarget();
-				return (() => Array.Empty<Result<IWait>>(), Mock.Of<Cancel>());
+				return (() => Array.Empty<Result<IWait>>(), () => Result.Ok<IWait>(new NoWait()));
 			});
 
 		this.kineticController.baseRange = 10;
@@ -170,7 +173,7 @@ public class TestKineticController : GameTestCollection {
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
 			.Returns((Func<Vector3> getTarget) => {
 				adjustedTarget = getTarget();
-				return (() => Array.Empty<Result<IWait>>(), Mock.Of<Cancel>());
+				return (() => Array.Empty<Result<IWait>>(), () => Result.Ok<IWait>(new NoWait()));
 			});
 
 		this.kineticController.baseRange = 10;
@@ -193,7 +196,7 @@ public class TestKineticController : GameTestCollection {
 		_ = Mock
 			.Get(this.getCoroutine)
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
-			.Returns((run, Mock.Of<Cancel>()));
+			.Returns((run, () => Result.Ok<IWait>(new NoWait())));
 
 		_ = this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(3, 2, 1), 42f);
 
@@ -218,7 +221,7 @@ public class TestKineticController : GameTestCollection {
 		_ = Mock
 			.Get(this.getCoroutine)
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
-			.Returns((run, Mock.Of<Cancel>()));
+			.Returns((run, () => Result.Ok<IWait>(new NoWait())));
 
 		_ = this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(3, 2, 1), 42f);
 		_ = this.kineticController.Follow(new Vector3(100, 200, 300), () => new Vector3(3, 2, 1), 42f);
@@ -243,7 +246,7 @@ public class TestKineticController : GameTestCollection {
 		_ = Mock
 			.Get(this.getCoroutine)
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
-			.Returns((run, Mock.Of<Cancel>()));
+			.Returns((run, () => Result.Ok<IWait>(new NoWait())));
 
 		var obstacle = new Entity {
 			new StaticColliderComponent {
@@ -270,17 +273,24 @@ public class TestKineticController : GameTestCollection {
 
 	[Fact]
 	public void CallOnHitAndCancelOnCollision() {
-		IEnumerable<Result<IWait>> run() {
+		IEnumerable<Result<IWait>> Run() {
 			for (var i = 0; i < 10; ++i) {
 				this.kineticController.Entity.Transform.Position.X += 1f;
 				yield return new WaitFrame();
 			}
 		}
+
 		var cancel = Mock.Of<Cancel>();
+
+		_ = Mock
+			.Get(cancel)
+			.Setup(cancel => cancel())
+			.Returns(Result.Ok<IWait>(new NoWait()));
+
 		_ = Mock
 			.Get(this.getCoroutine)
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
-			.Returns((run, cancel));
+			.Returns((Run, cancel));
 
 		var onHit = Mock.Of<Action<PhysicsComponent>>();
 		this.kineticController.OnHit += onHit;
@@ -314,7 +324,7 @@ public class TestKineticController : GameTestCollection {
 		_ = Mock
 			.Get(this.getCoroutine)
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
-			.Returns((run, Mock.Of<Cancel>()));
+			.Returns((run, () => Result.Ok<IWait>(new NoWait())));
 
 		var onRangeLimit = Mock.Of<Action>();
 		this.kineticController.OnRangeLimit += onRangeLimit;
@@ -358,7 +368,7 @@ public class TestKineticController : GameTestCollection {
 		_ = Mock
 			.Get(this.getCoroutine)
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
-			.Returns((systemError, () => Result.Ok()));
+			.Returns((systemError, () => Result.Ok<IWait>(new NoWait())));
 
 		_ = this.kineticController.Follow(Vector3.Zero, () => Vector3.Zero, 1f);
 		this.game.WaitFrames(3);
@@ -377,7 +387,7 @@ public class TestKineticController : GameTestCollection {
 		_ = Mock
 			.Get(this.getCoroutine)
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
-			.Returns((playerError, () => Result.Ok()));
+			.Returns((playerError, () => Result.Ok<IWait>(new NoWait())));
 
 		_ = this.kineticController.Follow(Vector3.Zero, () => Vector3.Zero, 1f);
 		this.game.WaitFrames(2);

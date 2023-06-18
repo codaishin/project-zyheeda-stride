@@ -188,7 +188,7 @@ public class LauncherControllerTests : GameTestCollection {
 		Mock
 			.Get(this.animation)
 			.Verify(a => a.Play(this.agentAnimator, LauncherController.fallbackAnimationKey));
-		Assert.Equal(Result.Ok(), result);
+		_ = Assert.IsType<NoWait>(result.UnpackOr(new WaitMilliSeconds(42)));
 	}
 
 	[Fact]
@@ -206,7 +206,7 @@ public class LauncherControllerTests : GameTestCollection {
 
 		var error = cancel().Switch(
 			errors => (string)errors.system.FirstOrDefault(),
-			() => "no errors"
+			_ => "no errors"
 		);
 
 		Assert.Equal("OOO", error);

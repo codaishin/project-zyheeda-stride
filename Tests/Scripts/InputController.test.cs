@@ -84,7 +84,7 @@ public class TestInputController : GameTestCollection {
 			yield break;
 		}
 
-		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (run, () => Result.Ok());
+		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (run, () => Result.Ok<IWait>(new NoWait()));
 
 		_ = Mock.Get(this.behavior)
 			.Setup(c => c.GetCoroutine())
@@ -105,7 +105,7 @@ public class TestInputController : GameTestCollection {
 			yield break;
 		}
 
-		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (run, () => Result.Ok());
+		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (run, () => Result.Ok<IWait>(new NoWait()));
 
 		_ = Mock.Get(this.behavior)
 			.Setup(c => c.GetCoroutine())
@@ -126,7 +126,7 @@ public class TestInputController : GameTestCollection {
 			yield break;
 		}
 
-		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (run, () => Result.Ok());
+		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (run, () => Result.Ok<IWait>(new NoWait()));
 
 		_ = Mock.Get(this.behavior)
 			.Setup(c => c.GetCoroutine())
@@ -231,7 +231,7 @@ public class TestInputController : GameTestCollection {
 		_ = Mock
 			.Get(this.behavior)
 			.Setup(b => b.GetCoroutine())
-			.Returns((() => Enumerable.Empty<Result<IWait>>(), () => Result.Ok()));
+			.Returns((() => Enumerable.Empty<Result<IWait>>(), () => Result.Ok<IWait>(new NoWait())));
 
 		this.newActionFnTaskTokens[0].SetResult(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
 
@@ -250,7 +250,7 @@ public class TestInputController : GameTestCollection {
 		_ = Mock
 			.Get(this.behavior)
 			.Setup(b => b.GetCoroutine())
-			.Returns((() => Enumerable.Empty<Result<IWait>>(), () => Result.Ok()));
+			.Returns((() => Enumerable.Empty<Result<IWait>>(), () => Result.Ok<IWait>(new NoWait())));
 
 		_ = Mock
 			.Get(this.scheduler)
@@ -274,7 +274,7 @@ public class TestInputController : GameTestCollection {
 		_ = Mock
 			.Get(this.behavior)
 			.Setup(b => b.GetCoroutine())
-			.Returns((() => Enumerable.Empty<Result<IWait>>(), () => Result.Ok()));
+			.Returns((() => Enumerable.Empty<Result<IWait>>(), () => Result.Ok<IWait>(new NoWait())));
 
 		_ = Mock
 			.Get(this.scheduler)

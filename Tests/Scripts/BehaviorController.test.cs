@@ -81,7 +81,7 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
 			.Returns((Func<Vector3> getTarget) => {
 				Assert.Equal(target, getTarget());
-				return (() => Array.Empty<Result<IWait>>(), () => Result.Ok());
+				return (() => Array.Empty<Result<IWait>>(), () => Result.Ok<IWait>(new NoWait()));
 			});
 
 		this.controller.agent = new();
@@ -138,7 +138,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		var target = Vector3.UnitX;
 		this.controller.agent = new Entity("Player");
 
-		var (run, _) = this.controller.GetCoroutine().Switch(
+		var (run, cancel) = this.controller.GetCoroutine().Switch(
 			errors => BehaviorControllerTest.Fail(errors),
 			runAndCancel => runAndCancel
 		);
@@ -150,7 +150,10 @@ public class BehaviorControllerTest : GameTestCollection {
 			_ => (PlayerError)"no error"
 		);
 
-		Assert.Equal((PlayerError)"nothing equipped", error);
+		Assert.Multiple(() => {
+			Assert.Equal((PlayerError)"nothing equipped", error);
+			_ = Assert.IsType<NoWait>(cancel().UnpackOr(new WaitMilliSeconds(42)));
+		});
 	}
 
 	[Fact]
@@ -197,7 +200,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		var target = new Vector3(1, 2, 3);
 		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (
 			() => Array.Empty<Result<IWait>>(),
-			() => Result.Ok()
+			() => Result.Ok<IWait>(new NoWait())
 		);
 
 		_ = Mock

@@ -22,8 +22,8 @@ public class TestMoveController : GameTestCollection {
 		IEnumerable<Result<IWait>> Run() {
 			yield break;
 		}
-		Result Cancel() {
-			return Result.Ok();
+		Result<IWait> Cancel() {
+			return Result.Ok<IWait>(new NoWait());
 		}
 
 		this.agent = new Entity();

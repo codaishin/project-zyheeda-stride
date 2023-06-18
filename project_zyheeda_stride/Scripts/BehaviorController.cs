@@ -15,8 +15,8 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 				yield return Result.PlayerError("nothing equipped");
 			}
 
-			static Result Cancel() {
-				return Result.Ok();
+			static Result<IWait> Cancel() {
+				return Result.Ok<IWait>(new NoWait());
 			}
 
 			return Result.Ok<FGetCoroutine>((Func<Vector3> _) => (Run, Cancel));
