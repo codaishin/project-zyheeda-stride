@@ -1,8 +1,10 @@
 namespace Tests;
 
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using ProjectZyheeda;
+using Stride.Engine.Processors;
 using Xunit;
 
 public class TestWaitFrame : GameTestCollection {
@@ -111,5 +113,102 @@ public class TestNoWait : GameTestCollection {
 		);
 
 		Assert.True(ok);
+	}
+}
+
+public class TestWaitMultiple : GameTestCollection {
+	public TestWaitMultiple(GameFixture fixture) : base(fixture) { }
+
+	private class MockWait : IWait {
+		public TaskCompletionSource<Result> token = new();
+
+		public Task<Result> Wait(ScriptSystem script) {
+			return this.token.Task;
+		}
+	}
+
+	[Fact]
+	public void Completes() {
+		var waits = new[] { new MockWait(), new MockWait() };
+		var wait = new WaitMultiple(waits);
+
+		var task = wait.Wait(this.game.Script);
+
+		Assert.False(task.IsCompletedSuccessfully);
+
+		waits[0].token.SetResult(Result.Ok());
+
+		Assert.False(task.IsCompletedSuccessfully);
+
+		waits[1].token.SetResult(Result.Ok());
+
+		Assert.True(task.IsCompletedSuccessfully);
+	}
+
+	[Fact]
+	public async Task ResultErrorA() {
+		var waits = new[] { new MockWait(), new MockWait() };
+		var wait = new WaitMultiple(waits);
+
+		var task = wait.Wait(this.game.Script);
+
+		waits[0].token.SetResult(Result.SystemError("AAA"));
+		waits[1].token.SetResult(Result.Ok());
+
+		var error = (await task).Switch<string>(
+			errors => errors.system.FirstOrDefault(),
+			() => "no errors"
+		);
+
+		Assert.Equal("AAA", error);
+	}
+
+	[Fact]
+	public async Task ResultErrorB() {
+		var waits = new[] { new MockWait(), new MockWait() };
+		var wait = new WaitMultiple(waits);
+
+		var task = wait.Wait(this.game.Script);
+
+		waits[0].token.SetResult(Result.Ok());
+		waits[1].token.SetResult(Result.SystemError("BBB"));
+
+		var error = (await task).Switch<string>(
+			errors => errors.system.FirstOrDefault(),
+			() => "no errors"
+		);
+
+		Assert.Equal("BBB", error);
+	}
+
+	[Fact]
+	public async Task ResultErrorAB() {
+		var waits = new[] { new MockWait(), new MockWait() };
+		var wait = new WaitMultiple(waits);
+
+		var task = wait.Wait(this.game.Script);
+
+		waits[0].token.SetResult(Result.SystemError("AAA"));
+		waits[1].token.SetResult(Result.SystemError("BBB"));
+
+		var error = (await task).Switch(
+			errors => string.Join(", ", errors.system.Select(e => (string)e)),
+			() => "no errors"
+		);
+
+		Assert.Equal("AAA, BBB", error);
+	}
+
+	[Fact]
+	public async Task ResultOKNoWaits() {
+		var wait = new WaitMultiple();
+		var task = wait.Wait(this.game.Script);
+
+		var error = (await task).Switch(
+			errors => "had errors",
+			() => "no errors"
+		);
+
+		Assert.Equal("no errors", error);
 	}
 }
