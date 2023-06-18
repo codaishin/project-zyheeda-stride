@@ -235,7 +235,31 @@ public class TestAnimatedMove {
 	}
 
 	[Fact]
-	public void ReturnInnerCancelResult() {
+	public void ReturnInnerCancelResultOk() {
+		var target = new Vector3(1, 0, 0);
+		var play = Mock.Of<Func<string, Result>>();
+		var getCoroutine = this.animatedMove.PrepareCoroutineFor(new Entity(), _ => 0, play).Switch(
+			errors => TestAnimatedMove.AssertFail(errors),
+			value => value
+		);
+
+		var innerWait = Mock.Of<IWait>();
+
+		_ = Mock
+			.Get(this.cancel)
+			.Setup(c => c()).Returns(Result.Ok(innerWait));
+
+		var (_, cancel) = getCoroutine(() => target);
+
+		var wait = cancel().Switch<IWait>(
+			_ => new NoWait(),
+			w => w
+		);
+		Assert.Same(innerWait, wait);
+	}
+
+	[Fact]
+	public void ReturnInnerCancelResultError() {
 		var target = new Vector3(1, 0, 0);
 		var play = Mock.Of<Func<string, Result>>();
 		var getCoroutine = this.animatedMove.PrepareCoroutineFor(new Entity(), _ => 0, play).Switch(
@@ -272,6 +296,28 @@ public class TestAnimatedMove {
 			_ => "no error"
 		);
 		Assert.Equal("AAA", error);
+	}
+
+	[Fact]
+	public void ReturnInnerCancelErrorAndPlayCancelAnimationError() {
+		var target = new Vector3(1, 0, 0);
+		var play = (string _) => (Result)Result.PlayerError("PLAY ERROR");
+		var getCoroutine = this.animatedMove.PrepareCoroutineFor(new Entity(), _ => 0, play).Switch(
+			errors => TestAnimatedMove.AssertFail(errors),
+			value => value
+		);
+
+		_ = Mock
+			.Get(this.cancel)
+			.Setup(c => c()).Returns(Result.PlayerError("INNER ERROR"));
+
+		var (_, cancel) = getCoroutine(() => target);
+
+		var error = cancel().Switch(
+			errors => string.Join(", ", errors.player.Select(e => (string)e)),
+			_ => "no error"
+		);
+		Assert.Equal("INNER ERROR, PLAY ERROR", error);
 	}
 
 	[Fact]

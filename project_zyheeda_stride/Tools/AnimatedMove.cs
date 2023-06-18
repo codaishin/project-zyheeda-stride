@@ -16,11 +16,18 @@ public class AnimatedMove : IAnimatedMoveEditor {
 		return key => playAnimation(key).Map<IWait>(() => new NoWait());
 	}
 
+	private static Result<IWait> CombineResultsAndWaitFirst(Result<IWait> fst, Result<IWait> snd) {
+		var returnFirst = (IWait f) => (IWait _) => f;
+		return returnFirst
+			.Apply(fst)
+			.Apply(snd);
+	}
+
 	private Result<FGetCoroutine> GetCoroutine(FGetCoroutine innerGetCoroutine, Func<string, Result<IWait>> play) {
 		(Func<Coroutine>, Cancel) GetCoroutine(Func<Vector3> getTarget) {
 			var (runMove, cancelMove) = innerGetCoroutine(getTarget);
 
-			Coroutine run() {
+			Coroutine Run() {
 				yield return play(this.animationKey);
 				foreach (var wait in runMove()) {
 					yield return wait;
@@ -28,12 +35,14 @@ public class AnimatedMove : IAnimatedMoveEditor {
 				yield return play(AnimatedMove.fallbackAnimationKey);
 			};
 
-			Result<IWait> cancel() {
-				return cancelMove()
-					.FlatMap(_ => play(AnimatedMove.fallbackAnimationKey));
+			Result<IWait> Cancel() {
+				return AnimatedMove.CombineResultsAndWaitFirst(
+					cancelMove(),
+					play(AnimatedMove.fallbackAnimationKey)
+				);
 			};
 
-			return (run, cancel);
+			return (Run, Cancel);
 		}
 		return Result.Ok<FGetCoroutine>(GetCoroutine);
 	}
