@@ -7,9 +7,14 @@ using System.Threading.Tasks;
 using Stride.Core.MicroThreading;
 
 public class SchedulerController : ProjectZyheedaStartupScript, IScheduler {
-	private readonly Queue<(Func<Coroutine>, Cancel)> queue = new();
+	private readonly Queue<(Func<Coroutine>, Cancel)> executionQueue = new();
+	private readonly Queue<IWait> clearQueue = new();
 	private MicroThread? dequeueThread;
-	private Cancel? cancelExecution;
+	private Cancel cancelExecution = SchedulerController.DefaultCancel;
+
+	private static Result<IWait> DefaultCancel() {
+		return Result.Ok<IWait>(new NoWait());
+	}
 
 	private void LogErrors((SystemErrors system, PlayerErrors player) errors) {
 		this.EssentialServices.systemMessage.Log(errors.system.ToArray());
@@ -17,7 +22,10 @@ public class SchedulerController : ProjectZyheedaStartupScript, IScheduler {
 	}
 
 	private async Task Dequeue() {
-		while (this.queue.TryDequeue(out var execution)) {
+		while (this.clearQueue.TryDequeue(out var clear)) {
+			_ = await clear.Wait(this.Script);
+		}
+		while (this.executionQueue.TryDequeue(out var execution)) {
 			(var runExecution, this.cancelExecution) = execution;
 			var coroutine = runExecution();
 			foreach (var yield in coroutine) {
@@ -26,7 +34,7 @@ public class SchedulerController : ProjectZyheedaStartupScript, IScheduler {
 					.Flatten();
 				result.Switch(this.LogErrors, () => { });
 			}
-			this.cancelExecution = null;
+			this.cancelExecution = SchedulerController.DefaultCancel;
 		}
 	}
 
@@ -37,17 +45,24 @@ public class SchedulerController : ProjectZyheedaStartupScript, IScheduler {
 		this.dequeueThread = this.Script.AddTask(this.Dequeue);
 	}
 
-	public Result Clear() {
-		this.queue.Clear();
-		var result = this.cancelExecution?.Invoke();
-		this.cancelExecution = null;
+	private Result Clear(IWait clearYield) {
+		this.executionQueue.Clear();
+		this.cancelExecution = SchedulerController.DefaultCancel;
 		this.dequeueThread?.Cancel();
 		this.dequeueThread = null;
-		return result ?? Result.Ok();
+		this.clearQueue.Enqueue(clearYield);
+		this.StartDequeue();
+		return Result.Ok();
+	}
+
+	public Result Clear() {
+		return this
+			.cancelExecution()
+			.FlatMap(this.Clear);
 	}
 
 	public Result Enqueue((Func<Coroutine>, Cancel) execution) {
-		this.queue.Enqueue(execution);
+		this.executionQueue.Enqueue(execution);
 		this.StartDequeue();
 		return Result.Ok();
 	}

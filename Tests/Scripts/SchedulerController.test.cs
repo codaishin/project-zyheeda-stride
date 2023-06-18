@@ -10,6 +10,7 @@ using ProjectZyheeda;
 using Stride.Engine;
 using Stride.Engine.Processors;
 using Xunit;
+using Xunit.Sdk;
 
 public class SchedulerControllerTest : GameTestCollection {
 	private readonly SchedulerController schedulerController;
@@ -169,6 +170,8 @@ public class SchedulerControllerTest : GameTestCollection {
 
 	[Fact]
 	public void RunAfterEnqueueShouldClear() {
+		var token = new TaskCompletionSource<Result>();
+		var wait = Mock.Of<IWait>();
 		var result = "";
 		IEnumerable<Result<IWait>> funcA() {
 			result += "A";
@@ -179,10 +182,19 @@ public class SchedulerControllerTest : GameTestCollection {
 			yield return new WaitFrame();
 		};
 
-		_ = this.schedulerController.Enqueue((funcA, () => Result.Ok<IWait>(new NoWait())));
+		_ = Mock
+			.Get(wait)
+			.Setup(w => w.Wait(It.IsAny<ScriptSystem>()))
+			.Returns(token.Task);
+
+		_ = this.schedulerController.Enqueue((funcA, () => Result.Ok(wait)));
 		_ = this.schedulerController.Run((funcB, () => Result.Ok<IWait>(new NoWait())));
 
+		Assert.Equal("", result);
+
+		token.SetResult(Result.Ok());
 		this.game.WaitFrames(1);
+
 		Assert.Equal("B", result);
 	}
 
@@ -230,7 +242,7 @@ public class SchedulerControllerTest : GameTestCollection {
 	}
 
 	[Fact]
-	public void CLearOk() {
+	public void ClearOk() {
 		var ok = this.schedulerController.Clear().Switch(
 			_ => false,
 			() => true
@@ -278,6 +290,43 @@ public class SchedulerControllerTest : GameTestCollection {
 
 		_ = this.schedulerController.Enqueue((faultyRun, Cancel));
 		this.game.WaitFrames(10);
+
+		Mock
+			.Get(this.game.Services.GetService<ISystemMessage>())
+			.Verify(s => s.Log("AAA"), Times.Once);
+		Mock
+			.Get(this.game.Services.GetService<IPlayerMessage>())
+			.Verify(s => s.Log("BBB"), Times.Once);
+	}
+
+
+	[Fact]
+	public void AwaitCancelErrors() {
+		var asyncError = Mock.Of<IWait>();
+		var errors = (new SystemError[] { "AAA" }, new PlayerError[] { "BBB" });
+
+		static IEnumerable<Result<IWait>> Idle2Frames() {
+			yield return new WaitFrame();
+			yield return new WaitFrame();
+		}
+
+		Result<IWait> Cancel() {
+			return Result.Ok(asyncError ?? throw new XunitException("no asyncError"));
+		}
+
+		_ = Mock
+			.Get(asyncError)
+			.Setup(e => e.Wait(It.IsAny<ScriptSystem>()))
+			.Returns(Task.FromResult<Result>(Result.Errors(errors)));
+
+
+		_ = this.schedulerController.Enqueue((Idle2Frames, Cancel));
+
+		this.game.WaitFrames(1);
+
+		_ = this.schedulerController.Clear();
+
+		this.game.WaitFrames(1);
 
 		Mock
 			.Get(this.game.Services.GetService<ISystemMessage>())
