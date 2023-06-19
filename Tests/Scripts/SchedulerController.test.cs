@@ -456,11 +456,13 @@ public class SchedulerControllerTest : GameTestCollection {
 	public void LogWaitErrors() {
 		var wait = Mock.Of<IWait>();
 		var errors = (new SystemError[] { "AAA" }, new PlayerError[] { "LLL" });
+		var token = new TaskCompletionSource<Result>();
+		token.SetResult(Result.Errors(errors));
 
 		_ = Mock
 			.Get(wait)
 			.Setup(w => w.Wait(It.IsAny<ScriptSystem>()))
-			.Returns(Task.FromResult((Result)Result.Errors(errors)));
+			.Returns(token);
 
 		IEnumerable<Result<IWait>> doNotWait() {
 			yield return Result.Ok(wait);

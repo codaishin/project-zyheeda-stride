@@ -20,7 +20,7 @@ public class TestAnimatedMove {
 	private readonly Cancel cancel;
 
 	private class MockWait : IWait {
-		public Task<Result> Wait(ScriptSystem script) {
+		public TaskCompletionSource<Result> Wait(ScriptSystem script) {
 			throw new NotImplementedException();
 		}
 	}

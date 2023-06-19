@@ -24,7 +24,7 @@ public class KineticController : ProjectZyheedaAsyncScript, IProjectile {
 	}
 
 	private Task WaitPause(IWait pause) {
-		return pause.Wait(this.Script);
+		return pause.Wait(this.Script).Task;
 	}
 
 	public override async Task Execute() {

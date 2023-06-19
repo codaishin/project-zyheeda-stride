@@ -22,7 +22,7 @@ public class SchedulerController : ProjectZyheedaStartupScript, IScheduler {
 			var coroutine = runExecution();
 			foreach (var yield in coroutine) {
 				var result = await yield
-					.Map(y => y.Wait(this.Script))
+					.Map(y => y.Wait(this.Script).Task)
 					.Flatten();
 				result.Switch(this.LogErrors, () => { });
 			}
