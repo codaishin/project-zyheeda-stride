@@ -10,23 +10,30 @@ public class SchedulerController : ProjectZyheedaStartupScript, IScheduler {
 	private readonly Queue<(Func<Coroutine>, Cancel)> queue = new();
 	private MicroThread? dequeueThread;
 	private Cancel? cancelExecution;
+	private TaskCompletionSource<Result>? currentStepToken;
 
 	private void LogErrors((SystemErrors system, PlayerErrors player) errors) {
 		this.EssentialServices.systemMessage.Log(errors.system.ToArray());
 		this.EssentialServices.playerMessage.Log(errors.player.ToArray());
 	}
 
+	private Task<Result> WaitAndSetCurrentStepToken(IWait wait) {
+		this.currentStepToken = wait.Wait(this.Script);
+		return this.currentStepToken.Task;
+	}
+
 	private async Task Dequeue() {
 		while (this.queue.TryDequeue(out var execution)) {
 			(var runExecution, this.cancelExecution) = execution;
 			var coroutine = runExecution();
-			foreach (var yield in coroutine) {
-				var result = await yield
-					.Map(y => y.Wait(this.Script).Task)
+			foreach (var step in coroutine) {
+				var result = await step
+					.Map(this.WaitAndSetCurrentStepToken)
 					.Flatten();
 				result.Switch(this.LogErrors, () => { });
 			}
 			this.cancelExecution = null;
+			this.currentStepToken = null;
 		}
 	}
 
@@ -38,11 +45,13 @@ public class SchedulerController : ProjectZyheedaStartupScript, IScheduler {
 	}
 
 	public Result Clear() {
-		this.queue.Clear();
 		var result = this.cancelExecution?.Invoke();
 		this.cancelExecution = null;
 		this.dequeueThread?.Cancel();
 		this.dequeueThread = null;
+		_ = (this.currentStepToken?.TrySetCanceled());
+		this.currentStepToken = null;
+		this.queue.Clear();
 		return result ?? Result.Ok();
 	}
 
