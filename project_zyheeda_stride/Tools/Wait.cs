@@ -4,9 +4,14 @@ using System.Threading.Tasks;
 using Stride.Engine.Processors;
 
 public readonly struct WaitFrame : IWait {
-	public async Task<Result> Wait(ScriptSystem script) {
-		_ = await script.NextFrame();
-		return Result.Ok();
+	public TaskCompletionSource<Result> Wait(ScriptSystem script) {
+		var token = new TaskCompletionSource<Result>();
+		var run = async () => {
+			_ = await script.NextFrame();
+			token.SetResult(Result.Ok());
+		};
+		_ = run();
+		return token;
 	}
 }
 
@@ -17,14 +22,22 @@ public readonly struct WaitMilliSeconds : IWait {
 		this.milliSeconds = milliseconds;
 	}
 
-	public async Task<Result> Wait(ScriptSystem script) {
-		await Task.Delay(this.milliSeconds);
-		return Result.Ok();
+	public TaskCompletionSource<Result> Wait(ScriptSystem script) {
+		var token = new TaskCompletionSource<Result>();
+		var ms = this.milliSeconds;
+		var run = async () => {
+			await Task.Delay(ms);
+			token.SetResult(Result.Ok());
+		};
+		_ = run();
+		return token;
 	}
 }
 
 public readonly struct NoWait : IWait {
-	public Task<Result> Wait(ScriptSystem script) {
-		return Task.FromResult(Result.Ok());
+	public TaskCompletionSource<Result> Wait(ScriptSystem script) {
+		var token = new TaskCompletionSource<Result>();
+		token.SetResult(Result.Ok());
+		return token;
 	}
 }

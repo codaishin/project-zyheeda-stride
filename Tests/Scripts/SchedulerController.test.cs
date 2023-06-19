@@ -456,11 +456,13 @@ public class SchedulerControllerTest : GameTestCollection {
 	public void LogWaitErrors() {
 		var wait = Mock.Of<IWait>();
 		var errors = (new SystemError[] { "AAA" }, new PlayerError[] { "LLL" });
+		var token = new TaskCompletionSource<Result>();
+		token.SetResult(Result.Errors(errors));
 
 		_ = Mock
 			.Get(wait)
 			.Setup(w => w.Wait(It.IsAny<ScriptSystem>()))
-			.Returns(Task.FromResult((Result)Result.Errors(errors)));
+			.Returns(token);
 
 		IEnumerable<Result<IWait>> doNotWait() {
 			yield return Result.Ok(wait);
@@ -478,5 +480,32 @@ public class SchedulerControllerTest : GameTestCollection {
 		Mock
 			.Get(this.game.Services.GetService<IPlayerMessage>())
 			.Verify(s => s.Log("LLL"), Times.Once);
+	}
+
+	[Fact]
+	public async Task CancelStopsAwaitingCurrentStep() {
+		var result = "";
+
+		IEnumerable<Result<IWait>> RunBar() {
+			while (true) {
+				result += "|";
+				yield return new WaitMilliSeconds(100);
+				result += "|";
+			}
+		}
+
+		Result Cancel() {
+			return Result.Ok();
+		}
+
+		_ = this.schedulerController.Run((RunBar, Cancel));
+
+		await Task.Delay(100);
+
+		_ = this.schedulerController.Clear();
+
+		await Task.Delay(100);
+
+		Assert.Equal("|", result);
 	}
 }

@@ -16,7 +16,7 @@ public class TestWaitFrame : GameTestCollection {
 
 		this.tasks.AddTask(async () => {
 			frame = this.game.UpdateTime.FrameCount;
-			_ = await wait.Wait(this.game.Script);
+			_ = await wait.Wait(this.game.Script).Task;
 			token.SetResult();
 		});
 
@@ -32,7 +32,7 @@ public class TestWaitFrame : GameTestCollection {
 		Result result = Result.SystemError("result not set");
 
 		this.tasks.AddTask(async () => {
-			result = await wait.Wait(this.game.Script);
+			result = await wait.Wait(this.game.Script).Task;
 			token.SetResult();
 		});
 
@@ -58,7 +58,7 @@ public class TestWaitMilliseconds : GameTestCollection {
 		this.tasks.AddTask(async () => {
 			var stopwatch = new Stopwatch();
 			stopwatch.Start();
-			_ = await wait.Wait(this.game.Script);
+			_ = await wait.Wait(this.game.Script).Task;
 			stopwatch.Stop();
 			token.SetResult(stopwatch.ElapsedMilliseconds);
 		});
@@ -71,7 +71,7 @@ public class TestWaitMilliseconds : GameTestCollection {
 	[Fact]
 	public async Task ResultOk() {
 		var wait = new WaitMilliSeconds(0);
-		var result = await wait.Wait(this.game.Script);
+		var result = await wait.Wait(this.game.Script).Task;
 		var ok = result.Switch(
 			_ => false,
 			() => true
@@ -92,7 +92,7 @@ public class TestNoWait : GameTestCollection {
 
 		this.tasks.AddTask(async () => {
 			frame = this.game.UpdateTime.FrameCount;
-			_ = await wait.Wait(this.game.Script);
+			_ = await wait.Wait(this.game.Script).Task;
 			token.SetResult();
 		});
 
@@ -104,7 +104,7 @@ public class TestNoWait : GameTestCollection {
 	[Fact]
 	public async Task ResultOk() {
 		var wait = new NoWait();
-		var result = await wait.Wait(this.game.Script);
+		var result = await wait.Wait(this.game.Script).Task;
 		var ok = result.Switch(
 			_ => false,
 			() => true
