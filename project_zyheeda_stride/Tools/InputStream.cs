@@ -16,7 +16,7 @@ public enum InputKeys {
 public class InputStream : IInputStreamEditor {
 	public InputKeys activationKey = InputKeys.None;
 	public InputActivation activation = InputActivation.OnPress;
-	public InputKeys chainKey = InputKeys.None;
+	public InputKeys enqueueKey = InputKeys.None;
 
 	private TaskCompletionSource<Result<InputAction>> actionToken = new();
 	private bool primedForChaining;
@@ -26,7 +26,7 @@ public class InputStream : IInputStreamEditor {
 	}
 
 	public Result ProcessEvent(InputKeys key, bool isDown) {
-		return key == this.chainKey
+		return key == this.enqueueKey
 			? this.TryPrimeForChaining(isDown)
 			: key == this.activationKey
 			? this.TryRunOrChain(isDown)
@@ -43,7 +43,7 @@ public class InputStream : IInputStreamEditor {
 		if (!InputStream.Matches(this.activation, isDown)) {
 			return ok;
 		}
-		this.actionToken.SetResult(this.primedForChaining ? InputAction.Chain : InputAction.Run);
+		this.actionToken.SetResult(this.primedForChaining ? InputAction.Enqueue : InputAction.Run);
 		this.actionToken = new();
 		return ok;
 	}

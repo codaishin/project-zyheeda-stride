@@ -131,7 +131,7 @@ public class TestInputController : GameTestCollection {
 		_ = Mock.Get(this.behavior)
 			.Setup(c => c.GetCoroutine())
 			.Returns(execution);
-		this.newActionFnTaskTokens[0].SetResult(InputAction.Chain);
+		this.newActionFnTaskTokens[0].SetResult(InputAction.Enqueue);
 
 		this.game.WaitFrames(1);
 
@@ -281,7 +281,7 @@ public class TestInputController : GameTestCollection {
 			.Setup(s => s.Enqueue(It.IsAny<(Func<IEnumerable<Result<IWait>>>, Cancel)>()))
 			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
 
-		this.newActionFnTaskTokens[0].SetResult(InputAction.Chain);
+		this.newActionFnTaskTokens[0].SetResult(InputAction.Enqueue);
 
 		this.game.WaitFrames(2);
 
