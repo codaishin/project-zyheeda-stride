@@ -38,7 +38,7 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 			.Apply(getTarget.GetTarget());
 	}
 
-	public Result<(Func<Coroutine>, Cancel)> GetCoroutine() {
+	public Result<(Func<Coroutine>, Cancel)> GetExecution() {
 		var getCoroutine =
 			(IEquipmentEditor equipment) =>
 			(IGetTargetEditor getTarget) =>

@@ -87,7 +87,7 @@ public class TestInputController : GameTestCollection {
 		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (run, () => Result.Ok());
 
 		_ = Mock.Get(this.behavior)
-			.Setup(c => c.GetCoroutine())
+			.Setup(c => c.GetExecution())
 			.Returns(execution);
 
 		this.newActionFnTaskTokens[0].SetResult(InputAction.Run);
@@ -96,7 +96,7 @@ public class TestInputController : GameTestCollection {
 
 		Mock
 			.Get(this.behavior)
-			.Verify(b => b.GetCoroutine(), Times.Once);
+			.Verify(b => b.GetExecution(), Times.Once);
 	}
 
 	[Fact]
@@ -105,10 +105,10 @@ public class TestInputController : GameTestCollection {
 			yield break;
 		}
 
-		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (run, () => Result.Ok());
+		(Func<IEnumerable<Result<IWait>>> coroutine, Cancel cancel) execution = (run, () => Result.Ok());
 
 		_ = Mock.Get(this.behavior)
-			.Setup(c => c.GetCoroutine())
+			.Setup(c => c.GetExecution())
 			.Returns(execution);
 		this.newActionFnTaskTokens[0].SetResult(InputAction.Run);
 		this.newActionFnTaskTokens[1].SetResult(InputAction.Run);
@@ -117,7 +117,7 @@ public class TestInputController : GameTestCollection {
 
 		Mock
 			.Get(this.scheduler)
-			.Verify(b => b.Run(execution), Times.Exactly(2));
+			.Verify(b => b.Run(execution.coroutine, execution.cancel), Times.Exactly(2));
 	}
 
 	[Fact]
@@ -126,10 +126,10 @@ public class TestInputController : GameTestCollection {
 			yield break;
 		}
 
-		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (run, () => Result.Ok());
+		(Func<IEnumerable<Result<IWait>>> coroutine, Cancel cancel) execution = (run, () => Result.Ok());
 
 		_ = Mock.Get(this.behavior)
-			.Setup(c => c.GetCoroutine())
+			.Setup(c => c.GetExecution())
 			.Returns(execution);
 		this.newActionFnTaskTokens[0].SetResult(InputAction.Enqueue);
 
@@ -137,7 +137,7 @@ public class TestInputController : GameTestCollection {
 
 		Mock
 			.Get(this.scheduler)
-			.Verify(b => b.Enqueue(execution), Times.Once);
+			.Verify(b => b.Enqueue(execution.coroutine, execution.cancel), Times.Once);
 	}
 
 	[Fact]
@@ -211,7 +211,7 @@ public class TestInputController : GameTestCollection {
 	public void LogCoroutineError() {
 		_ = Mock
 			.Get(this.behavior)
-			.Setup(b => b.GetCoroutine())
+			.Setup(b => b.GetExecution())
 			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
 
 		this.newActionFnTaskTokens[0].SetResult(InputAction.Run);
@@ -230,7 +230,7 @@ public class TestInputController : GameTestCollection {
 	public void LogActionError() {
 		_ = Mock
 			.Get(this.behavior)
-			.Setup(b => b.GetCoroutine())
+			.Setup(b => b.GetExecution())
 			.Returns((() => Enumerable.Empty<Result<IWait>>(), () => Result.Ok()));
 
 		this.newActionFnTaskTokens[0].SetResult(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
@@ -249,12 +249,12 @@ public class TestInputController : GameTestCollection {
 	public void LogCoroutineRunError() {
 		_ = Mock
 			.Get(this.behavior)
-			.Setup(b => b.GetCoroutine())
+			.Setup(b => b.GetExecution())
 			.Returns((() => Enumerable.Empty<Result<IWait>>(), () => Result.Ok()));
 
 		_ = Mock
 			.Get(this.scheduler)
-			.Setup(s => s.Run(It.IsAny<(Func<IEnumerable<Result<IWait>>>, Cancel)>()))
+			.Setup(s => s.Run(It.IsAny<Func<IEnumerable<Result<IWait>>>>(), It.IsAny<Cancel>()))
 			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
 
 		this.newActionFnTaskTokens[0].SetResult(InputAction.Run);
@@ -273,12 +273,12 @@ public class TestInputController : GameTestCollection {
 	public void LogCoroutineEnqueError() {
 		_ = Mock
 			.Get(this.behavior)
-			.Setup(b => b.GetCoroutine())
+			.Setup(b => b.GetExecution())
 			.Returns((() => Enumerable.Empty<Result<IWait>>(), () => Result.Ok()));
 
 		_ = Mock
 			.Get(this.scheduler)
-			.Setup(s => s.Enqueue(It.IsAny<(Func<IEnumerable<Result<IWait>>>, Cancel)>()))
+			.Setup(s => s.Enqueue(It.IsAny<Func<IEnumerable<Result<IWait>>>>(), It.IsAny<Cancel>()))
 			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
 
 		this.newActionFnTaskTokens[0].SetResult(InputAction.Enqueue);

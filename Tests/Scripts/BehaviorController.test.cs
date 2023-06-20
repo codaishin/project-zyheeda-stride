@@ -53,7 +53,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		this.controller.agent = agent;
 		this.controller.equipment = equipment;
 
-		_ = this.controller.GetCoroutine();
+		_ = this.controller.GetExecution();
 
 		Mock
 			.Get(equipment)
@@ -87,7 +87,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		this.controller.agent = new();
 		this.controller.equipment = equipment;
 
-		_ = this.controller.GetCoroutine();
+		_ = this.controller.GetExecution();
 
 		Mock
 			.Get(getCoroutine)
@@ -100,7 +100,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		this.controller.equipment = Mock.Of<IEquipmentEditor>();
 		this.controller.getTarget = null;
 
-		var result = this.controller.GetCoroutine();
+		var result = this.controller.GetExecution();
 		var error = result.Switch(
 			errors => (string)errors.system.FirstOrDefault(),
 			_ => "no error"
@@ -124,7 +124,7 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Setup(g => g.GetTarget())
 			.Returns(Result.SystemError("AAA"));
 
-		var result = this.controller.GetCoroutine();
+		var result = this.controller.GetExecution();
 		var error = result.Switch(
 			errors => (string)errors.system.FirstOrDefault(),
 			_ => "no error"
@@ -138,7 +138,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		var target = Vector3.UnitX;
 		this.controller.agent = new Entity("Player");
 
-		var (run, _) = this.controller.GetCoroutine().Switch(
+		var (run, _) = this.controller.GetExecution().Switch(
 			errors => BehaviorControllerTest.Fail(errors),
 			runAndCancel => runAndCancel
 		);
@@ -166,7 +166,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		this.controller.agent = new();
 		this.controller.equipment = equipment;
 
-		var error = this.controller.GetCoroutine().Switch<string>(
+		var error = this.controller.GetExecution().Switch<string>(
 			errors => errors.player.First(),
 			_ => "no errors"
 		);
@@ -182,7 +182,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		this.controller.agent = null;
 		this.controller.equipment = equipment;
 
-		var error = this.controller.GetCoroutine().Switch<string>(
+		var error = this.controller.GetExecution().Switch<string>(
 			errors => errors.system.First(),
 			_ => "no errors"
 		);
@@ -212,7 +212,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		this.controller.agent = new();
 		this.controller.equipment = equipment;
 
-		var gotExecution = this.controller.GetCoroutine().Switch(
+		var gotExecution = this.controller.GetExecution().Switch(
 			errors => BehaviorControllerTest.Fail(errors),
 			runAndCancel => runAndCancel
 		);

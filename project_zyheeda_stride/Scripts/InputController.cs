@@ -18,13 +18,13 @@ public class InputController : ProjectZyheedaAsyncScript {
 
 	private Action<InputAction> RunBehavior(IBehavior behavior, IScheduler scheduler) {
 		return action => {
-			Func<(Func<Coroutine>, Cancel), Result> runOrEnqueue =
+			Func<Func<Coroutine>, Cancel, Result> runOrEnqueue =
 				action is InputAction.Run
 					? scheduler.Run
 					: scheduler.Enqueue;
 			behavior
-				.GetCoroutine()
-				.FlatMap(runOrEnqueue)
+				.GetExecution()
+				.FlatMap(c => runOrEnqueue(c.coroutine, c.cancel))
 				.Switch(errors => this.LogErrors(errors), () => { });
 		};
 	}

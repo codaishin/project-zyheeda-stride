@@ -27,35 +27,35 @@ public class ReferenceSchedulerTests {
 
 	[Fact]
 	public void EnqueueOk() {
-		var execution = (Mock.Of<Func<IEnumerable<Result<IWait>>>>(), Mock.Of<Cancel>());
+		var (coroutine, cancel) = (Mock.Of<Func<IEnumerable<Result<IWait>>>>(), Mock.Of<Cancel>());
 		var reference = new SimpleReference { Target = Mock.Of<IScheduler>() };
 
 		Mock
 			.Get(reference.Target)
 			.SetReturnsDefault<Result>(Result.Ok());
 
-		var result = reference.Enqueue(execution);
+		var result = reference.Enqueue(coroutine, cancel);
 
 		Assert.Equal(result, Result.Ok());
 		Mock
 			.Get(reference.Target)
-			.Verify(e => e.Enqueue(execution), Times.Once);
+			.Verify(e => e.Enqueue(coroutine, cancel), Times.Once);
 	}
 
 	[Fact]
 	public void RunOk() {
-		var execution = (Mock.Of<Func<IEnumerable<Result<IWait>>>>(), Mock.Of<Cancel>());
+		var (coroutine, cancel) = (Mock.Of<Func<IEnumerable<Result<IWait>>>>(), Mock.Of<Cancel>());
 		var reference = new SimpleReference { Target = Mock.Of<IScheduler>() };
 
 		Mock
 			.Get(reference.Target)
 			.SetReturnsDefault<Result>(Result.Ok());
 
-		var result = reference.Run(execution);
+		var result = reference.Run(coroutine, cancel);
 
 		Assert.Equal(result, Result.Ok());
 		Mock
 			.Get(reference.Target)
-			.Verify(e => e.Run(execution), Times.Once);
+			.Verify(e => e.Run(coroutine, cancel), Times.Once);
 	}
 }

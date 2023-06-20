@@ -18,11 +18,11 @@ public class ReferenceBehaviorTests {
 			.Get(reference.Target)
 			.SetReturnsDefault<Result<(Func<IEnumerable<Result<IWait>>>, Cancel)>>(Result.Ok(routine));
 
-		var result = reference.GetCoroutine();
+		var result = reference.GetExecution();
 
 		Assert.Equal(routine, result.UnpackOr((Mock.Of<Func<IEnumerable<Result<IWait>>>>(), Mock.Of<Cancel>())));
 		Mock
 			.Get(reference.Target)
-			.Verify(e => e.GetCoroutine(), Times.Once);
+			.Verify(e => e.GetExecution(), Times.Once);
 	}
 }
