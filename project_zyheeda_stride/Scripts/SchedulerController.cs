@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Stride.Core.MicroThreading;
 
 public class SchedulerController : ProjectZyheedaStartupScript, IScheduler {
-	private readonly Queue<(Func<Coroutine>, Cancel)> queue = new();
+	private readonly Queue<(Func<Coroutine>, Cancel?)> queue = new();
 	private MicroThread? dequeueThread;
 	private Cancel? cancelExecution;
 	private TaskCompletionSource<Result>? currentStepToken;
@@ -45,25 +45,30 @@ public class SchedulerController : ProjectZyheedaStartupScript, IScheduler {
 	}
 
 	public Result Clear() {
-		var result = this.cancelExecution?.Invoke();
+		this.queue.Clear();
+
+		if (this.cancelExecution is null) {
+			return Result.Ok();
+		}
+
+		var result = this.cancelExecution();
 		this.cancelExecution = null;
 		this.dequeueThread?.Cancel();
 		this.dequeueThread = null;
 		_ = (this.currentStepToken?.TrySetCanceled());
 		this.currentStepToken = null;
-		this.queue.Clear();
-		return result ?? Result.Ok();
+		return result;
 	}
 
-	public Result Enqueue((Func<Coroutine>, Cancel) execution) {
-		this.queue.Enqueue(execution);
-		this.StartDequeue();
-		return Result.Ok();
-	}
-
-	public Result Run((Func<Coroutine>, Cancel) execution) {
+	public Result Run(Func<Coroutine> coroutine, Cancel? cancel = null) {
 		return this
 			.Clear()
-			.FlatMap(() => this.Enqueue(execution));
+			.FlatMap(() => this.Enqueue(coroutine, cancel));
+	}
+
+	public Result Enqueue(Func<Coroutine> coroutine, Cancel? cancel = null) {
+		this.queue.Enqueue((coroutine, cancel));
+		this.StartDequeue();
+		return Result.Ok();
 	}
 }

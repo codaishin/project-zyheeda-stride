@@ -15,12 +15,12 @@ public abstract class ReferenceScheduler<TScheduler> : Reference<TScheduler>, IS
 		return this.target.FlatMap(s => s.Clear());
 	}
 
-	public Result Enqueue((Func<Coroutine>, Cancel) execution) {
-		return this.target.FlatMap(s => s.Enqueue(execution));
+	public Result Run(Func<Coroutine> coroutine, Cancel? cancel = null) {
+		return this.target.FlatMap(s => s.Run(coroutine, cancel));
 	}
 
-	public Result Run((Func<Coroutine>, Cancel) execution) {
-		return this.target.FlatMap(s => s.Run(execution));
+	public Result Enqueue(Func<Coroutine> coroutine, Cancel? cancel = null) {
+		return this.target.FlatMap(s => s.Enqueue(coroutine, cancel));
 	}
 }
 

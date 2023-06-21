@@ -30,21 +30,23 @@ Hierarchy:
                         input: !ProjectZyheeda.InputStream,project_zyheeda_stride
                             activationKey: MouseLeft
                             activation: OnPress
-                            chainKey: ShiftLeft
+                            enqueueKey: ShiftLeft
                         behavior: !ProjectZyheeda.ReferenceBehaviorController,project_zyheeda_stride
                             Target: ref!! cd6e3c0f-8bb1-4757-9dc1-f2f6c1143f2d
                         scheduler: !ProjectZyheeda.ReferenceSchedularController,project_zyheeda_stride
                             Target: ref!! a585c668-e48f-42e3-ba34-c0e88883834e
+                        canBeCanceled: true
                     fe30bf0d79e5310638f10cf1c389984c: !ProjectZyheeda.InputController,project_zyheeda_stride
                         Id: 3e58509c-00e9-4dda-b8aa-92f91495a993
                         input: !ProjectZyheeda.InputStream,project_zyheeda_stride
                             activationKey: MouseRight
                             activation: OnPress
-                            chainKey: None
+                            enqueueKey: None
                         behavior: !ProjectZyheeda.ReferenceBehaviorController,project_zyheeda_stride
                             Target: ref!! f23cde4b-fdf3-4964-91e9-f5367b2c40ed
                         scheduler: !ProjectZyheeda.ReferenceSchedularController,project_zyheeda_stride
                             Target: ref!! a585c668-e48f-42e3-ba34-c0e88883834e
+                        canBeCanceled: false
         -   Entity:
                 Id: 2b3d03a5-6086-452d-af65-8a103c8713eb
                 Name: Move

@@ -29,6 +29,7 @@ dotnet_diagnostic.CS8524.severity = error  # non exhaustive switch for unnamed e
 dotnet_diagnostic.CS8846.severity = error  # possibly non exhaustive switch (using when)
 dotnet_diagnostic.IDE0072.severity = none  # don't add missing cases to switch expression
 dotnet_diagnostic.IDE0251.severity = none  # undocumented message, ignoring
+dotnet_diagnostic.xUnit1004.severity = none  # allow skiping of tests
 
 dotnet_style_qualification_for_field = true:error
 dotnet_style_qualification_for_property = true:error

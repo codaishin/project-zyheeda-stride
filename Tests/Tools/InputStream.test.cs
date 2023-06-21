@@ -25,7 +25,7 @@ public class TestInputStream {
 
 		var action = await task;
 
-		Assert.Equal(InputAction.Run, action.UnpackOr(InputAction.Chain));
+		Assert.Equal(InputAction.Run, action.UnpackOr(InputAction.Enqueue));
 	}
 
 	[Fact]
@@ -82,7 +82,7 @@ public class TestInputStream {
 	public void NewActionChain() {
 		var stream = new InputStream {
 			activationKey = InputKeys.MouseRight,
-			chainKey = InputKeys.ShiftLeft,
+			enqueueKey = InputKeys.ShiftLeft,
 			activation = InputActivation.OnPress
 		};
 
@@ -98,7 +98,7 @@ public class TestInputStream {
 			Assert.True(result.Switch(_ => false, () => true));
 			Assert.True(task.IsCompletedSuccessfully);
 			var action = await task;
-			Assert.Equal(InputAction.Chain, action.UnpackOr(InputAction.Run));
+			Assert.Equal(InputAction.Enqueue, action.UnpackOr(InputAction.Run));
 		});
 	}
 
@@ -106,7 +106,7 @@ public class TestInputStream {
 	public void NewActionRunWhenChainKeyUp() {
 		var stream = new InputStream {
 			activationKey = InputKeys.MouseRight,
-			chainKey = InputKeys.ShiftLeft,
+			enqueueKey = InputKeys.ShiftLeft,
 			activation = InputActivation.OnPress
 		};
 
@@ -122,7 +122,7 @@ public class TestInputStream {
 			Assert.True(result.Switch(_ => false, () => true));
 			Assert.True(task.IsCompletedSuccessfully);
 			var action = await task;
-			Assert.Equal(InputAction.Run, action.UnpackOr(InputAction.Chain));
+			Assert.Equal(InputAction.Run, action.UnpackOr(InputAction.Enqueue));
 		});
 
 	}
