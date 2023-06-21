@@ -120,6 +120,29 @@ public class TestInputController : GameTestCollection {
 			.Verify(b => b.Run(execution.coroutine, execution.cancel), Times.Exactly(2));
 	}
 
+
+	[Fact]
+	public void RunBehaviorCannotBeCanceled() {
+		static IEnumerable<Result<IWait>> run() {
+			yield break;
+		}
+
+		(Func<IEnumerable<Result<IWait>>> coroutine, Cancel cancel) execution = (run, () => Result.Ok());
+
+		_ = Mock.Get(this.behavior)
+			.Setup(c => c.GetExecution())
+			.Returns(execution);
+
+		this.controller.canBeCanceled = false;
+		this.newActionFnTaskTokens[0].SetResult(InputAction.Run);
+
+		this.game.WaitFrames(1);
+
+		Mock
+			.Get(this.scheduler)
+			.Verify(b => b.Run(execution.coroutine, null), Times.Once);
+	}
+
 	[Fact]
 	public void EnqueueBehavior() {
 		static IEnumerable<Result<IWait>> run() {

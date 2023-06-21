@@ -4,11 +4,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Stride.Core;
 
 public class InputController : ProjectZyheedaAsyncScript {
-	public IInputStreamEditor? input;
-	public IBehaviorEditor? behavior;
-	public ISchedulerEditor? scheduler;
+	[DataMember(0)] public IInputStreamEditor? input;
+	[DataMember(1)] public IBehaviorEditor? behavior;
+	[DataMember(2)] public ISchedulerEditor? scheduler;
+	[DataMember(3)] public bool canBeCanceled = true;
 
 	private Task LogErrors((IEnumerable<SystemError> system, IEnumerable<PlayerError> player) errors) {
 		this.EssentialServices.systemMessage.Log(errors.system.ToArray());
@@ -18,13 +20,13 @@ public class InputController : ProjectZyheedaAsyncScript {
 
 	private Action<InputAction> RunBehavior(IBehavior behavior, IScheduler scheduler) {
 		return action => {
-			Func<Func<Coroutine>, Cancel, Result> runOrEnqueue =
+			Func<Func<Coroutine>, Cancel?, Result> runOrEnqueue =
 				action is InputAction.Run
 					? scheduler.Run
 					: scheduler.Enqueue;
 			behavior
 				.GetExecution()
-				.FlatMap(c => runOrEnqueue(c.coroutine, c.cancel))
+				.FlatMap(e => runOrEnqueue(e.coroutine, this.canBeCanceled ? e.cancel : null))
 				.Switch(errors => this.LogErrors(errors), () => { });
 		};
 	}
