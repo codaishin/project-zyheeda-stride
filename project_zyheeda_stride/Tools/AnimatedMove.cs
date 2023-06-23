@@ -16,26 +16,48 @@ public class AnimatedMove : IAnimatedMoveEditor {
 		return key => playAnimation(key).Map<IWait>(() => new NoWait());
 	}
 
-	private Result<FGetCoroutine> GetCoroutine(FGetCoroutine innerGetCoroutine, Func<string, Result<IWait>> play) {
-		(Func<Coroutine>, Cancel) GetCoroutine(Func<Vector3> getTarget) {
-			var (runMove, cancelMove) = innerGetCoroutine(getTarget);
+	private static Cancel GetCancel(Cancel cancelMove, Func<string, Result<IWait>> play) {
+		Result Cancel() {
+			return cancelMove()
+				.FlatMap(() => play(AnimatedMove.fallbackAnimationKey));
+		};
 
-			Coroutine run() {
-				yield return play(this.animationKey);
-				foreach (var wait in runMove()) {
-					yield return wait;
+		return Cancel;
+	}
+
+	private Func<Coroutine> GetRun(Func<Coroutine> runMove, Func<string, Result<IWait>> play) {
+		Coroutine Run() {
+			var lastAnimationKey = this.animationKey;
+
+			bool AnimationKeyChanged() {
+				if (this.animationKey != lastAnimationKey) {
+					lastAnimationKey = this.animationKey;
+					return true;
 				}
-				yield return play(AnimatedMove.fallbackAnimationKey);
-			};
+				return false;
+			}
 
-			Result cancel() {
-				return cancelMove()
-					.FlatMap(() => play(AnimatedMove.fallbackAnimationKey));
-			};
+			yield return play(this.animationKey);
+			foreach (var wait in runMove()) {
+				if (AnimationKeyChanged()) {
+					yield return play(this.animationKey);
+				}
+				yield return wait;
+			}
+			yield return play(AnimatedMove.fallbackAnimationKey);
+		};
 
+		return Run;
+	}
+
+	private Result<FGetCoroutine> GetCoroutine(FGetCoroutine innerGetCoroutine, Func<string, Result<IWait>> play) {
+		FGetCoroutine getCoroutine = (Func<Vector3> getTarget) => {
+			var (runMove, cancelMove) = innerGetCoroutine(getTarget);
+			var run = this.GetRun(runMove, play);
+			var cancel = AnimatedMove.GetCancel(cancelMove, play);
 			return (run, cancel);
-		}
-		return Result.Ok<FGetCoroutine>(GetCoroutine);
+		};
+		return getCoroutine;
 	}
 
 	public Result<FGetCoroutine> PrepareCoroutineFor(
