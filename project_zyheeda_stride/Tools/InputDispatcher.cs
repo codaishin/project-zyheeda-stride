@@ -10,6 +10,7 @@ public class InputDispatcher :
 
 	private static readonly Dictionary<Keys, InputKeys> keysMap = new() {
 		{Keys.LeftShift, InputKeys.ShiftLeft},
+		{Keys.CapsLock, InputKeys.CapsLock},
 	};
 	private static readonly Dictionary<MouseButton, InputKeys> mouseButtonsMap = new(){
 		{MouseButton.Left, InputKeys.MouseLeft},
