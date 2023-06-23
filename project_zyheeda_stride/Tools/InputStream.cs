@@ -8,6 +8,7 @@ public enum InputActivation { OnPress, OnRelease }
 public enum InputKeys {
 	None = default,
 	ShiftLeft,
+	CapsLock,
 	MouseLeft,
 	MouseRight,
 }

@@ -19,6 +19,7 @@
 		"Gamepad",
 		"notnull",
 		"Raycast",
+		"togglable",
 		"Xunit",
 		"Zyheeda"
 	],
