@@ -31,8 +31,8 @@ Hierarchy:
                             activationKey: MouseLeft
                             activation: OnPress
                             enqueueKey: ShiftLeft
-                        behavior: !ProjectZyheeda.ReferenceBehaviorController,project_zyheeda_stride
-                            Target: ref!! cd6e3c0f-8bb1-4757-9dc1-f2f6c1143f2d
+                        behavior: !ProjectZyheeda.ReferenceTogglableBehavior,project_zyheeda_stride
+                            Target: ref!! 600a4040-6844-422f-91fd-7b325364d27b
                         scheduler: !ProjectZyheeda.ReferenceSchedularController,project_zyheeda_stride
                             Target: ref!! a585c668-e48f-42e3-ba34-c0e88883834e
                         canBeCanceled: true
@@ -44,6 +44,17 @@ Hierarchy:
                             enqueueKey: None
                         behavior: !ProjectZyheeda.ReferenceBehaviorController,project_zyheeda_stride
                             Target: ref!! f23cde4b-fdf3-4964-91e9-f5367b2c40ed
+                        scheduler: !ProjectZyheeda.ReferenceSchedularController,project_zyheeda_stride
+                            Target: ref!! a585c668-e48f-42e3-ba34-c0e88883834e
+                        canBeCanceled: false
+                    b5292cb3ffaa6b414558c5e9e8ff4645: !ProjectZyheeda.InputController,project_zyheeda_stride
+                        Id: de3cf0e9-7cfe-4c9c-aa90-f968bf0683cb
+                        input: !ProjectZyheeda.InputStream,project_zyheeda_stride
+                            activationKey: CapsLock
+                            activation: OnPress
+                            enqueueKey: None
+                        behavior: !ProjectZyheeda.ReferenceBehaviorToggle,project_zyheeda_stride
+                            Target: ref!! 600a4040-6844-422f-91fd-7b325364d27b
                         scheduler: !ProjectZyheeda.ReferenceSchedularController,project_zyheeda_stride
                             Target: ref!! a585c668-e48f-42e3-ba34-c0e88883834e
                         canBeCanceled: false
@@ -82,6 +93,29 @@ Hierarchy:
                         Children: {}
                     b70cb45919deaf5ba2baaa96dbf30e72: !ProjectZyheeda.SchedulerController,project_zyheeda_stride
                         Id: a585c668-e48f-42e3-ba34-c0e88883834e
+        -   Entity:
+                Id: 3177a24a-2b17-4602-b6f0-72abfcd8bc1c
+                Name: Run
+                Components:
+                    f248825c9d6a7d6d23ed119c123752bb: !TransformComponent
+                        Id: ec6d74dc-b8a1-4744-ada5-f788fc161de7
+                        Position: {X: 0.0, Y: 0.0, Z: 0.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children: {}
+                    d2c26f9ab9074385e6c9d981d5b57bdf: !ProjectZyheeda.MoveController,project_zyheeda_stride
+                        Id: a8b980d2-6a9b-4e55-9f97-7bcc2fdb3c30
+                        move: !ProjectZyheeda.AnimatedMove,project_zyheeda_stride
+                            move: !ProjectZyheeda.StraightMove,project_zyheeda_stride
+                                speed: 4.0
+                            animationKey: run
+                    74ca53bf10b979fccda28376174d91ea: !ProjectZyheeda.BehaviorController,project_zyheeda_stride
+                        Id: 68f76681-6238-4b35-aabd-b849f934eb34
+                        getTarget: !ProjectZyheeda.ReferenceGetMousePosition,project_zyheeda_stride
+                            Target: ref!! 7d51016a-d614-4104-a392-31d63207bd35
+                        equipment: !ProjectZyheeda.ReferenceMoveController,project_zyheeda_stride
+                            Target: ref!! a8b980d2-6a9b-4e55-9f97-7bcc2fdb3c30
+                        agent: ref!! a70e6895-7fd3-4135-9869-1e5eb430a3c8
         -   Entity:
                 Id: 3f4909c5-2f98-4c04-b65f-7d5c1cb9b368
                 Name: ForwardProjictileSpawn
@@ -307,9 +341,27 @@ Hierarchy:
                         Children:
                             c44c707cfc178d55811203942789a263: ref!! ced314a0-83c4-41d2-a0ed-82da86c4fbdf
                             b329a86c998c57ebdeb79970d6e58e6c: ref!! f1c858c7-525a-42ac-a4c0-61a573304c45
-                            7a37a32e0ab6a26dd536f337271b5b54: ref!! 5e3d5ab5-cfd6-4ca2-a0d1-2c6759e8d5f1
+                            1895cf68d1561e644a184261d886da63: ref!! 05bd01eb-1fc6-4a21-9617-22f10ba82131
                             daca0c3b51f7344181e239d408cb9e9b: ref!! a57b22ef-dc9e-4b26-bb84-83e73155678c
                             b5da0543df0afd9880cae4790dd58446: ref!! 5bded2de-bef4-402f-8ef6-97a5683027c6
+        -   Entity:
+                Id: b502d86e-556e-4069-80a9-602c305979cd
+                Name: MoveOrRun
+                Components:
+                    945c1cb1735784ff46aaf9db502c19e5: !TransformComponent
+                        Id: 05bd01eb-1fc6-4a21-9617-22f10ba82131
+                        Position: {X: 0.0, Y: 0.0, Z: 0.0}
+                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
+                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
+                        Children:
+                            e4262768934276d67aaa0b544c27c8e3: ref!! 5e3d5ab5-cfd6-4ca2-a0d1-2c6759e8d5f1
+                            7bf9b29e9ab72e4832b3678c083af0d2: ref!! ec6d74dc-b8a1-4744-ada5-f788fc161de7
+                    ed72defdb9e8f55bb3fac8bcc9b6e6b0: !ProjectZyheeda.ToggleBehaviorController,project_zyheeda_stride
+                        Id: 600a4040-6844-422f-91fd-7b325364d27b
+                        behaviorA: !ProjectZyheeda.ReferenceBehaviorController,project_zyheeda_stride
+                            Target: ref!! cd6e3c0f-8bb1-4757-9dc1-f2f6c1143f2d
+                        behaviorB: !ProjectZyheeda.ReferenceBehaviorController,project_zyheeda_stride
+                            Target: ref!! 68f76681-6238-4b35-aabd-b849f934eb34
         -   Entity:
                 Id: c3ebcead-ded4-4b73-a88f-2fbe1eda413c
                 Name: Skybox
