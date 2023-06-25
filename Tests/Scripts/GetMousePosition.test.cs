@@ -85,10 +85,10 @@ public class TestGetMousePosition : GameTestCollection {
 			.Simulation
 			.Raycast(nearVector.XYZ(), farVector.XYZ());
 
-		Assert.Multiple(() => {
-			Assert.True(hit.Succeeded);
-			Assert.Equal(new Vector3(0, 0, -7.5f), hit.Point);
-		});
+		Assert.Multiple(
+			() => Assert.True(hit.Succeeded),
+			() => Assert.Equal(new Vector3(0, 0, -7.5f), hit.Point)
+		);
 	}
 
 	[Fact]
@@ -139,10 +139,10 @@ public class TestGetMousePosition : GameTestCollection {
 			.GetTarget()
 			.Switch(
 				errors => {
-					Assert.Multiple(() => {
-						Assert.Empty(errors.system);
-						Assert.Contains(GetMousePosition.invalidTarget, errors.player);
-					});
+					Assert.Multiple(
+						() => Assert.Empty(errors.system),
+						() => Assert.Contains(GetMousePosition.invalidTarget, errors.player)
+					);
 				},
 				target => Assert.Fail($"Should not have hit something, but hit {target}")
 			);

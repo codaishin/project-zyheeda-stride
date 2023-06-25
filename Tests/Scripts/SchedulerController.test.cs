@@ -339,10 +339,10 @@ public class SchedulerControllerTest : GameTestCollection {
 
 		_ = this.schedulerController.Clear();
 
-		Assert.Multiple(() => {
-			Mock.Get(cancelA).Verify(cancel => cancel(), Times.Once);
-			Mock.Get(cancelB).Verify(cancel => cancel(), Times.Never);
-		});
+		Assert.Multiple(
+			() => Mock.Get(cancelA).Verify(cancel => cancel(), Times.Once),
+			() => Mock.Get(cancelB).Verify(cancel => cancel(), Times.Never)
+		);
 	}
 
 	[Fact]
