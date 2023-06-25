@@ -113,14 +113,10 @@ public class TestStraightMove : IDisposable {
 		_ = runner.MoveNext();
 		_ = runner.MoveNext();
 
-		Assert.Multiple(() => {
-			Mock
-				.Get(delta)
-				.Verify(func => func(5), Times.Exactly(2));
-			Mock
-				.Get(delta)
-				.Verify(func => func(3), Times.Exactly(3));
-		});
+		Assert.Multiple(
+			() => Mock.Get(delta).Verify(func => func(5), Times.Exactly(2)),
+			() => Mock.Get(delta).Verify(func => func(3), Times.Exactly(3))
+		);
 	}
 
 	[Fact]

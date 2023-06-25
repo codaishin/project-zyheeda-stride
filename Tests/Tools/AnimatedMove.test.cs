@@ -105,10 +105,10 @@ public class TestAnimatedMove {
 
 		var waits = run().ToArray();
 
-		Assert.Multiple(() => {
-			_ = Assert.IsType<NoWait>(waits.First().UnpackOr(new WaitMilliSeconds(0)));
-			_ = Assert.IsType<NoWait>(waits.Last().UnpackOr(new WaitMilliSeconds(0)));
-		});
+		Assert.Multiple(
+			() => _ = Assert.IsType<NoWait>(waits.First().UnpackOr(new WaitMilliSeconds(0))),
+			() => _ = Assert.IsType<NoWait>(waits.Last().UnpackOr(new WaitMilliSeconds(0)))
+		);
 	}
 
 	[Fact]

@@ -18,10 +18,10 @@ public class TestInputStream {
 
 		var result = stream.ProcessEvent(InputKeys.ShiftLeft, isDown: true);
 
-		Assert.Multiple(() => {
-			Assert.True(result.Switch(_ => false, () => true));
-			Assert.True(task.IsCompletedSuccessfully);
-		});
+		Assert.Multiple(
+			() => Assert.True(result.Switch(_ => false, () => true)),
+			() => Assert.True(task.IsCompletedSuccessfully)
+		);
 
 		var action = await task;
 
@@ -39,17 +39,17 @@ public class TestInputStream {
 
 		var result = stream.ProcessEvent(InputKeys.ShiftLeft, isDown: true);
 
-		Assert.Multiple(() => {
-			Assert.True(result.Switch(_ => false, () => true));
-			Assert.False(task.IsCompletedSuccessfully);
-		});
+		Assert.Multiple(
+			() => Assert.True(result.Switch(_ => false, () => true)),
+			() => Assert.False(task.IsCompletedSuccessfully)
+		);
 
 		result = stream.ProcessEvent(InputKeys.MouseRight, isDown: true);
 
-		Assert.Multiple(() => {
-			Assert.True(result.Switch(_ => false, () => true));
-			Assert.True(task.IsCompletedSuccessfully);
-		});
+		Assert.Multiple(
+			() => Assert.True(result.Switch(_ => false, () => true)),
+			() => Assert.True(task.IsCompletedSuccessfully)
+		);
 	}
 
 	[Fact]
@@ -63,19 +63,19 @@ public class TestInputStream {
 
 		var result = stream.ProcessEvent(InputKeys.MouseRight, isDown: true);
 
-		Assert.Multiple(() => {
-			Assert.True(result.Switch(_ => false, () => true));
-			Assert.False(task.IsCompletedSuccessfully);
-		});
+		Assert.Multiple(
+			() => Assert.True(result.Switch(_ => false, () => true)),
+			() => Assert.False(task.IsCompletedSuccessfully)
+		);
 
 		stream.activation = InputActivation.OnPress;
 
 		result = stream.ProcessEvent(InputKeys.MouseRight, isDown: false);
 
-		Assert.Multiple(() => {
-			Assert.True(result.Switch(_ => false, () => true));
-			Assert.False(task.IsCompletedSuccessfully);
-		});
+		Assert.Multiple(
+			() => Assert.True(result.Switch(_ => false, () => true)),
+			() => Assert.False(task.IsCompletedSuccessfully)
+		);
 	}
 
 	[Fact]
@@ -94,12 +94,14 @@ public class TestInputStream {
 
 		result = stream.ProcessEvent(InputKeys.MouseRight, isDown: true);
 
-		Assert.Multiple(async () => {
-			Assert.True(result.Switch(_ => false, () => true));
-			Assert.True(task.IsCompletedSuccessfully);
-			var action = await task;
-			Assert.Equal(InputAction.Enqueue, action.UnpackOr(InputAction.Run));
-		});
+		Assert.Multiple(
+			() => Assert.True(result.Switch(_ => false, () => true)),
+			() => Assert.True(task.IsCompletedSuccessfully),
+			async () => {
+				var action = await task;
+				Assert.Equal(InputAction.Enqueue, action.UnpackOr(InputAction.Run));
+			}
+		);
 	}
 
 	[Fact]
@@ -118,12 +120,14 @@ public class TestInputStream {
 
 		result = stream.ProcessEvent(InputKeys.MouseRight, isDown: true);
 
-		Assert.Multiple(async () => {
-			Assert.True(result.Switch(_ => false, () => true));
-			Assert.True(task.IsCompletedSuccessfully);
-			var action = await task;
-			Assert.Equal(InputAction.Run, action.UnpackOr(InputAction.Enqueue));
-		});
+		Assert.Multiple(
+			() => Assert.True(result.Switch(_ => false, () => true)),
+			() => Assert.True(task.IsCompletedSuccessfully),
+			async () => {
+				var action = await task;
+				Assert.Equal(InputAction.Run, action.UnpackOr(InputAction.Enqueue));
+			}
+		);
 
 	}
 
