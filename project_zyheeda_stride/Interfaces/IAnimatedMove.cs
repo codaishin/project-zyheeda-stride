@@ -3,7 +3,7 @@ namespace ProjectZyheeda;
 using System;
 using Stride.Engine;
 
-public interface IAnimatedMove {
+public interface IAnimatedMove : ISetAnimation, ISetSpeed {
 	Result<FGetCoroutine> PrepareCoroutineFor(
 		Entity agent,
 		FSpeedToDelta delta,

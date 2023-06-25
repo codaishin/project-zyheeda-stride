@@ -10,12 +10,12 @@ using Stride.Engine;
 using Xunit;
 using Xunit.Sdk;
 
-public class TestMove : IDisposable {
+public class TestStraightMove : IDisposable {
 	private readonly VectorTolerance tolerance;
 	private readonly Entity agent;
 	private readonly StraightMove move;
 
-	public TestMove() {
+	public TestStraightMove() {
 		this.tolerance = new(0.001f);
 		this.agent = new();
 		this.move = new();
@@ -32,7 +32,7 @@ public class TestMove : IDisposable {
 	public void MoveTowardsTarget() {
 		var target = new Vector3(1, 0, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.1f).Switch(
-			TestMove.Fail,
+			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
 		var (run, _) = getCoroutine(() => target);
@@ -49,7 +49,7 @@ public class TestMove : IDisposable {
 	public void YieldsWaitFrames() {
 		var target = new Vector3(1, 0, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.1f).Switch(
-			TestMove.Fail,
+			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
 		var (run, _) = getCoroutine(() => target);
@@ -62,7 +62,7 @@ public class TestMove : IDisposable {
 		var target = new Vector3(1, 0, 0);
 		var delta = Mock.Of<FSpeedToDelta>();
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, delta).Switch(
-			TestMove.Fail,
+			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
 		var (run, _) = getCoroutine(() => target);
@@ -91,7 +91,7 @@ public class TestMove : IDisposable {
 		var target = new Vector3(1, 0, 0);
 		var delta = Mock.Of<FSpeedToDelta>();
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, delta).Switch(
-			TestMove.Fail,
+			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
 		var (run, _) = getCoroutine(() => target);
@@ -127,7 +127,7 @@ public class TestMove : IDisposable {
 	public void MoveTowardsTargetEntityAfterChangingTargetPosition() {
 		var target = new Entity();
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.1f).Switch(
-			TestMove.Fail,
+			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
 		var (run, _) = getCoroutine(() => target.Transform.Position);
@@ -152,7 +152,7 @@ public class TestMove : IDisposable {
 		var target = new Vector3(1, 0, 0);
 		var delta = Mock.Of<FSpeedToDelta>();
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, delta).Switch(
-			TestMove.Fail,
+			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
 		var (run, _) = getCoroutine(() => target);
@@ -182,7 +182,7 @@ public class TestMove : IDisposable {
 	public void MoveTowardsTarget0Neg10() {
 		var target = new Vector3(0, -1, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.2f).Switch(
-			TestMove.Fail,
+			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
 		var (run, _) = getCoroutine(() => target);
@@ -200,7 +200,7 @@ public class TestMove : IDisposable {
 	public void MoveTowardsTargetFromOffsetPosition() {
 		var target = new Vector3(1, 1, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.3f).Switch(
-			TestMove.Fail,
+			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
 		var (run, _) = getCoroutine(() => target);
@@ -218,7 +218,7 @@ public class TestMove : IDisposable {
 	public void MoveTowardsTargetWithNotNormalizedInitialDistance() {
 		var target = new Vector3(1, 1, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.3f).Switch(
-			TestMove.Fail,
+			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
 		var (run, _) = getCoroutine(() => target);
@@ -240,7 +240,7 @@ public class TestMove : IDisposable {
 	public void DoNotOvershoot() {
 		var target = new Vector3(1, 0, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0.8f).Switch(
-			TestMove.Fail,
+			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
 		var (run, _) = getCoroutine(() => target);
@@ -257,7 +257,7 @@ public class TestMove : IDisposable {
 	public void LookAtTarget() {
 		var target = new Vector3(1, 0, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0f).Switch(
-			TestMove.Fail,
+			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
 		var (run, _) = getCoroutine(() => target);
@@ -275,7 +275,7 @@ public class TestMove : IDisposable {
 	public void LookAtTargetFromOffset() {
 		var target = new Vector3(1, 0, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0f).Switch(
-			TestMove.Fail,
+			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
 		var (run, _) = getCoroutine(() => target);
@@ -294,7 +294,7 @@ public class TestMove : IDisposable {
 	public void NoRotationChangeWhenTargetIsCurrentPosition() {
 		var target = new Vector3(1, 0, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0f).Switch(
-			TestMove.Fail,
+			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
 		var (run, _) = getCoroutine(() => target);
@@ -305,6 +305,18 @@ public class TestMove : IDisposable {
 		_ = runner.MoveNext();
 
 		Assert.Equal(expectedRotation, this.agent.Transform.Rotation);
+	}
+
+	[Fact]
+	public void SetSpeed() {
+		this.move.speed = 10;
+
+		var oldSpeed = this.move.SetSpeed(42).UnpackOr(-1);
+
+		Assert.Multiple(
+			() => Assert.Equal(10, oldSpeed),
+			() => Assert.Equal(42, this.move.speed)
+		);
 	}
 
 	public void Dispose() {

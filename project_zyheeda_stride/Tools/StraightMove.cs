@@ -38,4 +38,10 @@ public class StraightMove : IMoveEditor {
 			return (run, cancel);
 		});
 	}
+
+	public Result<OldSpeed> SetSpeed(float unitsPerSecond) {
+		var oldSpeed = this.speed;
+		this.speed = unitsPerSecond;
+		return oldSpeed;
+	}
 }

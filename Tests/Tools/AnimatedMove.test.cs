@@ -13,11 +13,10 @@ using Xunit;
 using Xunit.Sdk;
 
 public class TestAnimatedMove {
-	private readonly IMoveEditor move;
 	private readonly AnimatedMove animatedMove;
-	private readonly FGetCoroutine getCoroutine;
-	private readonly Func<IEnumerable<Result<IWait>>> run;
-	private readonly Cancel cancel;
+	private readonly FGetCoroutine getCoroutineOfInnerMove;
+	private readonly Func<IEnumerable<Result<IWait>>> runOfInnerMove;
+	private readonly Cancel cancelOfInnerMove;
 
 	private class MockWait : IWait {
 		public TaskCompletionSource<Result> Wait(ScriptSystem script) {
@@ -33,21 +32,21 @@ public class TestAnimatedMove {
 	}
 
 	public TestAnimatedMove() {
-		this.animatedMove = new() { move = this.move = Mock.Of<IMoveEditor>() };
-		this.getCoroutine = Mock.Of<FGetCoroutine>();
-		this.run = Mock.Of<Func<IEnumerable<Result<IWait>>>>();
-		this.cancel = Mock.Of<Cancel>();
+		this.animatedMove = new() { move = Mock.Of<IMoveEditor>() };
+		this.getCoroutineOfInnerMove = Mock.Of<FGetCoroutine>();
+		this.runOfInnerMove = Mock.Of<Func<IEnumerable<Result<IWait>>>>();
+		this.cancelOfInnerMove = Mock.Of<Cancel>();
 
 		Mock
 			.Get(this.animatedMove.move)
-			.SetReturnsDefault<Result<FGetCoroutine>>(this.getCoroutine);
+			.SetReturnsDefault<Result<FGetCoroutine>>(this.getCoroutineOfInnerMove);
 
 		Mock
-			.Get(this.getCoroutine)
-			.SetReturnsDefault<(Func<IEnumerable<Result<IWait>>>, Cancel)>((this.run, this.cancel));
+			.Get(this.getCoroutineOfInnerMove)
+			.SetReturnsDefault<(Func<IEnumerable<Result<IWait>>>, Cancel)>((this.runOfInnerMove, this.cancelOfInnerMove));
 
 		Mock
-			.Get(this.run)
+			.Get(this.runOfInnerMove)
 			.SetReturnsDefault<IEnumerable<Result<IWait>>>(new Result<IWait>[] { new MockWait(), new MockWait() });
 	}
 
@@ -61,13 +60,13 @@ public class TestAnimatedMove {
 		);
 
 		Mock
-			.Get(this.move)
+			.Get(this.animatedMove.move!)
 			.Verify(m => m.PrepareCoroutineFor(agent, delta), Times.Once);
 
 		var (run, cancel) = getCoroutine(() => new Vector3(1, 2, 3));
 
 		Mock
-			.Get(this.getCoroutine)
+			.Get(this.getCoroutineOfInnerMove)
 			.Verify(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()), Times.Once);
 
 		var waits = run().ToArray();
@@ -81,7 +80,7 @@ public class TestAnimatedMove {
 		_ = cancel();
 
 		Mock
-			.Get(this.cancel)
+			.Get(this.cancelOfInnerMove)
 			.Verify(cancel => cancel(), Times.Once);
 	}
 
@@ -95,13 +94,13 @@ public class TestAnimatedMove {
 		);
 
 		Mock
-			.Get(this.move)
+			.Get(this.animatedMove.move!)
 			.Verify(m => m.PrepareCoroutineFor(agent, delta), Times.Once);
 
 		var (run, cancel) = getCoroutine(() => new Vector3(1, 2, 3));
 
 		Mock
-			.Get(this.getCoroutine)
+			.Get(this.getCoroutineOfInnerMove)
 			.Verify(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()), Times.Once);
 
 		var waits = run().ToArray();
@@ -147,6 +146,46 @@ public class TestAnimatedMove {
 		Mock
 			.Get(play)
 			.Verify(func => func("run"), Times.Once);
+	}
+
+	[Fact]
+	public void PlayNewAnimationDuringRun() {
+		_ = Mock
+			.Get(this.runOfInnerMove)
+			.Setup(r => r())
+			.Returns(new Result<IWait>[] {
+				new MockWait(),
+				new MockWait(),
+				new MockWait(),
+				new MockWait(),
+			});
+
+		var play = Mock.Of<Func<string, Result>>();
+		var getCoroutine = this.animatedMove.PrepareCoroutineFor(new Entity(), _ => 0f, play).Switch(
+			errors => TestAnimatedMove.AssertFail(errors),
+			value => value
+		);
+		var (run, _) = getCoroutine(() => new Vector3(1, 0, 0));
+		var runner = run().GetEnumerator();
+
+		this.animatedMove.animationKey = "run";
+		_ = runner.MoveNext();  // start animation
+		_ = runner.MoveNext();  // move
+
+		this.animatedMove.animationKey = "dance";
+		_ = runner.MoveNext();  // change animation
+		_ = runner.MoveNext();  // move
+
+		Mock
+			.Get(play)
+			.Verify(func => func("dance"), Times.Once);
+
+		this.animatedMove.animationKey = "run";
+		_ = runner.MoveNext();  // change animation
+
+		Mock
+			.Get(play)
+			.Verify(func => func("run"), Times.Exactly(2));
 	}
 
 	[Fact]
@@ -240,7 +279,7 @@ public class TestAnimatedMove {
 		);
 
 		_ = Mock
-			.Get(this.cancel)
+			.Get(this.cancelOfInnerMove)
 			.Setup(c => c()).Returns(Result.PlayerError("AAA"));
 
 		var (_, cancel) = getCoroutine(() => target);
@@ -288,7 +327,7 @@ public class TestAnimatedMove {
 	[Fact]
 	public void ReturnMovePrepareErrors() {
 		_ = Mock
-			.Get(this.move)
+			.Get(this.animatedMove.move!)
 			.Setup(m => m.PrepareCoroutineFor(It.IsAny<Entity>(), It.IsAny<FSpeedToDelta>()))
 			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "BBB" })));
 
@@ -298,5 +337,41 @@ public class TestAnimatedMove {
 			_ => "no errors"
 		);
 		Assert.Equal("AAA, BBB", errors);
+	}
+
+	[Fact]
+	public void SetSpeed() {
+		_ = Mock
+			.Get(this.animatedMove.move!)
+			.Setup(m => m.SetSpeed(42))
+			.Returns(Result.Ok(5f));
+
+		var oldSpeed = this.animatedMove.SetSpeed(42).UnpackOr(-1);
+
+		Assert.Equal(5, oldSpeed);
+	}
+
+	[Fact]
+	public void SetSpeedNoMove() {
+		this.animatedMove.move = null;
+
+		var errors = this.animatedMove.SetSpeed(42).Switch(
+			errors => string.Join(", ", errors.system.Select(e => (string)e)),
+			_ => "no errors"
+		);
+
+		Assert.Equal(this.animatedMove.MissingField(nameof(this.animatedMove.move)), errors);
+	}
+
+	[Fact]
+	public void SetAnimation() {
+		this.animatedMove.animationKey = "crawl";
+
+		var oldAnimationKey = this.animatedMove.SetAnimation("jump").UnpackOr("");
+
+		Assert.Multiple(
+			() => Assert.Equal("crawl", oldAnimationKey),
+			() => Assert.Equal("jump", this.animatedMove.animationKey)
+		);
 	}
 }
