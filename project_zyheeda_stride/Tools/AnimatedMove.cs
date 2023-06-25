@@ -79,4 +79,16 @@ public class AnimatedMove : IAnimatedMoveEditor {
 			.Apply(AnimatedMove.RunAnimation(playAnimation))
 			.Flatten();
 	}
+
+	public Result<OldAnimationKey> SetAnimation(string animationKey) {
+		var oldAnimationKey = this.animationKey;
+		this.animationKey = animationKey;
+		return oldAnimationKey;
+	}
+
+	public Result<OldSpeed> SetSpeed(float unitsPerSecond) {
+		return this.move
+			.OkOrSystemError(this.MissingField(nameof(this.move)))
+			.FlatMap(m => m.SetSpeed(unitsPerSecond));
+	}
 }

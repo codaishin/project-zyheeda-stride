@@ -338,4 +338,40 @@ public class TestAnimatedMove {
 		);
 		Assert.Equal("AAA, BBB", errors);
 	}
+
+	[Fact]
+	public void SetSpeed() {
+		_ = Mock
+			.Get(this.animatedMove.move!)
+			.Setup(m => m.SetSpeed(42))
+			.Returns(Result.Ok(5f));
+
+		var oldSpeed = this.animatedMove.SetSpeed(42).UnpackOr(-1);
+
+		Assert.Equal(5, oldSpeed);
+	}
+
+	[Fact]
+	public void SetSpeedNoMove() {
+		this.animatedMove.move = null;
+
+		var errors = this.animatedMove.SetSpeed(42).Switch(
+			errors => string.Join(", ", errors.system.Select(e => (string)e)),
+			_ => "no errors"
+		);
+
+		Assert.Equal(this.animatedMove.MissingField(nameof(this.animatedMove.move)), errors);
+	}
+
+	[Fact]
+	public void SetAnimation() {
+		this.animatedMove.animationKey = "crawl";
+
+		var oldAnimationKey = this.animatedMove.SetAnimation("jump").UnpackOr("");
+
+		Assert.Multiple(
+			() => Assert.Equal("crawl", oldAnimationKey),
+			() => Assert.Equal("jump", this.animatedMove.animationKey)
+		);
+	}
 }
