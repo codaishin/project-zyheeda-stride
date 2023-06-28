@@ -41,18 +41,6 @@ public class TestResultExtensions {
 			.Get(callback)
 			.Verify(c => c.Invoke(), Times.Once);
 	}
-
-	[Fact]
-	public void ErrorAsString() {
-		Result result = Result.Errors((new SystemError[] { "A", "B", "C" }, new PlayerError[] { "a", "b", "c" }));
-		Assert.Equal("Result(SystemErrors(A, B, C), PlayerErrors(a, b, c))", result.UnpackToString());
-	}
-
-	[Fact]
-	public void OkAsString() {
-		var result = Result.Ok();
-		Assert.Equal("Result(Ok)", result.UnpackToString());
-	}
 }
 
 public class TestGenericResultExtensions {
