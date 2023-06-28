@@ -7,13 +7,13 @@ using Stride.Input;
 using Xunit;
 
 public class TestInputDispatcher {
-	private readonly IInputStream stream;
+	private readonly IExecutionStream stream;
 	private readonly InputDispatcher dispatcher;
 	private readonly ISystemMessage systemMessage;
 	private readonly IPlayerMessage playerMessage;
 
 	public TestInputDispatcher() {
-		this.stream = Mock.Of<IInputStream>();
+		this.stream = Mock.Of<IExecutionStream>();
 		this.systemMessage = Mock.Of<ISystemMessage>();
 		this.playerMessage = Mock.Of<IPlayerMessage>();
 		this.dispatcher = new(new InputManager(), this.systemMessage, this.playerMessage);
@@ -133,7 +133,7 @@ public class TestInputDispatcher {
 			errors => errors.system.First(),
 			() => "no error"
 		);
-		Assert.Equal($"{this.stream}: Can only add one input stream once", error);
+		Assert.Equal($"{this.stream}: Can only add one stream once", error);
 	}
 
 	[Fact]
