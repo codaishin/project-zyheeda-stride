@@ -287,6 +287,43 @@ public class TestStraightMove : IDisposable {
 	}
 
 	[Fact]
+	public void LookAtTargetEachFrame() {
+		var target = new Vector3(1, 0, 0);
+		var getTarget = Mock.Of<Func<Result<Vector3>>>();
+
+		_ = Mock
+			.Get(getTarget)
+			.SetupSequence(f => f())
+			.Returns(new Vector3(1, 0, 0))
+			.Returns(new Vector3(0, 0, 1))
+			.Returns(new Vector3(-1, 0, 0));
+
+		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0f).Switch(
+			TestStraightMove.Fail,
+			getCoroutine => getCoroutine
+		);
+		var (coroutine, _) = getCoroutine(getTarget);
+		var enumerator = coroutine.GetEnumerator();
+
+		Assert.Multiple(
+			() => {
+				_ = enumerator.MoveNext();
+				Assert.Equal(
+					Quaternion.LookRotation(Vector3.UnitX, Vector3.UnitY),
+					this.agent.Transform.Rotation
+				);
+			},
+			() => {
+				_ = enumerator.MoveNext();
+				Assert.Equal(
+					Quaternion.LookRotation(Vector3.UnitZ, Vector3.UnitY),
+					this.agent.Transform.Rotation
+				);
+			}
+		);
+	}
+
+	[Fact]
 	public void NoRotationChangeWhenTargetIsCurrentPosition() {
 		var target = new Vector3(1, 0, 0);
 		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0f).Switch(
@@ -313,6 +350,27 @@ public class TestStraightMove : IDisposable {
 			() => Assert.Equal(10, oldSpeed),
 			() => Assert.Equal(42, this.move.speed)
 		);
+	}
+
+	[Fact]
+	public void ErrorWhenDeterminingPosition() {
+		var getTarget = Mock.Of<Func<Result<Vector3>>>();
+		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0f).Switch(
+			TestStraightMove.Fail,
+			getCoroutine => getCoroutine
+		);
+		var (coroutine, _) = getCoroutine(getTarget);
+
+		_ = Mock
+			.Get(getTarget)
+			.Setup(f => f())
+			.Returns(Result.SystemError("AAA"));
+
+		var enumerator = coroutine.GetEnumerator();
+		_ = enumerator.MoveNext();
+
+		var error = enumerator.Current.Switch(errors => (string)errors.system.FirstOrDefault(), _ => "no error");
+		Assert.Equal("AAA", error);
 	}
 
 	public void Dispose() {

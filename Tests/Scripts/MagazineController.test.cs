@@ -19,7 +19,7 @@ public class MagazineControllerTests : GameTestCollection {
 	public MagazineControllerTests(GameFixture fixture) : base(fixture) {
 		var mProjectile = new Mock<EntityComponent>().As<IProjectile>();
 		_ = mProjectile
-			.Setup(p => p.Follow(It.IsAny<Vector3>(), It.IsAny<Func<Vector3>>(), It.IsAny<float>()))
+			.Setup(p => p.Follow(It.IsAny<Vector3>(), It.IsAny<Func<Result<Vector3>>>(), It.IsAny<float>()))
 			.Returns(Result.Ok());
 
 		this.projectileInstance = new Entity { (EntityComponent)mProjectile.Object };
@@ -59,7 +59,7 @@ public class MagazineControllerTests : GameTestCollection {
 		public event Action<PhysicsComponent>? OnHit;
 		public event Action? OnRangeLimit { add { } remove { } }
 
-		public Result Follow(Vector3 start, Func<Vector3> getTarget, float rangeMultiplier) {
+		public Result Follow(Vector3 start, Func<Result<Vector3>> getTarget, float rangeMultiplier) {
 			this.OnHit?.Invoke(new RigidbodyComponent());
 			return Result.Ok();
 		}
@@ -69,7 +69,7 @@ public class MagazineControllerTests : GameTestCollection {
 		public event Action<PhysicsComponent>? OnHit { add { } remove { } }
 		public event Action? OnRangeLimit;
 
-		public Result Follow(Vector3 start, Func<Vector3> getTarget, float rangeMultiplier) {
+		public Result Follow(Vector3 start, Func<Result<Vector3>> getTarget, float rangeMultiplier) {
 			this.OnRangeLimit?.Invoke();
 			return Result.Ok();
 		}

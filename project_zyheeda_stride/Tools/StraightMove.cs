@@ -9,34 +9,47 @@ using Stride.Engine;
 public class StraightMove : IMoveEditor {
 	public float speed;
 
-	private Coroutine MoveTowards(TransformComponent agent, Func<Vector3> getTarget, FSpeedToDelta delta) {
-		var direction = getTarget() - agent.Position;
+	private static bool NotAtTargetPosition(TransformComponent agent, Result<Vector3> targetOrError) {
+		return targetOrError
+			.Map(newTarget => newTarget != agent.Position)
+			.UnpackOr(false);
+	}
 
-		if (direction != Vector3.Zero) {
-			direction.Normalize();
-			agent.Rotation = Quaternion.LookRotation(direction, Vector3.UnitY);
+	private static IWait UpdateRotation(TransformComponent agent, Vector3 direction) {
+		if (direction == Vector3.Zero) {
+			return new WaitFrame();
 		}
 
-		while (agent.Position != getTarget()) {
-			agent.Position = agent.Position.MoveTowards(getTarget(), delta(this.speed));
-			yield return new WaitFrame();
+		direction.Normalize();
+		agent.Rotation = Quaternion.LookRotation(direction, Vector3.UnitY);
+		return new WaitFrame();
+	}
+
+	private Func<Vector3, IWait> UpdateAgentPositionAndRotation(TransformComponent agent, FSpeedToDelta delta) {
+		return newTarget => {
+			agent.Position = agent.Position.MoveTowards(newTarget, delta(this.speed));
+			return StraightMove.UpdateRotation(agent, newTarget - agent.Position);
+		};
+	}
+
+	private Coroutine MoveTowards(TransformComponent agent, Func<Result<Vector3>> getTarget, FSpeedToDelta delta) {
+		Coroutine Coroutine() {
+			Result<Vector3> targetOrError;
+
+			do {
+				targetOrError = getTarget();
+				yield return targetOrError.Map(this.UpdateAgentPositionAndRotation(agent, delta));
+			} while (StraightMove.NotAtTargetPosition(agent, targetOrError));
 		}
+
+		return Coroutine();
 	}
 
 	public Result<FGetCoroutine> PrepareCoroutineFor(Entity agent, FSpeedToDelta delta) {
-		return Result.Ok<FGetCoroutine>((Func<Vector3> getTarget) => {
-			Coroutine Coroutine() {
-				foreach (var wait in this.MoveTowards(agent.Transform, getTarget, delta)) {
-					yield return wait;
-				}
-			};
-
-			Result Cancel() {
-				return Result.Ok();
-			}
-
-			return (Coroutine(), Cancel);
-		});
+		return Result.Ok<FGetCoroutine>(getTarget => (
+			this.MoveTowards(agent.Transform, getTarget, delta),
+			() => Result.Ok())
+		);
 	}
 
 	public Result<OldSpeed> SetSpeed(float unitsPerSecond) {

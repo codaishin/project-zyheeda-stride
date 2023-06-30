@@ -121,7 +121,7 @@ public class TestGetMousePosition : GameTestCollection {
 				errors => Assert.Fail(string.Join(", ", errors)),
 				getTarget => Assert.Equal(
 					new Vector3(-2, 2, -7.5f),
-					getTarget(),
+					getTarget().UnpackOr(Vector3.Zero),
 					new VectorTolerance(0.0001f)
 				)
 			);

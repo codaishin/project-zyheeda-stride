@@ -28,12 +28,19 @@ public class LauncherController : ProjectZyheedaStartupScript, IEquipment {
 		return new NoWait();
 	}
 
-	private static Vector3 LookDirection(TransformComponent agent, Func<Vector3> target) {
-		var targetPosition = target();
-		var lookTarget = new Vector3(targetPosition.X, agent.Position.Y, targetPosition.Z);
+	private static Vector3 LookDirection(TransformComponent agent, Vector3 target) {
+		var lookTarget = new Vector3(target.X, agent.Position.Y, target.Z);
 		var lookDirection = lookTarget - agent.Position;
 		lookDirection.Normalize();
 		return lookDirection;
+	}
+
+	private static Func<Vector3, IWait> UpdateRotation(TransformComponent agent) {
+		return target => {
+			var lookDirection = LauncherController.LookDirection(agent, target);
+			agent.Rotation = Quaternion.LookRotation(lookDirection, Vector3.UnitY);
+			return new NoWait();
+		};
 	}
 
 	private FGetCoroutine PrepareCoroutine(
@@ -44,8 +51,7 @@ public class LauncherController : ProjectZyheedaStartupScript, IEquipment {
 	) {
 		return target => {
 			Coroutine Coroutine() {
-				var lookDirection = LauncherController.LookDirection(agent, target);
-				agent.Rotation = Quaternion.LookRotation(lookDirection, Vector3.UnitY);
+				yield return target().Map(LauncherController.UpdateRotation(agent));
 				yield return this.EssentialServices.animation
 					.Play(agentAnimator, this.animationKey)
 					.Map(LauncherController.NoDelay);

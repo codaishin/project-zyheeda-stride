@@ -13,7 +13,7 @@ public class GetMousePosition : ProjectZyheedaStartupScript, IGetTarget {
 
 	private Result<Simulation> simulation = Result.SystemError("NOT STARTED");
 
-	private Result<Func<Vector3>> WorldPosition(
+	private Result<Func<Result<Vector3>>> WorldPosition(
 		Vector2 mousePos,
 		Simulation simulation,
 		CameraComponent camera
@@ -31,7 +31,7 @@ public class GetMousePosition : ProjectZyheedaStartupScript, IGetTarget {
 		var hit = simulation.Raycast(nearVector.XYZ(), farVector.XYZ(), filterFlags: this.collideWith);
 
 		return hit.Succeeded
-			? Result.Ok(() => hit.Point)
+			? Result.Ok(() => Result.Ok(hit.Point))
 			: Result.PlayerError("Invalid target");
 	}
 
@@ -41,7 +41,7 @@ public class GetMousePosition : ProjectZyheedaStartupScript, IGetTarget {
 			.OkOrSystemError(this.MissingService<Simulation>());
 	}
 
-	public Result<Func<Vector3>> GetTarget() {
+	public Result<Func<Result<Vector3>>> GetTarget() {
 		var getTarget =
 			(Simulation simulation) =>
 			(CameraComponent camera) =>

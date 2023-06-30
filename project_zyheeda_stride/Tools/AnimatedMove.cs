@@ -2,7 +2,6 @@ namespace ProjectZyheeda;
 
 using System;
 using Stride.Core;
-using Stride.Core.Mathematics;
 using Stride.Engine;
 
 [DataContract]
@@ -51,7 +50,7 @@ public class AnimatedMove : IAnimatedMoveEditor {
 	}
 
 	private Result<FGetCoroutine> GetCoroutine(FGetCoroutine innerGetCoroutine, Func<string, Result<IWait>> play) {
-		FGetCoroutine getCoroutine = (Func<Vector3> getTarget) => {
+		FGetCoroutine getCoroutine = (getTarget) => {
 			var (runMove, cancelMove) = innerGetCoroutine(getTarget);
 			var run = this.GetRun(runMove, play);
 			var cancel = AnimatedMove.GetCancel(cancelMove, play);
