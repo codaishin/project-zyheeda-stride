@@ -1,6 +1,7 @@
 namespace ProjectZyheeda;
 
 using System.Collections.Generic;
+using System.Linq;
 using Stride.Input;
 
 public class InputDispatcher :
@@ -19,9 +20,11 @@ public class InputDispatcher :
 
 	private readonly HashSet<IInputStream> streams = new();
 	private readonly ISystemMessage systemMessage;
+	private readonly IPlayerMessage playerMessage;
 
-	public InputDispatcher(InputManager inputManager, ISystemMessage systemMessage) {
+	public InputDispatcher(InputManager inputManager, ISystemMessage systemMessage, IPlayerMessage playerMessage) {
 		this.systemMessage = systemMessage;
+		this.playerMessage = playerMessage;
 		inputManager.AddListener(this);
 	}
 
@@ -31,7 +34,13 @@ public class InputDispatcher :
 			return;
 		}
 		foreach (var stream in this.streams) {
-			_ = stream.ProcessEvent(key, inputEvent.IsDown);
+			stream.ProcessEvent(key, inputEvent.IsDown).Switch(
+				errors => {
+					this.systemMessage.Log(errors.system.ToArray());
+					this.playerMessage.Log(errors.player.ToArray());
+				},
+				() => { }
+			);
 		}
 	}
 
@@ -41,7 +50,13 @@ public class InputDispatcher :
 			return;
 		}
 		foreach (var stream in this.streams) {
-			_ = stream.ProcessEvent(button, inputEvent.IsDown);
+			stream.ProcessEvent(button, inputEvent.IsDown).Switch(
+				errors => {
+					this.systemMessage.Log(errors.system.ToArray());
+					this.playerMessage.Log(errors.player.ToArray());
+				},
+				() => { }
+			);
 		}
 	}
 

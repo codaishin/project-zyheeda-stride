@@ -24,9 +24,10 @@ public readonly struct EssentialServices {
 
 		var input = game.Services.GetSafeServiceAs<InputManager>();
 		var systemMessage = this.systemMessage;
+		var playerMessage = this.playerMessage;
 		this.inputDispatcher = EssentialServices.GetOrCreate<IInputDispatcher>(
 			game,
-			() => new InputDispatcher(input, systemMessage)
+			() => new InputDispatcher(input, systemMessage, playerMessage)
 		);
 	}
 
