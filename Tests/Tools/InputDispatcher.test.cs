@@ -7,14 +7,16 @@ using Stride.Input;
 using Xunit;
 
 public class TestInputDispatcher {
-	private readonly IInputStream stream;
+	private readonly IExecutionStream stream;
 	private readonly InputDispatcher dispatcher;
 	private readonly ISystemMessage systemMessage;
+	private readonly IPlayerMessage playerMessage;
 
 	public TestInputDispatcher() {
-		this.stream = Mock.Of<IInputStream>();
+		this.stream = Mock.Of<IExecutionStream>();
 		this.systemMessage = Mock.Of<ISystemMessage>();
-		this.dispatcher = new(new InputManager(), this.systemMessage);
+		this.playerMessage = Mock.Of<IPlayerMessage>();
+		this.dispatcher = new(new InputManager(), this.systemMessage, this.playerMessage);
 	}
 
 	[Fact]
@@ -83,6 +85,46 @@ public class TestInputDispatcher {
 	}
 
 	[Fact]
+	public void ProcessMouseEventError() {
+		var systemErrors = new SystemError[] { "AAAA", "BBBB" };
+		var playerErrors = new PlayerError[] { "aaaa", "bbbb" };
+
+		_ = this.dispatcher.Add(this.stream);
+
+		_ = Mock
+			.Get(this.stream)
+			.Setup(s => s.ProcessEvent(It.IsAny<InputKeys>(), It.IsAny<bool>()))
+			.Returns(Result.Errors((systemErrors, playerErrors)));
+
+		this.dispatcher.ProcessEvent(new MouseButtonEvent { Button = MouseButton.Left, IsDown = false });
+
+		Assert.Multiple(
+			() => Mock.Get(this.systemMessage).Verify(m => m.Log(systemErrors), Times.Once),
+			() => Mock.Get(this.playerMessage).Verify(m => m.Log(playerErrors), Times.Once)
+		);
+	}
+
+	[Fact]
+	public void ProcessKeyEventError() {
+		var systemErrors = new SystemError[] { "AAAA", "BBBB" };
+		var playerErrors = new PlayerError[] { "aaaa", "bbbb" };
+
+		_ = this.dispatcher.Add(this.stream);
+
+		_ = Mock
+			.Get(this.stream)
+			.Setup(s => s.ProcessEvent(It.IsAny<InputKeys>(), It.IsAny<bool>()))
+			.Returns(Result.Errors((systemErrors, playerErrors)));
+
+		this.dispatcher.ProcessEvent(new KeyEvent { Key = Keys.LeftShift, IsDown = false });
+
+		Assert.Multiple(
+			() => Mock.Get(this.systemMessage).Verify(m => m.Log(systemErrors), Times.Once),
+			() => Mock.Get(this.playerMessage).Verify(m => m.Log(playerErrors), Times.Once)
+		);
+	}
+
+	[Fact]
 	public void AddResults() {
 		var ok = this.dispatcher.Add(this.stream).Switch(_ => false, () => true);
 		Assert.True(ok);
@@ -91,7 +133,7 @@ public class TestInputDispatcher {
 			errors => errors.system.First(),
 			() => "no error"
 		);
-		Assert.Equal($"{this.stream}: Can only add one input stream once", error);
+		Assert.Equal($"{this.stream}: Can only add one stream once", error);
 	}
 
 	[Fact]

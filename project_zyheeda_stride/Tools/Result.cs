@@ -40,6 +40,18 @@ public readonly struct Result : IResult<(SystemErrors system, PlayerErrors playe
 		);
 	}
 
+	public override string ToString() {
+		var inner = this.Switch(
+			errors => {
+				var systemErrors = errors.system.Select(e => (string)e);
+				var playerErrors = errors.player.Select(e => (string)e);
+				return $"SystemErrors({string.Join(", ", systemErrors)}), PlayerErrors({string.Join(", ", playerErrors)})";
+			},
+			() => "Ok"
+		);
+		return $"{nameof(Result)}({inner})";
+	}
+
 	public static Result Ok() {
 		return new Result();
 	}

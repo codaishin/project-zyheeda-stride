@@ -19,7 +19,7 @@ public class TestMoveController : GameTestCollection {
 		this.game.Services.RemoveService<IAnimation>();
 		this.game.Services.AddService<IAnimation>(this.animation = Mock.Of<IAnimation>());
 
-		IEnumerable<Result<IWait>> Run() {
+		IEnumerable<Result<IWait>> Coroutine() {
 			yield break;
 		}
 		Result Cancel() {
@@ -39,7 +39,7 @@ public class TestMoveController : GameTestCollection {
 			.SetReturnsDefault<Result<IPlayingAnimation>>(Result.Ok(Mock.Of<IPlayingAnimation>()));
 		Mock
 			.Get(this.move)
-			.SetReturnsDefault<Result<FGetCoroutine>>(Result.Ok<FGetCoroutine>(_ => (Run, Cancel)));
+			.SetReturnsDefault<Result<FGetCoroutine>>(Result.Ok<FGetCoroutine>(_ => (Coroutine(), Cancel)));
 
 		this.scene.Entities.Add(new Entity { this.moveController });
 		this.scene.Entities.Add(this.agent);

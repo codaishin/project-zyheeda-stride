@@ -86,4 +86,16 @@ public class TestGenericResult {
 			value => Assert.Equal(42, value)
 		);
 	}
+
+	[Fact]
+	public void ErrorToString() {
+		Result result = Result.Errors((new SystemError[] { "A", "B", "C" }, new PlayerError[] { "a", "b", "c" }));
+		Assert.Equal("Result(SystemErrors(A, B, C), PlayerErrors(a, b, c))", result.ToString());
+	}
+
+	[Fact]
+	public void OkToString() {
+		var result = Result.Ok();
+		Assert.Equal("Result(Ok)", result.ToString());
+	}
 }

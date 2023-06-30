@@ -11,18 +11,6 @@ public static class ResultExtensions {
 			() => { ok(); return default; }
 		);
 	}
-
-	public static string UnpackToString(this Result result) {
-		var inner = result.Switch(
-			errors => {
-				var systemErrors = errors.system.Select(e => (string)e);
-				var playerErrors = errors.player.Select(e => (string)e);
-				return $"SystemErrors({string.Join(", ", systemErrors)}), PlayerErrors({string.Join(", ", playerErrors)})";
-			},
-			() => "Ok"
-		);
-		return $"{nameof(Result)}({inner})";
-	}
 }
 
 public static class GenericResultExtensions {

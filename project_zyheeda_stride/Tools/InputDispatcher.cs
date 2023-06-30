@@ -1,6 +1,7 @@
 namespace ProjectZyheeda;
 
 using System.Collections.Generic;
+using System.Linq;
 using Stride.Input;
 
 public class InputDispatcher :
@@ -17,11 +18,13 @@ public class InputDispatcher :
 		{MouseButton.Right, InputKeys.MouseRight},
 	};
 
-	private readonly HashSet<IInputStream> streams = new();
+	private readonly HashSet<IExecutionStream> streams = new();
 	private readonly ISystemMessage systemMessage;
+	private readonly IPlayerMessage playerMessage;
 
-	public InputDispatcher(InputManager inputManager, ISystemMessage systemMessage) {
+	public InputDispatcher(InputManager inputManager, ISystemMessage systemMessage, IPlayerMessage playerMessage) {
 		this.systemMessage = systemMessage;
+		this.playerMessage = playerMessage;
 		inputManager.AddListener(this);
 	}
 
@@ -31,7 +34,13 @@ public class InputDispatcher :
 			return;
 		}
 		foreach (var stream in this.streams) {
-			_ = stream.ProcessEvent(key, inputEvent.IsDown);
+			stream.ProcessEvent(key, inputEvent.IsDown).Switch(
+				errors => {
+					this.systemMessage.Log(errors.system.ToArray());
+					this.playerMessage.Log(errors.player.ToArray());
+				},
+				() => { }
+			);
 		}
 	}
 
@@ -41,17 +50,23 @@ public class InputDispatcher :
 			return;
 		}
 		foreach (var stream in this.streams) {
-			_ = stream.ProcessEvent(button, inputEvent.IsDown);
+			stream.ProcessEvent(button, inputEvent.IsDown).Switch(
+				errors => {
+					this.systemMessage.Log(errors.system.ToArray());
+					this.playerMessage.Log(errors.player.ToArray());
+				},
+				() => { }
+			);
 		}
 	}
 
-	public Result Add(IInputStream stream) {
+	public Result Add(IExecutionStream stream) {
 		return this.streams.Add(stream)
 			? Result.Ok()
-			: Result.SystemError($"{stream}: Can only add one input stream once");
+			: Result.SystemError($"{stream}: Can only add one stream once");
 	}
 
-	public Result Remove(IInputStream stream) {
+	public Result Remove(IExecutionStream stream) {
 		return this.streams.Remove(stream)
 			? Result.Ok()
 			: Result.SystemError($"{stream}: Could not be removed, due to not being in the set");

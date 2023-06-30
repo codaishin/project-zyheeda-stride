@@ -1,6 +1,5 @@
 namespace Tests;
 
-using System;
 using System.Collections.Generic;
 using Moq;
 using ProjectZyheeda;
@@ -11,16 +10,16 @@ public class ReferenceBehaviorTests {
 
 	[Fact]
 	public void Ok() {
-		var routine = (Mock.Of<Func<IEnumerable<Result<IWait>>>>(), Mock.Of<Cancel>());
+		var routine = (Mock.Of<IEnumerable<Result<IWait>>>(), Mock.Of<Cancel>());
 		var reference = new SimpleReference { Target = Mock.Of<IBehavior>() };
 
 		Mock
 			.Get(reference.Target)
-			.SetReturnsDefault<Result<(Func<IEnumerable<Result<IWait>>>, Cancel)>>(Result.Ok(routine));
+			.SetReturnsDefault<Result<(IEnumerable<Result<IWait>>, Cancel)>>(Result.Ok(routine));
 
 		var result = reference.GetExecution();
 
-		Assert.Equal(routine, result.UnpackOr((Mock.Of<Func<IEnumerable<Result<IWait>>>>(), Mock.Of<Cancel>())));
+		Assert.Equal(routine, result.UnpackOr((Mock.Of<IEnumerable<Result<IWait>>>(), Mock.Of<Cancel>())));
 		Mock
 			.Get(reference.Target)
 			.Verify(e => e.GetExecution(), Times.Once);

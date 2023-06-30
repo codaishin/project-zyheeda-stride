@@ -25,8 +25,8 @@ public class AnimatedMove : IAnimatedMoveEditor {
 		return Cancel;
 	}
 
-	private Func<Coroutine> GetRun(Func<Coroutine> runMove, Func<string, Result<IWait>> play) {
-		Coroutine Run() {
+	private Coroutine GetRun(Coroutine runMove, Func<string, Result<IWait>> play) {
+		Coroutine Coroutine() {
 			var lastAnimationKey = this.animationKey;
 
 			bool AnimationKeyChanged() {
@@ -38,16 +38,16 @@ public class AnimatedMove : IAnimatedMoveEditor {
 			}
 
 			yield return play(this.animationKey);
-			foreach (var wait in runMove()) {
+			foreach (var step in runMove) {
 				if (AnimationKeyChanged()) {
 					yield return play(this.animationKey);
 				}
-				yield return wait;
+				yield return step;
 			}
 			yield return play(AnimatedMove.fallbackAnimationKey);
 		};
 
-		return Run;
+		return Coroutine();
 	}
 
 	private Result<FGetCoroutine> GetCoroutine(FGetCoroutine innerGetCoroutine, Func<string, Result<IWait>> play) {

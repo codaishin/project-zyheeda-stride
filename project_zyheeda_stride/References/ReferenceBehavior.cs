@@ -1,7 +1,5 @@
 namespace ProjectZyheeda;
 
-using System;
-
 public abstract class ReferenceBehavior<TBehavior> : Reference<TBehavior>, IBehaviorEditor
 	where TBehavior :
 		IBehavior {
@@ -11,7 +9,7 @@ public abstract class ReferenceBehavior<TBehavior> : Reference<TBehavior>, IBeha
 		set => this.SetRef(value);
 	}
 
-	public Result<(Func<Coroutine>, Cancel)> GetExecution() {
+	public Result<(Coroutine, Cancel)> GetExecution() {
 		return this.target.FlatMap(b => b.GetExecution());
 	}
 }

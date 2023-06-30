@@ -29,7 +29,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		this.game.WaitFrames(2);
 	}
 
-	private static (Func<IEnumerable<Result<IWait>>>, Cancel) Fail(
+	private static (IEnumerable<Result<IWait>>, Cancel) Fail(
 		(IEnumerable<SystemError> system, IEnumerable<PlayerError> player) errors
 	) {
 		throw new XunitException((
@@ -81,7 +81,7 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
 			.Returns((Func<Vector3> getTarget) => {
 				Assert.Equal(target, getTarget());
-				return (() => Array.Empty<Result<IWait>>(), () => Result.Ok());
+				return (Enumerable.Empty<Result<IWait>>(), () => Result.Ok());
 			});
 
 		this.controller.agent = new();
@@ -138,14 +138,14 @@ public class BehaviorControllerTest : GameTestCollection {
 		var target = Vector3.UnitX;
 		this.controller.agent = new Entity("Player");
 
-		var (run, _) = this.controller.GetExecution().Switch(
+		var (coroutine, _) = this.controller.GetExecution().Switch(
 			errors => BehaviorControllerTest.Fail(errors),
 			runAndCancel => runAndCancel
 		);
-		var coroutine = run().GetEnumerator();
+		var enumerator = coroutine.GetEnumerator();
 
-		_ = coroutine.MoveNext();
-		var error = coroutine.Current.Switch(
+		_ = enumerator.MoveNext();
+		var error = enumerator.Current.Switch(
 			errors => errors.player.First(),
 			_ => (PlayerError)"no error"
 		);
@@ -195,8 +195,8 @@ public class BehaviorControllerTest : GameTestCollection {
 		var getCoroutine = Mock.Of<FGetCoroutine>();
 		var equipment = Mock.Of<IEquipmentEditor>();
 		var target = new Vector3(1, 2, 3);
-		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (
-			() => Array.Empty<Result<IWait>>(),
+		(IEnumerable<Result<IWait>>, Cancel) execution = (
+			Enumerable.Empty<Result<IWait>>(),
 			() => Result.Ok()
 		);
 

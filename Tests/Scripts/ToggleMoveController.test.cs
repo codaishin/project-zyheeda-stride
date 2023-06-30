@@ -1,6 +1,5 @@
 namespace Tests;
 
-using System;
 using System.Collections.Generic;
 using System.Linq
 ;
@@ -28,7 +27,7 @@ public class TestToggleMoveController {
 		this.toggleMoveController.target = this.moveController;
 	}
 
-	private static (Func<IEnumerable<Result<IWait>>> coroutine, Cancel cancel) Fail(string message) {
+	private static (IEnumerable<Result<IWait>> coroutine, Cancel cancel) Fail(string message) {
 		throw new XunitException(message);
 	}
 
@@ -37,12 +36,12 @@ public class TestToggleMoveController {
 		this.toggleMoveController.toggleSpeed = 42;
 		this.toggleMoveController.toggleAnimationKey = "fly";
 
-		var (run, _) = this.toggleMoveController.GetExecution().Switch(
+		var (coroutine, _) = this.toggleMoveController.GetExecution().Switch(
 			_ => TestToggleMoveController.Fail("no execution"),
 			e => e
 		);
 
-		var wait = run()
+		var wait = coroutine
 			.First()
 			.UnpackOr(new WaitFrame());
 
@@ -59,12 +58,12 @@ public class TestToggleMoveController {
 	public void MissingMoveController() {
 		this.toggleMoveController.target = null;
 
-		var (run, _) = this.toggleMoveController.GetExecution().Switch(
+		var (coroutine, _) = this.toggleMoveController.GetExecution().Switch(
 			_ => TestToggleMoveController.Fail("no execution"),
 			e => e
 		);
 
-		var error = run()
+		var error = coroutine
 			.First()
 			.Switch(
 				errors => (string)errors.system.FirstOrDefault(),
@@ -81,12 +80,12 @@ public class TestToggleMoveController {
 	public void MissingMoveOnMoveController() {
 		this.toggleMoveController.target!.move = null;
 
-		var (run, _) = this.toggleMoveController.GetExecution().Switch(
+		var (coroutine, _) = this.toggleMoveController.GetExecution().Switch(
 			_ => TestToggleMoveController.Fail("no execution"),
 			e => e
 		);
 
-		var error = run()
+		var error = coroutine
 			.First()
 			.Switch(
 				errors => (string)errors.system.FirstOrDefault(),
@@ -106,12 +105,12 @@ public class TestToggleMoveController {
 			.Setup(m => m.SetSpeed(It.IsAny<float>()))
 			.Returns(Result.PlayerError("OO"));
 
-		var (run, _) = this.toggleMoveController.GetExecution().Switch(
+		var (coroutine, _) = this.toggleMoveController.GetExecution().Switch(
 			_ => TestToggleMoveController.Fail("no execution"),
 			e => e
 		);
 
-		var error = run()
+		var error = coroutine
 			.First()
 			.Switch(
 				errors => (string)errors.player.FirstOrDefault(),
@@ -128,12 +127,12 @@ public class TestToggleMoveController {
 			.Setup(m => m.SetAnimation(It.IsAny<string>()))
 			.Returns(Result.PlayerError("II"));
 
-		var (run, _) = this.toggleMoveController.GetExecution().Switch(
+		var (coroutine, _) = this.toggleMoveController.GetExecution().Switch(
 			_ => TestToggleMoveController.Fail("no execution"),
 			e => e
 		);
 
-		var error = run()
+		var error = coroutine
 			.First()
 			.Switch(
 				errors => (string)errors.player.FirstOrDefault(),

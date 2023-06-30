@@ -15,7 +15,7 @@ using Xunit.Sdk;
 public class TestAnimatedMove {
 	private readonly AnimatedMove animatedMove;
 	private readonly FGetCoroutine getCoroutineOfInnerMove;
-	private readonly Func<IEnumerable<Result<IWait>>> runOfInnerMove;
+	private readonly List<Result<IWait>> innerCoroutine;
 	private readonly Cancel cancelOfInnerMove;
 
 	private class MockWait : IWait {
@@ -34,7 +34,7 @@ public class TestAnimatedMove {
 	public TestAnimatedMove() {
 		this.animatedMove = new() { move = Mock.Of<IMoveEditor>() };
 		this.getCoroutineOfInnerMove = Mock.Of<FGetCoroutine>();
-		this.runOfInnerMove = Mock.Of<Func<IEnumerable<Result<IWait>>>>();
+		this.innerCoroutine = new();
 		this.cancelOfInnerMove = Mock.Of<Cancel>();
 
 		Mock
@@ -43,11 +43,7 @@ public class TestAnimatedMove {
 
 		Mock
 			.Get(this.getCoroutineOfInnerMove)
-			.SetReturnsDefault<(Func<IEnumerable<Result<IWait>>>, Cancel)>((this.runOfInnerMove, this.cancelOfInnerMove));
-
-		Mock
-			.Get(this.runOfInnerMove)
-			.SetReturnsDefault<IEnumerable<Result<IWait>>>(new Result<IWait>[] { new MockWait(), new MockWait() });
+			.SetReturnsDefault<(IEnumerable<Result<IWait>>, Cancel)>((this.innerCoroutine, this.cancelOfInnerMove));
 	}
 
 	[Fact]
@@ -63,13 +59,13 @@ public class TestAnimatedMove {
 			.Get(this.animatedMove.move!)
 			.Verify(m => m.PrepareCoroutineFor(agent, delta), Times.Once);
 
-		var (run, cancel) = getCoroutine(() => new Vector3(1, 2, 3));
+		var (coroutine, cancel) = getCoroutine(() => new Vector3(1, 2, 3));
 
 		Mock
 			.Get(this.getCoroutineOfInnerMove)
 			.Verify(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()), Times.Once);
 
-		var waits = run().ToArray();
+		var waits = coroutine.ToArray();
 		var innerWaits = waits.Skip(1).Take(waits.Length - 2);
 
 		Assert.All(
@@ -97,13 +93,13 @@ public class TestAnimatedMove {
 			.Get(this.animatedMove.move!)
 			.Verify(m => m.PrepareCoroutineFor(agent, delta), Times.Once);
 
-		var (run, cancel) = getCoroutine(() => new Vector3(1, 2, 3));
+		var (coroutine, cancel) = getCoroutine(() => new Vector3(1, 2, 3));
 
 		Mock
 			.Get(this.getCoroutineOfInnerMove)
 			.Verify(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()), Times.Once);
 
-		var waits = run().ToArray();
+		var waits = coroutine.ToArray();
 
 		Assert.Multiple(
 			() => _ = Assert.IsType<NoWait>(waits.First().UnpackOr(new WaitMilliSeconds(0))),
@@ -119,8 +115,8 @@ public class TestAnimatedMove {
 			errors => TestAnimatedMove.AssertFail(errors),
 			value => value
 		);
-		var (run, _) = getCoroutine(() => target);
-		var runner = run().GetEnumerator();
+		var (coroutine, _) = getCoroutine(() => target);
+		var runner = coroutine.GetEnumerator();
 
 		this.animatedMove.animationKey = "walk";
 		_ = runner.MoveNext();
@@ -137,8 +133,8 @@ public class TestAnimatedMove {
 			errors => TestAnimatedMove.AssertFail(errors),
 			value => value
 		);
-		var (run, _) = getCoroutine(() => new Vector3(1, 0, 0));
-		var runner = run().GetEnumerator();
+		var (coroutine, _) = getCoroutine(() => new Vector3(1, 0, 0));
+		var runner = coroutine.GetEnumerator();
 
 		this.animatedMove.animationKey = "run";
 		_ = runner.MoveNext();
@@ -150,23 +146,20 @@ public class TestAnimatedMove {
 
 	[Fact]
 	public void PlayNewAnimationDuringRun() {
-		_ = Mock
-			.Get(this.runOfInnerMove)
-			.Setup(r => r())
-			.Returns(new Result<IWait>[] {
-				new MockWait(),
-				new MockWait(),
-				new MockWait(),
-				new MockWait(),
-			});
+		this.innerCoroutine.AddRange(new Result<IWait>[] {
+			new MockWait(),
+			new MockWait(),
+			new MockWait(),
+			new MockWait(),
+		});
 
 		var play = Mock.Of<Func<string, Result>>();
 		var getCoroutine = this.animatedMove.PrepareCoroutineFor(new Entity(), _ => 0f, play).Switch(
 			errors => TestAnimatedMove.AssertFail(errors),
 			value => value
 		);
-		var (run, _) = getCoroutine(() => new Vector3(1, 0, 0));
-		var runner = run().GetEnumerator();
+		var (coroutine, _) = getCoroutine(() => new Vector3(1, 0, 0));
+		var runner = coroutine.GetEnumerator();
 
 		this.animatedMove.animationKey = "run";
 		_ = runner.MoveNext();  // start animation
@@ -195,8 +188,8 @@ public class TestAnimatedMove {
 			errors => TestAnimatedMove.AssertFail(errors),
 			value => value
 		);
-		var (run, _) = getCoroutine(() => new Vector3(1, 0, 0));
-		var runner = run().GetEnumerator();
+		var (coroutine, _) = getCoroutine(() => new Vector3(1, 0, 0));
+		var runner = coroutine.GetEnumerator();
 
 		this.animatedMove.animationKey = "run";
 		_ = runner.MoveNext();
@@ -216,8 +209,8 @@ public class TestAnimatedMove {
 			errors => TestAnimatedMove.AssertFail(errors),
 			value => value
 		);
-		var (run, _) = getCoroutine(() => target);
-		var runner = run().GetEnumerator();
+		var (coroutine, _) = getCoroutine(() => target);
+		var runner = coroutine.GetEnumerator();
 
 		while (runner.MoveNext()) { }
 
@@ -234,7 +227,7 @@ public class TestAnimatedMove {
 			errors => TestAnimatedMove.AssertFail(errors),
 			value => value
 		);
-		var (run, _) = getCoroutine(() => target);
+		var (coroutine, _) = getCoroutine(() => target);
 
 		_ = Mock
 			.Get(play)
@@ -242,7 +235,7 @@ public class TestAnimatedMove {
 			.Returns(Result.Ok())
 			.Returns(Result.PlayerError("UUU"));
 
-		var waits = run().ToArray();
+		var waits = coroutine.ToArray();
 
 		waits.Last().Switch(
 			errors => Assert.Equal("UUU", (string)errors.player.First()),
@@ -258,8 +251,8 @@ public class TestAnimatedMove {
 			errors => TestAnimatedMove.AssertFail(errors),
 			value => value
 		);
-		var (run, cancel) = getCoroutine(() => target);
-		var runner = run().GetEnumerator();
+		var (coroutine, cancel) = getCoroutine(() => target);
+		var runner = coroutine.GetEnumerator();
 
 		_ = runner.MoveNext();
 		_ = cancel();

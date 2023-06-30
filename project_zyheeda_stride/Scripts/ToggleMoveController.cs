@@ -1,7 +1,5 @@
 namespace ProjectZyheeda;
 
-using System;
-
 public class ToggleMoveController : ProjectZyheedaStartupScript, IBehavior {
 	public float toggleSpeed;
 	public string toggleAnimationKey = "";
@@ -38,7 +36,7 @@ public class ToggleMoveController : ProjectZyheedaStartupScript, IBehavior {
 		return Result.Ok();
 	}
 
-	public Result<(Func<Coroutine> coroutine, Cancel cancel)> GetExecution() {
-		return (this.Toggle, this.DoNothing);
+	public Result<(Coroutine coroutine, Cancel cancel)> GetExecution() {
+		return (this.Toggle(), this.DoNothing);
 	}
 }

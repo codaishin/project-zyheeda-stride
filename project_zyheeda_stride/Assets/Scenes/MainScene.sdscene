@@ -25,39 +25,48 @@ Hierarchy:
                         Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
                         Scale: {X: 1.0, Y: 1.0, Z: 1.0}
                         Children: {}
-                    57c62770f9fbf32fd569d768849ded86: !ProjectZyheeda.InputController,project_zyheeda_stride
-                        Id: dcb3f888-77c7-4172-ae1b-5462de6b9d70
-                        input: !ProjectZyheeda.InputStream,project_zyheeda_stride
+                    ace4ec076d25286eaf442327908c164e: !ProjectZyheeda.ExecutionController,project_zyheeda_stride
+                        Id: 4c1479f0-33fd-4ba0-9bd4-890777d9377e
+                        input: !ProjectZyheeda.KeyPressExecutionStream,project_zyheeda_stride
                             activationKey: MouseLeft
                             activation: OnPress
                             enqueueKey: ShiftLeft
+                            scheduler: !ProjectZyheeda.ReferenceSchedularController,project_zyheeda_stride
+                                Target: ref!! a585c668-e48f-42e3-ba34-c0e88883834e
+                            canBeCanceled: true
                         behavior: !ProjectZyheeda.ReferenceBehaviorController,project_zyheeda_stride
                             Target: ref!! cd6e3c0f-8bb1-4757-9dc1-f2f6c1143f2d
-                        scheduler: !ProjectZyheeda.ReferenceSchedularController,project_zyheeda_stride
-                            Target: ref!! a585c668-e48f-42e3-ba34-c0e88883834e
-                        canBeCanceled: true
-                    fe30bf0d79e5310638f10cf1c389984c: !ProjectZyheeda.InputController,project_zyheeda_stride
-                        Id: 3e58509c-00e9-4dda-b8aa-92f91495a993
-                        input: !ProjectZyheeda.InputStream,project_zyheeda_stride
+                    5ccf7314098019501e32dca43dcfb421: !ProjectZyheeda.ExecutionController,project_zyheeda_stride
+                        Id: 2cbc5064-c16f-472c-ba9d-5b1d8d678d81
+                        input: !ProjectZyheeda.KeyPressExecutionStream,project_zyheeda_stride
                             activationKey: MouseRight
                             activation: OnPress
                             enqueueKey: None
+                            scheduler: !ProjectZyheeda.ReferenceSchedularController,project_zyheeda_stride
+                                Target: ref!! a585c668-e48f-42e3-ba34-c0e88883834e
+                            canBeCanceled: false
                         behavior: !ProjectZyheeda.ReferenceBehaviorController,project_zyheeda_stride
                             Target: ref!! f23cde4b-fdf3-4964-91e9-f5367b2c40ed
-                        scheduler: !ProjectZyheeda.ReferenceSchedularController,project_zyheeda_stride
-                            Target: ref!! a585c668-e48f-42e3-ba34-c0e88883834e
-                        canBeCanceled: false
-                    b5292cb3ffaa6b414558c5e9e8ff4645: !ProjectZyheeda.InputController,project_zyheeda_stride
-                        Id: de3cf0e9-7cfe-4c9c-aa90-f968bf0683cb
-                        input: !ProjectZyheeda.InputStream,project_zyheeda_stride
+                    8a0f2b956639969dea098f263aa5dc0e: !ProjectZyheeda.ExecutionController,project_zyheeda_stride
+                        Id: d4308848-6e5f-4e1e-8975-aa0689012d45
+                        input: !ProjectZyheeda.KeyPressExecutionStream,project_zyheeda_stride
                             activationKey: CapsLock
                             activation: OnPress
                             enqueueKey: None
+                            scheduler: !ProjectZyheeda.ReferenceSchedularController,project_zyheeda_stride
+                                Target: ref!! 47ebb743-2d93-40a6-880b-8b24d9fe1949
+                            canBeCanceled: false
                         behavior: !ProjectZyheeda.ReferenceToggleMove,project_zyheeda_stride
                             Target: ref!! b7d4654b-ab97-4308-8ff2-fc6355d80e5f
-                        scheduler: !ProjectZyheeda.ReferenceSchedularController,project_zyheeda_stride
-                            Target: ref!! 47ebb743-2d93-40a6-880b-8b24d9fe1949
-                        canBeCanceled: false
+                    cb9dcbc834627d05710a6e4f531852fa: !ProjectZyheeda.ExecutionController,project_zyheeda_stride
+                        Id: 53dd9cd5-1d98-494b-ad11-8f809703474f
+                        input: !ProjectZyheeda.KeyHoldExecutionStream,project_zyheeda_stride
+                            key: MouseLeft
+                            minimumHoldMilliseconds: 200
+                            scheduler: !ProjectZyheeda.ReferenceSchedularController,project_zyheeda_stride
+                                Target: ref!! a585c668-e48f-42e3-ba34-c0e88883834e
+                        behavior: !ProjectZyheeda.ReferenceBehaviorController,project_zyheeda_stride
+                            Target: ref!! cd6e3c0f-8bb1-4757-9dc1-f2f6c1143f2d
         -   Entity:
                 Id: 2b3d03a5-6086-452d-af65-8a103c8713eb
                 Name: Move

@@ -1,7 +1,5 @@
 namespace ProjectZyheeda;
 
-using System;
-
 public abstract class ReferenceScheduler<TScheduler> : Reference<TScheduler>, ISchedulerEditor
 	where TScheduler :
 		IScheduler {
@@ -15,11 +13,11 @@ public abstract class ReferenceScheduler<TScheduler> : Reference<TScheduler>, IS
 		return this.target.FlatMap(s => s.Clear());
 	}
 
-	public Result Run(Func<Coroutine> coroutine, Cancel? cancel = null) {
+	public Result Run(Coroutine coroutine, Cancel? cancel = null) {
 		return this.target.FlatMap(s => s.Run(coroutine, cancel));
 	}
 
-	public Result Enqueue(Func<Coroutine> coroutine, Cancel? cancel = null) {
+	public Result Enqueue(Coroutine coroutine, Cancel? cancel = null) {
 		return this.target.FlatMap(s => s.Enqueue(coroutine, cancel));
 	}
 }
