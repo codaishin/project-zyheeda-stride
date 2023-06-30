@@ -7,10 +7,10 @@ using Moq;
 using ProjectZyheeda;
 using Xunit;
 
-public class TestExecutionStream {
+public class TestKeyPressExecutionStream {
 	[Fact]
 	public void NewExecutionRun() {
-		var stream = new ExecutionStream {
+		var stream = new KeyPressExecutionStream {
 			activationKey = InputKeys.ShiftLeft,
 			activation = InputActivation.OnPress,
 			scheduler = Mock.Of<ISchedulerEditor>(),
@@ -44,7 +44,7 @@ public class TestExecutionStream {
 
 	[Fact]
 	public void NewExecutionRunnerCorrectKey() {
-		var stream = new ExecutionStream {
+		var stream = new KeyPressExecutionStream {
 			activationKey = InputKeys.MouseRight,
 			activation = InputActivation.OnPress,
 			scheduler = Mock.Of<ISchedulerEditor>(),
@@ -69,7 +69,7 @@ public class TestExecutionStream {
 
 	[Fact]
 	public void NewExecutionRunnerCorrectAction() {
-		var stream = new ExecutionStream {
+		var stream = new KeyPressExecutionStream {
 			activationKey = InputKeys.MouseRight,
 			activation = InputActivation.OnRelease,
 			scheduler = Mock.Of<ISchedulerEditor>(),
@@ -96,7 +96,7 @@ public class TestExecutionStream {
 
 	[Fact]
 	public void NewExecutionRunnerEnqueue() {
-		var stream = new ExecutionStream {
+		var stream = new KeyPressExecutionStream {
 			activationKey = InputKeys.MouseRight,
 			enqueueKey = InputKeys.ShiftLeft,
 			activation = InputActivation.OnPress,
@@ -132,7 +132,7 @@ public class TestExecutionStream {
 
 	[Fact]
 	public void NewExecutionRunnerRunWhenEnqueueKeyUp() {
-		var stream = new ExecutionStream {
+		var stream = new KeyPressExecutionStream {
 			activationKey = InputKeys.MouseRight,
 			enqueueKey = InputKeys.ShiftLeft,
 			activation = InputActivation.OnPress,
@@ -164,7 +164,7 @@ public class TestExecutionStream {
 
 	[Fact]
 	public void NewExecutionRunNoCancel() {
-		var stream = new ExecutionStream {
+		var stream = new KeyPressExecutionStream {
 			activationKey = InputKeys.ShiftLeft,
 			activation = InputActivation.OnPress,
 			scheduler = Mock.Of<ISchedulerEditor>(),
@@ -195,7 +195,7 @@ public class TestExecutionStream {
 
 	[Fact]
 	public void NewExecutionEnqueueNoCancel() {
-		var stream = new ExecutionStream {
+		var stream = new KeyPressExecutionStream {
 			activationKey = InputKeys.ShiftLeft,
 			activation = InputActivation.OnPress,
 			enqueueKey = InputKeys.CapsLock,
@@ -228,7 +228,7 @@ public class TestExecutionStream {
 
 	[Fact]
 	public void NewTaskAfterProcessEvent() {
-		var stream = new ExecutionStream {
+		var stream = new KeyPressExecutionStream {
 			activationKey = InputKeys.ShiftLeft,
 			activation = InputActivation.OnPress,
 			scheduler = Mock.Of<ISchedulerEditor>(),
@@ -246,7 +246,7 @@ public class TestExecutionStream {
 
 	[Fact]
 	public async Task MissingScheduler() {
-		var stream = new ExecutionStream {
+		var stream = new KeyPressExecutionStream {
 			activationKey = InputKeys.ShiftLeft,
 			activation = InputActivation.OnPress,
 			scheduler = null,

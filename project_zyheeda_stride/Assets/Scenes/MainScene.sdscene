@@ -27,7 +27,7 @@ Hierarchy:
                         Children: {}
                     ace4ec076d25286eaf442327908c164e: !ProjectZyheeda.ExecutionController,project_zyheeda_stride
                         Id: 4c1479f0-33fd-4ba0-9bd4-890777d9377e
-                        input: !ProjectZyheeda.ExecutionStream,project_zyheeda_stride
+                        input: !ProjectZyheeda.KeyPressExecutionStream,project_zyheeda_stride
                             activationKey: MouseLeft
                             activation: OnPress
                             enqueueKey: ShiftLeft
@@ -38,7 +38,7 @@ Hierarchy:
                             Target: ref!! cd6e3c0f-8bb1-4757-9dc1-f2f6c1143f2d
                     5ccf7314098019501e32dca43dcfb421: !ProjectZyheeda.ExecutionController,project_zyheeda_stride
                         Id: 2cbc5064-c16f-472c-ba9d-5b1d8d678d81
-                        input: !ProjectZyheeda.ExecutionStream,project_zyheeda_stride
+                        input: !ProjectZyheeda.KeyPressExecutionStream,project_zyheeda_stride
                             activationKey: MouseRight
                             activation: OnPress
                             enqueueKey: None
@@ -49,7 +49,7 @@ Hierarchy:
                             Target: ref!! f23cde4b-fdf3-4964-91e9-f5367b2c40ed
                     8a0f2b956639969dea098f263aa5dc0e: !ProjectZyheeda.ExecutionController,project_zyheeda_stride
                         Id: d4308848-6e5f-4e1e-8975-aa0689012d45
-                        input: !ProjectZyheeda.ExecutionStream,project_zyheeda_stride
+                        input: !ProjectZyheeda.KeyPressExecutionStream,project_zyheeda_stride
                             activationKey: CapsLock
                             activation: OnPress
                             enqueueKey: None

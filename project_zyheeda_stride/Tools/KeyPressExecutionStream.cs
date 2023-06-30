@@ -17,7 +17,7 @@ public enum InputKeys {
 }
 
 [DataContract]
-public class ExecutionStream : IExecutionStreamEditor {
+public class KeyPressExecutionStream : IExecutionStreamEditor {
 	[DataMember(0)] public InputKeys activationKey = InputKeys.None;
 	[DataMember(1)] public InputActivation activation = InputActivation.OnPress;
 	[DataMember(2)] public InputKeys enqueueKey = InputKeys.None;
@@ -40,7 +40,7 @@ public class ExecutionStream : IExecutionStreamEditor {
 	}
 
 	private Result TryPrimeForChaining(bool isDown) {
-		this.primedForEnqueueing = ExecutionStream.Matches(InputActivation.OnPress, isDown);
+		this.primedForEnqueueing = KeyPressExecutionStream.Matches(InputActivation.OnPress, isDown);
 		return Result.Ok();
 	}
 
@@ -58,7 +58,7 @@ public class ExecutionStream : IExecutionStreamEditor {
 
 	private Result TryRunOrChain(bool isDown) {
 		var ok = Result.Ok();
-		if (!ExecutionStream.Matches(this.activation, isDown)) {
+		if (!KeyPressExecutionStream.Matches(this.activation, isDown)) {
 			return ok;
 		}
 
