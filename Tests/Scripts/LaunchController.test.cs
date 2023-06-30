@@ -57,9 +57,9 @@ public class LauncherControllerTests : GameTestCollection {
 			_ => LauncherControllerTests.Fail("got errors"),
 			v => v
 		);
-		var (run, _) = getCoroutine(() => Vector3.Zero);
+		var (coroutine, _) = getCoroutine(() => Vector3.Zero);
 
-		var enumerator = run().GetEnumerator();
+		var enumerator = coroutine.GetEnumerator();
 		_ = enumerator.MoveNext();
 		_ = enumerator.MoveNext();
 
@@ -76,9 +76,9 @@ public class LauncherControllerTests : GameTestCollection {
 			_ => LauncherControllerTests.Fail("got errors"),
 			v => v
 		);
-		var (run, _) = getCoroutine(() => Vector3.Zero);
+		var (coroutine, _) = getCoroutine(() => Vector3.Zero);
 
-		var enumerator = run().GetEnumerator();
+		var enumerator = coroutine.GetEnumerator();
 		_ = enumerator.MoveNext();
 		_ = enumerator.MoveNext();
 		_ = enumerator.MoveNext();
@@ -97,9 +97,9 @@ public class LauncherControllerTests : GameTestCollection {
 			_ => LauncherControllerTests.Fail("got errors"),
 			v => v
 		);
-		var (run, _) = getCoroutine(() => Vector3.Zero);
+		var (coroutine, _) = getCoroutine(() => Vector3.Zero);
 
-		_ = run().GetEnumerator().MoveNext();
+		_ = coroutine.GetEnumerator().MoveNext();
 
 		Mock
 			.Get(this.animation)
@@ -117,9 +117,9 @@ public class LauncherControllerTests : GameTestCollection {
 			_ => LauncherControllerTests.Fail("got errors"),
 			v => v
 		);
-		var (run, _) = getCoroutine(() => Vector3.Zero);
+		var (coroutine, _) = getCoroutine(() => Vector3.Zero);
 
-		var enumerator = run().GetEnumerator();
+		var enumerator = coroutine.GetEnumerator();
 		_ = enumerator.MoveNext();
 
 		var error = enumerator.Current.Switch(
@@ -136,11 +136,11 @@ public class LauncherControllerTests : GameTestCollection {
 			_ => LauncherControllerTests.Fail("got errors"),
 			v => v
 		);
-		var (run, _) = getCoroutine(() => Vector3.Zero);
+		var (coroutine, _) = getCoroutine(() => Vector3.Zero);
 
 		var last = Result.Ok(Mock.Of<IWait>());
-		foreach (var wait in run()) {
-			last = wait;
+		foreach (var step in coroutine) {
+			last = step;
 		}
 
 		Mock
@@ -160,11 +160,11 @@ public class LauncherControllerTests : GameTestCollection {
 			_ => LauncherControllerTests.Fail("got errors"),
 			v => v
 		);
-		var (run, _) = getCoroutine(() => Vector3.Zero);
+		var (coroutine, _) = getCoroutine(() => Vector3.Zero);
 
 		var last = Result.Ok(Mock.Of<IWait>());
-		foreach (var wait in run()) {
-			last = wait;
+		foreach (var step in coroutine) {
+			last = step;
 		}
 
 		var error = last.Switch(
@@ -225,9 +225,9 @@ public class LauncherControllerTests : GameTestCollection {
 			_ => LauncherControllerTests.Fail("got errors"),
 			v => v
 		);
-		var (run, _) = getCoroutine(target);
+		var (coroutine, _) = getCoroutine(target);
 
-		var enumerator = run().GetEnumerator();
+		var enumerator = coroutine.GetEnumerator();
 		_ = enumerator.MoveNext();
 		_ = enumerator.MoveNext();
 		_ = enumerator.MoveNext();
@@ -260,9 +260,9 @@ public class LauncherControllerTests : GameTestCollection {
 			_ => LauncherControllerTests.Fail("got errors"),
 			v => v
 		);
-		var (run, _) = getCoroutine(target);
+		var (coroutine, _) = getCoroutine(target);
 
-		var enumerator = run().GetEnumerator();
+		var enumerator = coroutine.GetEnumerator();
 		_ = enumerator.MoveNext();
 		_ = enumerator.MoveNext();
 		_ = enumerator.MoveNext();
@@ -285,9 +285,9 @@ public class LauncherControllerTests : GameTestCollection {
 			_ => LauncherControllerTests.Fail("got errors"),
 			v => v
 		);
-		var (run, _) = getCoroutine(target);
+		var (coroutine, _) = getCoroutine(target);
 
-		var enumerator = run().GetEnumerator();
+		var enumerator = coroutine.GetEnumerator();
 		_ = enumerator.MoveNext();
 
 		var lookVector = new Vector3(1, 0, 3);
@@ -309,9 +309,9 @@ public class LauncherControllerTests : GameTestCollection {
 			_ => LauncherControllerTests.Fail("got errors"),
 			v => v
 		);
-		var (run, _) = getCoroutine(target);
+		var (coroutine, _) = getCoroutine(target);
 
-		var enumerator = run().GetEnumerator();
+		var enumerator = coroutine.GetEnumerator();
 		_ = enumerator.MoveNext();
 
 		var lookVector = new Vector3(1, 0, 3);
@@ -333,9 +333,9 @@ public class LauncherControllerTests : GameTestCollection {
 			_ => LauncherControllerTests.Fail("got errors"),
 			v => v
 		);
-		var (run, _) = getCoroutine(target);
+		var (coroutine, _) = getCoroutine(target);
 
-		var enumerator = run().GetEnumerator();
+		var enumerator = coroutine.GetEnumerator();
 		_ = enumerator.MoveNext();
 
 		var lookVector = new Vector3(4, 0, 6);
@@ -359,9 +359,9 @@ public class LauncherControllerTests : GameTestCollection {
 			_ => LauncherControllerTests.Fail("got errors"),
 			v => v
 		);
-		var (run, _) = getCoroutine(target);
+		var (coroutine, _) = getCoroutine(target);
 
-		var enumerator = run().GetEnumerator();
+		var enumerator = coroutine.GetEnumerator();
 		_ = enumerator.MoveNext();
 		_ = enumerator.MoveNext();
 		_ = enumerator.MoveNext();

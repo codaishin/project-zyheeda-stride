@@ -1,6 +1,5 @@
 namespace Tests;
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -78,8 +77,8 @@ public class TestExecutionController : GameTestCollection {
 
 	[Fact]
 	public void RunBehavior() {
-		(Func<IEnumerable<Result<IWait>>>, Cancel) execution = (
-			() => Enumerable.Empty<Result<IWait>>(),
+		(IEnumerable<Result<IWait>>, Cancel) execution = (
+			Enumerable.Empty<Result<IWait>>(),
 			() => Result.Ok()
 		);
 
@@ -98,8 +97,8 @@ public class TestExecutionController : GameTestCollection {
 
 	[Fact]
 	public void RunBehaviorTwice() {
-		(Func<IEnumerable<Result<IWait>>> coroutine, Cancel cancel) execution = (
-			() => Array.Empty<Result<IWait>>(),
+		(IEnumerable<Result<IWait>> coroutine, Cancel cancel) execution = (
+			Enumerable.Empty<Result<IWait>>(),
 			() => Result.Ok()
 		);
 		var executeA = Mock.Of<FExecute>();
@@ -194,7 +193,7 @@ public class TestExecutionController : GameTestCollection {
 		_ = Mock
 			.Get(this.behavior)
 			.Setup(b => b.GetExecution())
-			.Returns((() => Enumerable.Empty<Result<IWait>>(), () => Result.Ok()));
+			.Returns((Enumerable.Empty<Result<IWait>>(), () => Result.Ok()));
 
 		this.newActionFnTaskTokens[0].SetResult(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
 
@@ -213,7 +212,7 @@ public class TestExecutionController : GameTestCollection {
 		_ = Mock
 			.Get(this.behavior)
 			.Setup(b => b.GetExecution())
-			.Returns((() => Enumerable.Empty<Result<IWait>>(), () => Result.Ok()));
+			.Returns((Enumerable.Empty<Result<IWait>>(), () => Result.Ok()));
 
 		var errors = Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" }));
 		this.newActionFnTaskTokens[0].SetResult(errors);

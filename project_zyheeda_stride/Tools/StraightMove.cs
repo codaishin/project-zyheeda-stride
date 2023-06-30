@@ -25,17 +25,17 @@ public class StraightMove : IMoveEditor {
 
 	public Result<FGetCoroutine> PrepareCoroutineFor(Entity agent, FSpeedToDelta delta) {
 		return Result.Ok<FGetCoroutine>((Func<Vector3> getTarget) => {
-			Coroutine run() {
+			Coroutine Coroutine() {
 				foreach (var wait in this.MoveTowards(agent.Transform, getTarget, delta)) {
 					yield return wait;
 				}
 			};
 
-			Result cancel() {
+			Result Cancel() {
 				return Result.Ok();
 			}
 
-			return (run, cancel);
+			return (Coroutine(), Cancel);
 		});
 	}
 

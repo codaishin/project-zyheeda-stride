@@ -35,8 +35,8 @@ public class TestStraightMove : IDisposable {
 			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
-		var (run, _) = getCoroutine(() => target);
-		var runner = run().GetEnumerator();
+		var (coroutine, _) = getCoroutine(() => target);
+		var runner = coroutine.GetEnumerator();
 
 		_ = runner.MoveNext();
 		_ = runner.MoveNext();
@@ -52,9 +52,9 @@ public class TestStraightMove : IDisposable {
 			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
-		var (run, _) = getCoroutine(() => target);
+		var (coroutine, _) = getCoroutine(() => target);
 
-		Assert.All(run().Select(w => w.UnpackOr(new WaitMilliSeconds(0))), w => Assert.IsType<WaitFrame>(w));
+		Assert.All(coroutine.Select(w => w.UnpackOr(new WaitMilliSeconds(0))), w => Assert.IsType<WaitFrame>(w));
 	}
 
 	[Fact]
@@ -65,8 +65,8 @@ public class TestStraightMove : IDisposable {
 			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
-		var (run, _) = getCoroutine(() => target);
-		var runner = run().GetEnumerator();
+		var (coroutine, _) = getCoroutine(() => target);
+		var runner = coroutine.GetEnumerator();
 
 		_ = Mock
 			.Get(delta)
@@ -94,8 +94,8 @@ public class TestStraightMove : IDisposable {
 			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
-		var (run, _) = getCoroutine(() => target);
-		var runner = run().GetEnumerator();
+		var (coroutine, _) = getCoroutine(() => target);
+		var runner = coroutine.GetEnumerator();
 
 		_ = Mock
 			.Get(delta)
@@ -126,8 +126,8 @@ public class TestStraightMove : IDisposable {
 			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
-		var (run, _) = getCoroutine(() => target.Transform.Position);
-		var runner = run().GetEnumerator();
+		var (coroutine, _) = getCoroutine(() => target.Transform.Position);
+		var runner = coroutine.GetEnumerator();
 
 		target.Transform.Position = new Vector3(1, 0, 0);
 
@@ -151,8 +151,8 @@ public class TestStraightMove : IDisposable {
 			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
-		var (run, _) = getCoroutine(() => target);
-		var runner = run().GetEnumerator();
+		var (coroutine, _) = getCoroutine(() => target);
+		var runner = coroutine.GetEnumerator();
 
 		_ = Mock
 			.Get(delta)
@@ -181,8 +181,8 @@ public class TestStraightMove : IDisposable {
 			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
-		var (run, _) = getCoroutine(() => target);
-		var runner = run().GetEnumerator();
+		var (coroutine, _) = getCoroutine(() => target);
+		var runner = coroutine.GetEnumerator();
 
 		_ = runner.MoveNext();
 		_ = runner.MoveNext();
@@ -199,8 +199,8 @@ public class TestStraightMove : IDisposable {
 			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
-		var (run, _) = getCoroutine(() => target);
-		var runner = run().GetEnumerator();
+		var (coroutine, _) = getCoroutine(() => target);
+		var runner = coroutine.GetEnumerator();
 
 		this.agent.Transform.Position = new Vector3(1, 0, 0);
 		_ = runner.MoveNext();
@@ -217,8 +217,8 @@ public class TestStraightMove : IDisposable {
 			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
-		var (run, _) = getCoroutine(() => target);
-		var runner = run().GetEnumerator();
+		var (coroutine, _) = getCoroutine(() => target);
+		var runner = coroutine.GetEnumerator();
 
 		_ = runner.MoveNext();
 		_ = runner.MoveNext();
@@ -239,8 +239,8 @@ public class TestStraightMove : IDisposable {
 			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
-		var (run, _) = getCoroutine(() => target);
-		var runner = run().GetEnumerator();
+		var (coroutine, _) = getCoroutine(() => target);
+		var runner = coroutine.GetEnumerator();
 
 		_ = runner.MoveNext();
 		_ = runner.MoveNext();
@@ -256,8 +256,8 @@ public class TestStraightMove : IDisposable {
 			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
-		var (run, _) = getCoroutine(() => target);
-		var runner = run().GetEnumerator();
+		var (coroutine, _) = getCoroutine(() => target);
+		var runner = coroutine.GetEnumerator();
 
 		_ = runner.MoveNext();
 
@@ -274,8 +274,8 @@ public class TestStraightMove : IDisposable {
 			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
-		var (run, _) = getCoroutine(() => target);
-		var runner = run().GetEnumerator();
+		var (coroutine, _) = getCoroutine(() => target);
+		var runner = coroutine.GetEnumerator();
 
 		this.agent.Transform.Position = new Vector3(3, 0, 0);
 		_ = runner.MoveNext();
@@ -293,8 +293,8 @@ public class TestStraightMove : IDisposable {
 			TestStraightMove.Fail,
 			getCoroutine => getCoroutine
 		);
-		var (run, _) = getCoroutine(() => target);
-		var runner = run().GetEnumerator();
+		var (coroutine, _) = getCoroutine(() => target);
+		var runner = coroutine.GetEnumerator();
 		var expectedRotation = this.agent.Transform.Rotation;
 
 		this.agent.Transform.Position = new Vector3(1, 0, 0);

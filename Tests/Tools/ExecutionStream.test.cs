@@ -1,6 +1,5 @@
 namespace Tests;
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -17,7 +16,7 @@ public class TestExecutionStream {
 			scheduler = Mock.Of<ISchedulerEditor>(),
 		};
 
-		var coroutine = Mock.Of<Func<IEnumerable<Result<IWait>>>>();
+		var coroutine = Mock.Of<IEnumerable<Result<IWait>>>();
 		var cancel = Mock.Of<Cancel>();
 		var schedulerResult = Result.SystemError("Error");
 
@@ -104,7 +103,7 @@ public class TestExecutionStream {
 			scheduler = Mock.Of<ISchedulerEditor>(),
 		};
 
-		var coroutine = Mock.Of<Func<IEnumerable<Result<IWait>>>>();
+		var coroutine = Mock.Of<IEnumerable<Result<IWait>>>();
 		var cancel = Mock.Of<Cancel>();
 		var schedulerResult = Result.SystemError("Error");
 
@@ -140,7 +139,7 @@ public class TestExecutionStream {
 			scheduler = Mock.Of<ISchedulerEditor>(),
 		};
 
-		var coroutine = Mock.Of<Func<IEnumerable<Result<IWait>>>>();
+		var coroutine = Mock.Of<IEnumerable<Result<IWait>>>();
 		var cancel = Mock.Of<Cancel>();
 		var schedulerResult = Result.SystemError("Error");
 
@@ -172,7 +171,7 @@ public class TestExecutionStream {
 			canBeCanceled = false,
 		};
 
-		var coroutine = Mock.Of<Func<IEnumerable<Result<IWait>>>>();
+		var coroutine = Mock.Of<IEnumerable<Result<IWait>>>();
 		var cancel = Mock.Of<Cancel>();
 		Result schedulerResult = Result.SystemError("Error");
 
@@ -204,7 +203,7 @@ public class TestExecutionStream {
 			canBeCanceled = false,
 		};
 
-		var coroutine = Mock.Of<Func<IEnumerable<Result<IWait>>>>();
+		var coroutine = Mock.Of<IEnumerable<Result<IWait>>>();
 		var cancel = Mock.Of<Cancel>();
 		Result schedulerResult = Result.SystemError("Error");
 

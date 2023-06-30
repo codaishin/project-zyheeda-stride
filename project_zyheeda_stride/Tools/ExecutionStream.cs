@@ -1,6 +1,5 @@
 namespace ProjectZyheeda;
 
-using System;
 using System.Threading.Tasks;
 using Stride.Core;
 
@@ -46,11 +45,11 @@ public class ExecutionStream : IExecutionStreamEditor {
 	}
 
 	private FExecute GetExecution(IScheduler scheduler) {
-		Result Run(Func<Coroutine> coroutine, Cancel cancel) {
+		Result Run(Coroutine coroutine, Cancel cancel) {
 			return scheduler.Run(coroutine, this.canBeCanceled ? cancel : null);
 		}
 
-		Result Enqueue(Func<Coroutine> coroutine, Cancel cancel) {
+		Result Enqueue(Coroutine coroutine, Cancel cancel) {
 			return scheduler.Enqueue(coroutine, this.canBeCanceled ? cancel : null);
 		}
 

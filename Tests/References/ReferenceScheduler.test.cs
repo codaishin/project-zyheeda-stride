@@ -1,6 +1,5 @@
 namespace Tests;
 
-using System;
 using System.Collections.Generic;
 using Moq;
 using ProjectZyheeda;
@@ -27,7 +26,7 @@ public class ReferenceSchedulerTests {
 
 	[Fact]
 	public void EnqueueOk() {
-		var (coroutine, cancel) = (Mock.Of<Func<IEnumerable<Result<IWait>>>>(), Mock.Of<Cancel>());
+		var (coroutine, cancel) = (Mock.Of<IEnumerable<Result<IWait>>>(), Mock.Of<Cancel>());
 		var reference = new SimpleReference { Target = Mock.Of<IScheduler>() };
 
 		Mock
@@ -44,7 +43,7 @@ public class ReferenceSchedulerTests {
 
 	[Fact]
 	public void RunOk() {
-		var (coroutine, cancel) = (Mock.Of<Func<IEnumerable<Result<IWait>>>>(), Mock.Of<Cancel>());
+		var (coroutine, cancel) = (Mock.Of<IEnumerable<Result<IWait>>>(), Mock.Of<Cancel>());
 		var reference = new SimpleReference { Target = Mock.Of<IScheduler>() };
 
 		Mock

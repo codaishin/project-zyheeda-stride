@@ -1,7 +1,5 @@
 namespace ProjectZyheeda;
 
-using System;
-
 public abstract class ReferenceToggle<TToggle> : Reference<TToggle>, IBehaviorEditor
 	where TToggle :
 		IToggle {
@@ -11,7 +9,7 @@ public abstract class ReferenceToggle<TToggle> : Reference<TToggle>, IBehaviorEd
 		set => this.SetRef(value);
 	}
 
-	public Result<(Func<Coroutine>, Cancel)> GetExecution() {
+	public Result<(Coroutine, Cancel)> GetExecution() {
 		return this.target.FlatMap(t => t.GetToggle());
 	}
 }

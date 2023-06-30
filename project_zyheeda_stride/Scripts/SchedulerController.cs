@@ -1,13 +1,12 @@
 namespace ProjectZyheeda;
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Stride.Core.MicroThreading;
 
 public class SchedulerController : ProjectZyheedaStartupScript, IScheduler {
-	private readonly Queue<(Func<Coroutine>, Cancel?)> queue = new();
+	private readonly Queue<(Coroutine, Cancel?)> queue = new();
 	private MicroThread? dequeueThread;
 	private Cancel? cancelExecution;
 	private TaskCompletionSource<Result>? currentStepToken;
@@ -24,8 +23,7 @@ public class SchedulerController : ProjectZyheedaStartupScript, IScheduler {
 
 	private async Task Dequeue() {
 		while (this.queue.TryDequeue(out var execution)) {
-			(var runExecution, this.cancelExecution) = execution;
-			var coroutine = runExecution();
+			(var coroutine, this.cancelExecution) = execution;
 			foreach (var step in coroutine) {
 				var result = await step
 					.Map(this.WaitAndSetCurrentStepToken)
@@ -60,13 +58,13 @@ public class SchedulerController : ProjectZyheedaStartupScript, IScheduler {
 		return result;
 	}
 
-	public Result Run(Func<Coroutine> coroutine, Cancel? cancel = null) {
+	public Result Run(Coroutine coroutine, Cancel? cancel = null) {
 		return this
 			.Clear()
 			.FlatMap(() => this.Enqueue(coroutine, cancel));
 	}
 
-	public Result Enqueue(Func<Coroutine> coroutine, Cancel? cancel = null) {
+	public Result Enqueue(Coroutine coroutine, Cancel? cancel = null) {
 		this.queue.Enqueue((coroutine, cancel));
 		this.StartDequeue();
 		return Result.Ok();

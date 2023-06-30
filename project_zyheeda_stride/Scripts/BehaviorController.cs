@@ -11,7 +11,7 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 
 	private struct VoidEquipment : IEquipmentEditor {
 		public Result<FGetCoroutine> PrepareCoroutineFor(Entity agent) {
-			static Coroutine Run() {
+			static Coroutine Coroutine() {
 				yield return Result.PlayerError("nothing equipped");
 			}
 
@@ -19,11 +19,11 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 				return Result.Ok();
 			}
 
-			return Result.Ok<FGetCoroutine>((Func<Vector3> _) => (Run, Cancel));
+			return Result.Ok<FGetCoroutine>((Func<Vector3> _) => (Coroutine(), Cancel));
 		}
 	}
 
-	private static Result<(Func<Coroutine>, Cancel)> GetCoroutine(
+	private static Result<(Coroutine, Cancel)> GetCoroutine(
 		IEquipmentEditor equipment,
 		IGetTargetEditor getTarget,
 		Entity agent
@@ -38,7 +38,7 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 			.Apply(getTarget.GetTarget());
 	}
 
-	public Result<(Func<Coroutine>, Cancel)> GetExecution() {
+	public Result<(Coroutine, Cancel)> GetExecution() {
 		var getCoroutine =
 			(IEquipmentEditor equipment) =>
 			(IGetTargetEditor getTarget) =>

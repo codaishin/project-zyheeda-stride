@@ -50,19 +50,19 @@ public class KineticController : ProjectZyheedaAsyncScript, IProjectile {
 		return (float)this.Game.UpdateTime.Elapsed.TotalSeconds * speed;
 	}
 
-	private Vector3 AdjustTargetByRange(Vector3 start, Func<Vector3> getTarget, float rangeMultiplier) {
+	private Vector3 ProjectTargetOntoRange(Vector3 start, Func<Vector3> getTarget, float rangeMultiplier) {
 		var direction = Vector3.Normalize(getTarget() - start);
 		return start + (direction * this.baseRange * rangeMultiplier);
 	}
 
 	private Result Follow(Vector3 start, Func<Vector3> getTarget, float rangeMultiplier, FGetCoroutine getCoroutine) {
-		var target = this.AdjustTargetByRange(start, getTarget, rangeMultiplier);
-		(var run, this.cancel) = getCoroutine(() => target);
+		var target = this.ProjectTargetOntoRange(start, getTarget, rangeMultiplier);
+		(var coroutine, this.cancel) = getCoroutine(() => target);
 
 		this.thread?.Cancel();
 		this.thread = this.Script.AddTask(async () => {
-			foreach (var pause in run()) {
-				await pause.Switch(this.LogErrors, this.WaitPause);
+			foreach (var step in coroutine) {
+				await step.Switch(this.LogErrors, this.WaitPause);
 			}
 			this.OnRangeLimit?.Invoke();
 		});

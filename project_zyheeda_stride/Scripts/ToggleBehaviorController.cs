@@ -1,7 +1,5 @@
 namespace ProjectZyheeda;
 
-using System;
-
 public class ToggleBehaviorController : ProjectZyheedaStartupScript, IToggle, IBehavior {
 	public IBehaviorEditor? behaviorA;
 	public IBehaviorEditor? behaviorB;
@@ -16,11 +14,11 @@ public class ToggleBehaviorController : ProjectZyheedaStartupScript, IToggle, IB
 		return Result.Ok();
 	}
 
-	public Result<(Func<Coroutine> coroutine, Cancel cancel)> GetToggle() {
-		return (this.Toggle, ToggleBehaviorController.DoNothing);
+	public Result<(Coroutine coroutine, Cancel cancel)> GetToggle() {
+		return (this.Toggle(), ToggleBehaviorController.DoNothing);
 	}
 
-	public Result<(Func<Coroutine> coroutine, Cancel cancel)> GetExecution() {
+	public Result<(Coroutine coroutine, Cancel cancel)> GetExecution() {
 		return this.toggled
 			? this.behaviorB
 				.OkOrSystemError(this.MissingField(nameof(this.behaviorB)))

@@ -43,7 +43,7 @@ public class LauncherController : ProjectZyheedaStartupScript, IEquipment {
 		TransformComponent spawnTransform
 	) {
 		return target => {
-			Coroutine Run() {
+			Coroutine Coroutine() {
 				var lookDirection = LauncherController.LookDirection(agent, target);
 				agent.Rotation = Quaternion.LookRotation(lookDirection, Vector3.UnitY);
 				yield return this.EssentialServices.animation
@@ -72,7 +72,7 @@ public class LauncherController : ProjectZyheedaStartupScript, IEquipment {
 					.Play(agentAnimator, LauncherController.fallbackAnimationKey);
 			}
 
-			return (Run, Cancel);
+			return (Coroutine(), Cancel);
 		};
 	}
 
