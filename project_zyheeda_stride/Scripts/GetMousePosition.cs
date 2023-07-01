@@ -10,29 +10,43 @@ public class GetMousePosition : ProjectZyheedaStartupScript, IGetTarget {
 
 	public CameraComponent? camera;
 	public CollisionFilterGroupFlags collideWith = CollisionFilterGroupFlags.DefaultFilter;
+	public bool continuousRaycast;
 
 	private Result<Simulation> simulation = Result.SystemError("NOT STARTED");
 
 	private Result<Func<Result<Vector3>>> WorldPosition(
-		Vector2 mousePos,
 		Simulation simulation,
 		CameraComponent camera
 	) {
-		var invViewProj = Matrix.Invert(camera.ViewProjectionMatrix);
-		var nearPos = new Vector3((mousePos.X * 2f) - 1f, 1f - (mousePos.Y * 2f), 0f);
-		var farPos = nearPos + Vector3.UnitZ;
+		return this.EssentialServices.inputWrapper.MousePosition.FlatMap(
+			mousePos => {
+				var invViewProj = Matrix.Invert(camera.ViewProjectionMatrix);
+				var nearPos = new Vector3((mousePos.X * 2f) - 1f, 1f - (mousePos.Y * 2f), 0f);
+				var farPos = nearPos + Vector3.UnitZ;
 
-		var nearVector = Vector3.Transform(nearPos, invViewProj);
-		nearVector /= nearVector.W;
+				var nearVector = Vector3.Transform(nearPos, invViewProj);
+				nearVector /= nearVector.W;
 
-		var farVector = Vector3.Transform(farPos, invViewProj);
-		farVector /= farVector.W;
+				var farVector = Vector3.Transform(farPos, invViewProj);
+				farVector /= farVector.W;
 
-		var hit = simulation.Raycast(nearVector.XYZ(), farVector.XYZ(), filterFlags: this.collideWith);
+				var hit = simulation.Raycast(nearVector.XYZ(), farVector.XYZ(), filterFlags: this.collideWith);
+				return hit.Succeeded
+					? Result.Ok(() => Result.Ok(hit.Point))
+					: Result.PlayerError("Invalid target");
+			}
+		);
+	}
 
-		return hit.Succeeded
-			? Result.Ok(() => Result.Ok(hit.Point))
-			: Result.PlayerError("Invalid target");
+	private Result<Func<Result<Vector3>>> WorldPositionLazy(
+		Simulation simulation,
+		CameraComponent camera
+	) {
+		return Result.Ok(
+			() => this
+				.WorldPosition(simulation, camera)
+				.FlatMap(getTarget => getTarget())
+		);
 	}
 
 	public override void Start() {
@@ -45,12 +59,13 @@ public class GetMousePosition : ProjectZyheedaStartupScript, IGetTarget {
 		var getTarget =
 			(Simulation simulation) =>
 			(CameraComponent camera) =>
-			(Vector2 mousePos) => this.WorldPosition(mousePos, simulation, camera);
+				this.continuousRaycast
+					? this.WorldPositionLazy(simulation, camera)
+					: this.WorldPosition(simulation, camera);
 
 		return getTarget
 			.Apply(this.simulation)
 			.Apply(this.camera.OkOrSystemError(this.MissingField(nameof(this.camera))))
-			.Apply(this.EssentialServices.inputWrapper.MousePosition)
 			.Flatten();
 	}
 }
