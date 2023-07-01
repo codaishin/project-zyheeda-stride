@@ -1,9 +1,9 @@
 namespace ProjectZyheeda;
 
-public class ToggleMoveController : ProjectZyheedaStartupScript, IBehavior {
+public class ToggleAnimatedMoveDependencyController : ProjectZyheedaStartupScript, IBehavior {
 	public float toggleSpeed;
 	public string toggleAnimationKey = "";
-	public MoveController? target;
+	public CharacterDependencies? target;
 
 	private Result ToggleTargetMove(IAnimatedMove move) {
 		var storeOldValues =
@@ -19,7 +19,7 @@ public class ToggleMoveController : ProjectZyheedaStartupScript, IBehavior {
 			.Apply(move.SetAnimation(this.toggleAnimationKey));
 	}
 
-	private Result ToggleTarget(MoveController target) {
+	private Result ToggleTarget(CharacterDependencies target) {
 		return target.move
 			.OkOrSystemError(target.MissingField(nameof(target.move)))
 			.FlatMap(this.ToggleTargetMove);
