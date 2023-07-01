@@ -8,23 +8,23 @@ using ProjectZyheeda;
 using Xunit;
 using Xunit.Sdk;
 
-public class TestToggleMoveController {
-	private readonly MoveController moveController = new() {
+public class TestToggleAnimatedMoveDependencyController {
+	private readonly CharacterDependencies characterDependencies = new() {
 		move = Mock.Of<IAnimatedMoveEditor>()
 	};
-	private readonly ToggleMoveController toggleMoveController = new();
+	private readonly ToggleAnimatedMoveDependencyController toggleMoveController = new();
 
-	public TestToggleMoveController() : base() {
+	public TestToggleAnimatedMoveDependencyController() : base() {
 		_ = Mock
-			.Get(this.moveController.move!)
+			.Get(this.characterDependencies.move!)
 			.Setup(m => m.SetSpeed(It.IsAny<float>()))
 			.Returns(Result.Ok(3f));
 		_ = Mock
-			.Get(this.moveController.move!)
+			.Get(this.characterDependencies.move!)
 			.Setup(m => m.SetAnimation(It.IsAny<string>()))
 			.Returns(Result.Ok("hover"));
 
-		this.toggleMoveController.target = this.moveController;
+		this.toggleMoveController.target = this.characterDependencies;
 	}
 
 	private static (IEnumerable<Result<IWait>> coroutine, Cancel cancel) Fail(string message) {
@@ -37,7 +37,7 @@ public class TestToggleMoveController {
 		this.toggleMoveController.toggleAnimationKey = "fly";
 
 		var (coroutine, _) = this.toggleMoveController.GetExecution().Switch(
-			_ => TestToggleMoveController.Fail("no execution"),
+			_ => TestToggleAnimatedMoveDependencyController.Fail("no execution"),
 			e => e
 		);
 
@@ -46,8 +46,8 @@ public class TestToggleMoveController {
 			.UnpackOr(new WaitFrame());
 
 		Assert.Multiple(
-			() => Mock.Get(this.moveController.move!).Verify(m => m.SetSpeed(42), Times.Once),
-			() => Mock.Get(this.moveController.move!).Verify(m => m.SetAnimation("fly"), Times.Once),
+			() => Mock.Get(this.characterDependencies.move!).Verify(m => m.SetSpeed(42), Times.Once),
+			() => Mock.Get(this.characterDependencies.move!).Verify(m => m.SetAnimation("fly"), Times.Once),
 			() => Assert.Equal(3, this.toggleMoveController.toggleSpeed),
 			() => Assert.Equal("hover", this.toggleMoveController.toggleAnimationKey),
 			() => Assert.IsType<NoWait>(wait)
@@ -59,7 +59,7 @@ public class TestToggleMoveController {
 		this.toggleMoveController.target = null;
 
 		var (coroutine, _) = this.toggleMoveController.GetExecution().Switch(
-			_ => TestToggleMoveController.Fail("no execution"),
+			_ => TestToggleAnimatedMoveDependencyController.Fail("no execution"),
 			e => e
 		);
 
@@ -81,7 +81,7 @@ public class TestToggleMoveController {
 		this.toggleMoveController.target!.move = null;
 
 		var (coroutine, _) = this.toggleMoveController.GetExecution().Switch(
-			_ => TestToggleMoveController.Fail("no execution"),
+			_ => TestToggleAnimatedMoveDependencyController.Fail("no execution"),
 			e => e
 		);
 
@@ -93,7 +93,7 @@ public class TestToggleMoveController {
 			);
 
 		Assert.Equal(
-			this.moveController.MissingField(nameof(this.moveController.move)),
+			this.characterDependencies.MissingField(nameof(this.characterDependencies.move)),
 			error
 		);
 	}
@@ -101,12 +101,12 @@ public class TestToggleMoveController {
 	[Fact]
 	public void SetSpeedError() {
 		_ = Mock
-			.Get(this.moveController.move!)
+			.Get(this.characterDependencies.move!)
 			.Setup(m => m.SetSpeed(It.IsAny<float>()))
 			.Returns(Result.PlayerError("OO"));
 
 		var (coroutine, _) = this.toggleMoveController.GetExecution().Switch(
-			_ => TestToggleMoveController.Fail("no execution"),
+			_ => TestToggleAnimatedMoveDependencyController.Fail("no execution"),
 			e => e
 		);
 
@@ -123,12 +123,12 @@ public class TestToggleMoveController {
 	[Fact]
 	public void SetAnimationError() {
 		_ = Mock
-			.Get(this.moveController.move!)
+			.Get(this.characterDependencies.move!)
 			.Setup(m => m.SetAnimation(It.IsAny<string>()))
 			.Returns(Result.PlayerError("II"));
 
 		var (coroutine, _) = this.toggleMoveController.GetExecution().Switch(
-			_ => TestToggleMoveController.Fail("no execution"),
+			_ => TestToggleAnimatedMoveDependencyController.Fail("no execution"),
 			e => e
 		);
 
@@ -145,7 +145,7 @@ public class TestToggleMoveController {
 	[Fact]
 	public void CancelOk() {
 		var (_, cancel) = this.toggleMoveController.GetExecution().Switch(
-			_ => TestToggleMoveController.Fail("no execution"),
+			_ => TestToggleAnimatedMoveDependencyController.Fail("no execution"),
 			e => e
 		);
 

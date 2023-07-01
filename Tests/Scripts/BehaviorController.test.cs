@@ -24,7 +24,7 @@ public class BehaviorControllerTest : GameTestCollection {
 		_ = Mock
 			.Get(this.getTarget)
 			.Setup(g => g.GetTarget())
-			.Returns(Result.Ok(() => Vector3.Zero));
+			.Returns(Result.Ok(() => Result.Ok(Vector3.Zero)));
 
 		this.game.WaitFrames(2);
 	}
@@ -64,7 +64,7 @@ public class BehaviorControllerTest : GameTestCollection {
 	public void ExecuteWithTarget() {
 		var getCoroutine = Mock.Of<FGetCoroutine>();
 		var equipment = Mock.Of<IEquipmentEditor>();
-		var target = new Vector3(1, 2, 3);
+		var target = Result.Ok(new Vector3(1, 2, 3));
 
 		_ = Mock
 			.Get(this.getTarget)
@@ -78,8 +78,8 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		_ = Mock
 			.Get(getCoroutine)
-			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()))
-			.Returns((Func<Vector3> getTarget) => {
+			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Result<Vector3>>>()))
+			.Returns((Func<Result<Vector3>> getTarget) => {
 				Assert.Equal(target, getTarget());
 				return (Enumerable.Empty<Result<IWait>>(), () => Result.Ok());
 			});
@@ -91,7 +91,7 @@ public class BehaviorControllerTest : GameTestCollection {
 
 		Mock
 			.Get(getCoroutine)
-			.Verify(func => func(It.IsAny<Func<Vector3>>()), Times.Once());
+			.Verify(func => func(It.IsAny<Func<Result<Vector3>>>()), Times.Once());
 	}
 
 	[Fact]
@@ -206,7 +206,7 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Returns(Result.Ok(getCoroutine));
 
 		_ = Mock.Get(getCoroutine)
-			.Setup(func => func(It.IsAny<Func<Vector3>>()))
+			.Setup(func => func(It.IsAny<Func<Result<Vector3>>>()))
 			.Returns(execution);
 
 		this.controller.agent = new();

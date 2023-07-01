@@ -35,7 +35,7 @@ public class LauncherControllerTests : GameTestCollection {
 
 		_ = Mock
 			.Get(this.projectile)
-			.Setup(p => p.Follow(It.IsAny<Vector3>(), It.IsAny<Func<Vector3>>(), It.IsAny<float>()))
+			.Setup(p => p.Follow(It.IsAny<Vector3>(), It.IsAny<Func<Result<Vector3>>>(), It.IsAny<float>()))
 			.Returns(Result.Ok(this.projectile));
 
 		_ = Mock
@@ -60,13 +60,18 @@ public class LauncherControllerTests : GameTestCollection {
 		var (coroutine, _) = getCoroutine(() => Vector3.Zero);
 
 		var enumerator = coroutine.GetEnumerator();
-		_ = enumerator.MoveNext();
-		_ = enumerator.MoveNext();
 
-		var wait = enumerator.Current.UnpackOr(new NoWait());
+		Assert.Multiple(
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.True(enumerator.MoveNext()),
+			() => {
+				var wait = enumerator.Current.UnpackOr(new NoWait());
 
-		var waitMilliSeconds = Assert.IsType<WaitMilliSeconds>(wait);
-		Assert.Equal(42, waitMilliSeconds.milliSeconds);
+				var waitMilliSeconds = Assert.IsType<WaitMilliSeconds>(wait);
+				Assert.Equal(42, waitMilliSeconds.milliSeconds);
+			}
+		);
 	}
 
 	[Fact]
@@ -79,15 +84,20 @@ public class LauncherControllerTests : GameTestCollection {
 		var (coroutine, _) = getCoroutine(() => Vector3.Zero);
 
 		var enumerator = coroutine.GetEnumerator();
-		_ = enumerator.MoveNext();
-		_ = enumerator.MoveNext();
-		_ = enumerator.MoveNext();
-		_ = enumerator.MoveNext();
 
-		var wait = enumerator.Current.UnpackOr(new NoWait());
+		Assert.Multiple(
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.True(enumerator.MoveNext()),
+			() => {
+				var wait = enumerator.Current.UnpackOr(new NoWait());
 
-		var waitMilliSeconds = Assert.IsType<WaitMilliSeconds>(wait);
-		Assert.Equal(33, waitMilliSeconds.milliSeconds);
+				var waitMilliSeconds = Assert.IsType<WaitMilliSeconds>(wait);
+				Assert.Equal(33, waitMilliSeconds.milliSeconds);
+			}
+		);
 	}
 
 	[Fact]
@@ -99,11 +109,13 @@ public class LauncherControllerTests : GameTestCollection {
 		);
 		var (coroutine, _) = getCoroutine(() => Vector3.Zero);
 
-		_ = coroutine.GetEnumerator().MoveNext();
+		var enumerator = coroutine.GetEnumerator();
 
-		Mock
-			.Get(this.animation)
-			.Verify(a => a.Play(this.agentAnimator, "shoot"));
+		Assert.Multiple(
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.True(enumerator.MoveNext()),
+			() => Mock.Get(this.animation).Verify(a => a.Play(this.agentAnimator, "shoot"))
+		);
 	}
 
 	[Fact]
@@ -120,14 +132,12 @@ public class LauncherControllerTests : GameTestCollection {
 		var (coroutine, _) = getCoroutine(() => Vector3.Zero);
 
 		var enumerator = coroutine.GetEnumerator();
-		_ = enumerator.MoveNext();
 
-		var error = enumerator.Current.Switch(
-			errors => (string)errors.system.FirstOrDefault(),
-			_ => "no errors"
+		Assert.Multiple(
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.Equal("BBB", enumerator.Current.Switch(e => (string)e.system.FirstOrDefault(), _ => "no errors"))
 		);
-
-		Assert.Equal("BBB", error);
 	}
 
 	[Fact]
@@ -143,10 +153,10 @@ public class LauncherControllerTests : GameTestCollection {
 			last = step;
 		}
 
-		Mock
-			.Get(this.animation)
-			.Verify(a => a.Play(this.agentAnimator, LauncherController.fallbackAnimationKey));
-		_ = Assert.IsType<NoWait>(last.UnpackOr(new WaitFrame()));
+		Assert.Multiple(
+			() => Mock.Get(this.animation).Verify(a => a.Play(this.agentAnimator, LauncherController.fallbackAnimationKey)),
+			() => Assert.IsType<NoWait>(last.UnpackOr(new WaitFrame()))
+		);
 	}
 
 	[Fact]
@@ -185,10 +195,10 @@ public class LauncherControllerTests : GameTestCollection {
 
 		var result = cancel();
 
-		Mock
-			.Get(this.animation)
-			.Verify(a => a.Play(this.agentAnimator, LauncherController.fallbackAnimationKey));
-		Assert.Equal(Result.Ok(), result);
+		Assert.Multiple(
+			() => Mock.Get(this.animation).Verify(a => a.Play(this.agentAnimator, LauncherController.fallbackAnimationKey)),
+			() => Assert.Equal(Result.Ok(), result)
+		);
 	}
 
 	[Fact]
@@ -214,7 +224,7 @@ public class LauncherControllerTests : GameTestCollection {
 
 	[Fact]
 	public void FollowTargetOk() {
-		var target = () => new Vector3(1, 2, 3);
+		var target = () => Result.Ok(new Vector3(1, 2, 3));
 		var spawn = new Vector3(5, 6, 7);
 		this.controller.rangeModifier = 2f;
 		this.controller.spawnProjectileAt!.Position = spawn;
@@ -228,22 +238,20 @@ public class LauncherControllerTests : GameTestCollection {
 		var (coroutine, _) = getCoroutine(target);
 
 		var enumerator = coroutine.GetEnumerator();
-		_ = enumerator.MoveNext();
-		_ = enumerator.MoveNext();
-		_ = enumerator.MoveNext();
 
-		Mock
-			.Get(this.projectile)
-			.Verify(p => p.Follow(spawn, target, this.controller.rangeModifier), Times.Once);
-
-		var noWait = enumerator.Current.UnpackOr(new WaitFrame());
-
-		_ = Assert.IsType<NoWait>(noWait);
+		Assert.Multiple(
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.True(enumerator.MoveNext()),
+			() => Mock.Get(this.projectile).Verify(p => p.Follow(spawn, target, this.controller.rangeModifier), Times.Once),
+			() => Assert.IsType<NoWait>(enumerator.Current.UnpackOr(new WaitFrame()))
+		);
 	}
 
 	[Fact]
 	public void FollowTargetSpawnWorldPosition() {
-		var target = () => new Vector3(1, 2, 3);
+		var target = () => Result.Ok(new Vector3(1, 2, 3));
 		var spawn = new Vector3(5, 6, 7);
 		var spawnEntityParent = new Entity();
 		spawnEntityParent.AddChild(new Entity());
@@ -263,22 +271,20 @@ public class LauncherControllerTests : GameTestCollection {
 		var (coroutine, _) = getCoroutine(target);
 
 		var enumerator = coroutine.GetEnumerator();
-		_ = enumerator.MoveNext();
-		_ = enumerator.MoveNext();
-		_ = enumerator.MoveNext();
 
-		Mock
-			.Get(this.projectile)
-			.Verify(p => p.Follow(spawn, target, this.controller.rangeModifier), Times.Once);
-
-		var noWait = enumerator.Current.UnpackOr(new WaitFrame());
-
-		_ = Assert.IsType<NoWait>(noWait);
+		Assert.Multiple(
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.True(enumerator.MoveNext()),
+			() => Mock.Get(this.projectile).Verify(p => p.Follow(spawn, target, this.controller.rangeModifier), Times.Once),
+			() => Assert.IsType<NoWait>(enumerator.Current.UnpackOr(new WaitFrame()))
+		);
 	}
 
 	[Fact]
 	public void LookAtTargetXZ() {
-		var target = () => new Vector3(1, 2, 3);
+		var target = () => Result.Ok(new Vector3(1, 2, 3));
 		this.controller.rangeModifier = 2f;
 
 		var getCoroutine = this.controller.PrepareCoroutineFor(this.agent).Switch(
@@ -288,20 +294,20 @@ public class LauncherControllerTests : GameTestCollection {
 		var (coroutine, _) = getCoroutine(target);
 
 		var enumerator = coroutine.GetEnumerator();
-		_ = enumerator.MoveNext();
 
 		var lookVector = new Vector3(1, 0, 3);
 		lookVector.Normalize();
 
-		Assert.Equal(
-			Quaternion.LookRotation(lookVector, Vector3.UnitY),
-			this.agent.Transform.Rotation
+		Assert.Multiple(
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.IsType<NoWait>(enumerator.Current.UnpackOr(new WaitMilliSeconds(1))),
+			() => Assert.Equal(Quaternion.LookRotation(lookVector, Vector3.UnitY), this.agent.Transform.Rotation)
 		);
 	}
 
 	[Fact]
 	public void LookAtTargetXZWithAgentY() {
-		var target = () => new Vector3(1, 2, 3);
+		var target = () => Result.Ok(new Vector3(1, 2, 3));
 		this.controller.rangeModifier = 2f;
 		this.agent.Transform.Position = Vector3.UnitY;
 
@@ -325,7 +331,7 @@ public class LauncherControllerTests : GameTestCollection {
 
 	[Fact]
 	public void LookAtTargetXZWithAgentNotAtZero() {
-		var target = () => new Vector3(5, 6, 7);
+		var target = () => Result.Ok(new Vector3(5, 6, 7));
 		this.controller.rangeModifier = 2f;
 		this.agent.Transform.Position = Vector3.One;
 
@@ -348,13 +354,33 @@ public class LauncherControllerTests : GameTestCollection {
 	}
 
 	[Fact]
+	public void LookAtTargetError() {
+		this.controller.rangeModifier = 2f;
+		this.agent.Transform.Position = Vector3.UnitY;
+
+		var getCoroutine = this.controller.PrepareCoroutineFor(this.agent).Switch(
+			_ => LauncherControllerTests.Fail("got errors"),
+			v => v
+		);
+		var (coroutine, _) = getCoroutine(() => Result.SystemError("AAA"));
+
+		var enumerator = coroutine.GetEnumerator();
+
+		Assert.Multiple(
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.Equal("AAA", enumerator.Current.Switch(e => (string)e.system.FirstOrDefault(), _ => "no error"))
+		);
+
+	}
+
+	[Fact]
 	public void FollowTargetError() {
 		_ = Mock
 			.Get(this.projectile)
-			.Setup(p => p.Follow(It.IsAny<Vector3>(), It.IsAny<Func<Vector3>>(), It.IsAny<float>()))
+			.Setup(p => p.Follow(It.IsAny<Vector3>(), It.IsAny<Func<Result<Vector3>>>(), It.IsAny<float>()))
 			.Returns(Result.PlayerError("AAA"));
 
-		var target = () => new Vector3(1, 2, 3);
+		var target = () => Result.Ok(new Vector3(1, 2, 3));
 		var getCoroutine = this.controller.PrepareCoroutineFor(this.agent).Switch(
 			_ => LauncherControllerTests.Fail("got errors"),
 			v => v
@@ -362,16 +388,14 @@ public class LauncherControllerTests : GameTestCollection {
 		var (coroutine, _) = getCoroutine(target);
 
 		var enumerator = coroutine.GetEnumerator();
-		_ = enumerator.MoveNext();
-		_ = enumerator.MoveNext();
-		_ = enumerator.MoveNext();
 
-		var error = enumerator.Current.Switch(
-			errors => (string)errors.player.FirstOrDefault(),
-			_ => "no error"
+		Assert.Multiple(
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.True(enumerator.MoveNext()),
+			() => Assert.Equal("AAA", enumerator.Current.Switch(e => (string)e.player.FirstOrDefault(), _ => "no error"))
 		);
-
-		Assert.Equal("AAA", error);
 	}
 
 	[Fact]

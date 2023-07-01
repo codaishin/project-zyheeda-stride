@@ -12,7 +12,7 @@ public abstract class ReferenceGetTarget<TGetTarget> : Reference<TGetTarget>, IG
 		set => this.SetRef(value);
 	}
 
-	public Result<Func<Vector3>> GetTarget() {
+	public Result<Func<Result<Vector3>>> GetTarget() {
 		return this.target.FlatMap(g => g.GetTarget());
 	}
 }

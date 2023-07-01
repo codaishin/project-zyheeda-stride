@@ -63,7 +63,7 @@ public class TestAnimatedMove {
 
 		Mock
 			.Get(this.getCoroutineOfInnerMove)
-			.Verify(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()), Times.Once);
+			.Verify(getCoroutine => getCoroutine(It.IsAny<Func<Result<Vector3>>>()), Times.Once);
 
 		var waits = coroutine.ToArray();
 		var innerWaits = waits.Skip(1).Take(waits.Length - 2);
@@ -97,7 +97,7 @@ public class TestAnimatedMove {
 
 		Mock
 			.Get(this.getCoroutineOfInnerMove)
-			.Verify(getCoroutine => getCoroutine(It.IsAny<Func<Vector3>>()), Times.Once);
+			.Verify(getCoroutine => getCoroutine(It.IsAny<Func<Result<Vector3>>>()), Times.Once);
 
 		var waits = coroutine.ToArray();
 

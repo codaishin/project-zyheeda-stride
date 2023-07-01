@@ -1,5 +1,6 @@
 namespace Tests;
 
+using System;
 using System.Linq;
 using Moq;
 using ProjectZyheeda;
@@ -121,10 +122,28 @@ public class TestGetMousePosition : GameTestCollection {
 				errors => Assert.Fail(string.Join(", ", errors)),
 				getTarget => Assert.Equal(
 					new Vector3(-2, 2, -7.5f),
-					getTarget(),
+					getTarget().UnpackOr(Vector3.Zero),
 					new VectorTolerance(0.0001f)
 				)
 			);
+	}
+
+	[Fact]
+	public void GetPositionWithContinuousRaycast() {
+		this.getMousePosition.continuousRaycast = true;
+		_ = Mock.Get(this.game.Services.GetService<IInputWrapper>())
+			.SetupSequence(i => i.MousePosition)
+			.Returns(new Vector2(0.5f, 0.5f))
+			.Returns(new Vector2(0.3f, 0.3f));
+
+		this.game.WaitFrames(2);
+
+		var getTarget = this.getMousePosition.GetTarget().UnpackOr(Mock.Of<Func<Result<Vector3>>>());
+
+		Assert.Multiple(
+			() => Assert.Equal(new Vector3(0, 0, -7.5f), getTarget().UnpackOr(Vector3.Zero)),
+			() => Assert.Equal(new Vector3(-2, 2, -7.5f), getTarget().UnpackOr(Vector3.Zero))
+		);
 	}
 
 	[Fact]

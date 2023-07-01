@@ -50,13 +50,13 @@ public class KineticController : ProjectZyheedaAsyncScript, IProjectile {
 		return (float)this.Game.UpdateTime.Elapsed.TotalSeconds * speed;
 	}
 
-	private Vector3 ProjectTargetOntoRange(Vector3 start, Func<Vector3> getTarget, float rangeMultiplier) {
-		var direction = Vector3.Normalize(getTarget() - start);
+	private Vector3 ProjectTargetOntoRange(Vector3 start, Vector3 target, float rangeMultiplier) {
+		var direction = Vector3.Normalize(target - start);
 		return start + (direction * this.baseRange * rangeMultiplier);
 	}
 
-	private Result Follow(Vector3 start, Func<Vector3> getTarget, float rangeMultiplier, FGetCoroutine getCoroutine) {
-		var target = this.ProjectTargetOntoRange(start, getTarget, rangeMultiplier);
+	private Result Follow(Vector3 start, Vector3 target, float rangeMultiplier, FGetCoroutine getCoroutine) {
+		target = this.ProjectTargetOntoRange(start, target, rangeMultiplier);
 		(var coroutine, this.cancel) = getCoroutine(() => target);
 
 		this.thread?.Cancel();
@@ -70,10 +70,18 @@ public class KineticController : ProjectZyheedaAsyncScript, IProjectile {
 		return Result.Ok();
 	}
 
-	public Result Follow(Vector3 start, Func<Vector3> getTarget, float rangeMultiplier) {
-		return this.move
+	public Result Follow(Vector3 start, Func<Result<Vector3>> getTarget, float rangeMultiplier) {
+		var follow =
+			(FGetCoroutine getCoroutine) =>
+			(Vector3 target) =>
+				this.Follow(start, target, rangeMultiplier, getCoroutine);
+
+		var getCoroutine = this.move
 			.OkOrSystemError(this.MissingField(nameof(this.move)))
-			.FlatMap(m => m.PrepareCoroutineFor(this.Entity, this.Delta))
-			.FlatMap(getCoroutine => this.Follow(start, getTarget, rangeMultiplier, getCoroutine));
+			.FlatMap(m => m.PrepareCoroutineFor(this.Entity, this.Delta));
+
+		return follow
+			.Apply(getCoroutine)
+			.Apply(getTarget());
 	}
 }

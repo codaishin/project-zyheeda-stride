@@ -19,7 +19,7 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 				return Result.Ok();
 			}
 
-			return Result.Ok<FGetCoroutine>((Func<Vector3> _) => (Coroutine(), Cancel));
+			return Result.Ok<FGetCoroutine>(_ => (Coroutine(), Cancel));
 		}
 	}
 
@@ -30,7 +30,7 @@ public class BehaviorController : ProjectZyheedaStartupScript, IBehavior {
 	) {
 		var getCoroutine =
 			(FGetCoroutine getCoroutine) =>
-			(Func<Vector3> target) =>
+			(Func<Result<Vector3>> target) =>
 				getCoroutine(target);
 
 		return getCoroutine
