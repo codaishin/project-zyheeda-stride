@@ -57,8 +57,10 @@ Hierarchy:
                             scheduler: !ProjectZyheeda.ReferenceSchedularController,project_zyheeda_stride
                                 Target: ref!! 47ebb743-2d93-40a6-880b-8b24d9fe1949
                             canBeCanceled: false
-                        behavior: !ProjectZyheeda.ReferenceToggleAnimatedMoveDependency,project_zyheeda_stride
-                            Target: ref!! acecf79f-0430-47fc-b6e7-756b248c0aea
+                        behavior: !ProjectZyheeda.ToggleAnimatedMoveDependency,project_zyheeda_stride
+                            toggleSpeed: 4.0
+                            toggleAnimationKey: run
+                            target: ref!! 85ecd596-4896-426d-b01c-e343c44240da
                     cb9dcbc834627d05710a6e4f531852fa: !ProjectZyheeda.ExecutionController,project_zyheeda_stride
                         Id: 53dd9cd5-1d98-494b-ad11-8f809703474f
                         input: !ProjectZyheeda.KeyHoldExecutionStream,project_zyheeda_stride
@@ -378,7 +380,6 @@ Hierarchy:
                             b329a86c998c57ebdeb79970d6e58e6c: ref!! f1c858c7-525a-42ac-a4c0-61a573304c45
                             fd4595c9816f7054ee8d9ee0e5a5088e: ref!! 5e3d5ab5-cfd6-4ca2-a0d1-2c6759e8d5f1
                             21ad835fa4dc3dbe47d8fa2621ab948e: ref!! 5b4b29f3-3754-41e7-9cfb-164c75989efc
-                            1895cf68d1561e644a184261d886da63: ref!! 05bd01eb-1fc6-4a21-9617-22f10ba82131
                             daca0c3b51f7344181e239d408cb9e9b: ref!! a57b22ef-dc9e-4b26-bb84-83e73155678c
                             f686296427fe8c085afc2c5f955e6c3d: ref!! 813768ff-cccc-4025-9c8c-4c628c791c60
                             b5da0543df0afd9880cae4790dd58446: ref!! 5bded2de-bef4-402f-8ef6-97a5683027c6
@@ -388,21 +389,6 @@ Hierarchy:
                             move: !ProjectZyheeda.StraightMove,project_zyheeda_stride
                                 speed: 2.0
                             animationKey: walk
-        -   Entity:
-                Id: b502d86e-556e-4069-80a9-602c305979cd
-                Name: WalkOrRun
-                Components:
-                    945c1cb1735784ff46aaf9db502c19e5: !TransformComponent
-                        Id: 05bd01eb-1fc6-4a21-9617-22f10ba82131
-                        Position: {X: 0.0, Y: 0.0, Z: 0.0}
-                        Rotation: {X: 0.0, Y: 0.0, Z: 0.0, W: 1.0}
-                        Scale: {X: 1.0, Y: 1.0, Z: 1.0}
-                        Children: {}
-                    a3154631c4ff08aef41efad2c89d350f: !ProjectZyheeda.ToggleAnimatedMoveDependencyController,project_zyheeda_stride
-                        Id: acecf79f-0430-47fc-b6e7-756b248c0aea
-                        toggleSpeed: 4.0
-                        toggleAnimationKey: run
-                        target: ref!! 85ecd596-4896-426d-b01c-e343c44240da
         -   Entity:
                 Id: c3ebcead-ded4-4b73-a88f-2fbe1eda413c
                 Name: Skybox

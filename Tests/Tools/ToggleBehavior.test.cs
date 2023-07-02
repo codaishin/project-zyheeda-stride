@@ -6,7 +6,7 @@ using Moq;
 using ProjectZyheeda;
 using Xunit;
 
-public class TestBehaviorToggleController {
+public class TestBehaviorToggle {
 	private (IEnumerable<Result<IWait>>, Cancel) executionA = (
 		Mock.Of<IEnumerable<Result<IWait>>>(),
 		Mock.Of<Cancel>()
@@ -15,9 +15,9 @@ public class TestBehaviorToggleController {
 		Mock.Of<IEnumerable<Result<IWait>>>(),
 		Mock.Of<Cancel>()
 	);
-	private readonly ToggleBehaviorController controller = new();
+	private readonly ToggleBehavior controller = new();
 
-	public TestBehaviorToggleController() {
+	public TestBehaviorToggle() {
 		var behaviorA = Mock.Of<IBehaviorEditor>();
 		var behaviorB = Mock.Of<IBehaviorEditor>();
 

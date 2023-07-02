@@ -15,5 +15,3 @@ public abstract class ReferenceBehavior<TBehavior> : Reference<TBehavior>, IBeha
 }
 
 public class ReferenceBehaviorController : ReferenceBehavior<BehaviorController> { }
-public class ReferenceTogglableBehavior : ReferenceBehavior<ToggleBehaviorController> { }
-public class ReferenceToggleAnimatedMoveDependency : ReferenceBehavior<ToggleAnimatedMoveDependencyController> { }

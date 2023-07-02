@@ -1,6 +1,9 @@
 namespace ProjectZyheeda;
 
-public class ToggleBehaviorController : ProjectZyheedaStartupScript, IToggle, IBehavior {
+using Stride.Core;
+
+[DataContract]
+public class ToggleBehavior : IToggle, IBehaviorEditor {
 	public IBehaviorEditor? behaviorA;
 	public IBehaviorEditor? behaviorB;
 	private bool toggled;
@@ -15,7 +18,7 @@ public class ToggleBehaviorController : ProjectZyheedaStartupScript, IToggle, IB
 	}
 
 	public Result<(Coroutine coroutine, Cancel cancel)> GetToggle() {
-		return (this.Toggle(), ToggleBehaviorController.DoNothing);
+		return (this.Toggle(), ToggleBehavior.DoNothing);
 	}
 
 	public Result<(Coroutine coroutine, Cancel cancel)> GetExecution() {

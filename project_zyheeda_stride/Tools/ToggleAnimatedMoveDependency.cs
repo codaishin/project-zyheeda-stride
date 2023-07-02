@@ -1,6 +1,9 @@
 namespace ProjectZyheeda;
 
-public class ToggleAnimatedMoveDependencyController : ProjectZyheedaStartupScript, IBehavior {
+using Stride.Core;
+
+[DataContract]
+public class ToggleAnimatedMoveDependency : IBehaviorEditor {
 	public float toggleSpeed;
 	public string toggleAnimationKey = "";
 	public CharacterDependencies? target;
