@@ -46,8 +46,8 @@ public class KineticController : ProjectZyheedaAsyncScript, IProjectile {
 		}
 	}
 
-	private float Delta(float speed) {
-		return (float)this.Game.UpdateTime.Elapsed.TotalSeconds * speed;
+	private float Delta(ISpeed speed) {
+		return (float)this.Game.UpdateTime.Elapsed.TotalSeconds * speed.ToUnitsPerSecond();
 	}
 
 	private Vector3 ProjectTargetOntoRange(Vector3 start, Vector3 target, float rangeMultiplier) {

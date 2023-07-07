@@ -8,7 +8,7 @@ using Stride.Engine;
 [DataContract]
 [Display(Expand = ExpandRule.Always)]
 public class StraightMove : IMoveEditor {
-	public float speed;
+	public ISpeedEditor? speed;
 
 	private static bool NotAtTargetPosition(TransformComponent agent, Result<Vector3> targetOrError) {
 		return targetOrError
@@ -26,24 +26,31 @@ public class StraightMove : IMoveEditor {
 		return new WaitFrame();
 	}
 
-	private Func<Vector3, IWait> UpdateAgentPositionAndRotation(TransformComponent agent, FSpeedToDelta delta) {
-		return newTarget => {
-			agent.Position = agent.Position.MoveTowards(newTarget, delta(this.speed));
-			return StraightMove.UpdateRotation(agent, newTarget - agent.Position);
-		};
+	private static IWait UpdateAgentPositionAndRotation(
+		TransformComponent agent,
+		FSpeedToDelta delta,
+		Vector3 target,
+		ISpeed speed
+	) {
+		agent.Position = agent.Position.MoveTowards(target, delta(speed));
+		return StraightMove.UpdateRotation(agent, target - agent.Position);
 	}
 
 	private Coroutine MoveTowards(TransformComponent agent, Func<Result<Vector3>> getTarget, FSpeedToDelta delta) {
-		Coroutine Coroutine() {
-			Result<Vector3> targetOrError;
+		var updateAgentPositionAndRotation =
+			(Vector3 target) =>
+			(ISpeedEditor speed) =>
+				StraightMove.UpdateAgentPositionAndRotation(agent, delta, target, speed);
 
-			do {
-				targetOrError = getTarget();
-				yield return targetOrError.Map(this.UpdateAgentPositionAndRotation(agent, delta));
-			} while (StraightMove.NotAtTargetPosition(agent, targetOrError));
-		}
+		Result<Vector3> targetOrError;
 
-		return Coroutine();
+		do {
+			targetOrError = getTarget();
+			var speedOrError = this.speed.OkOrSystemError(this.MissingField(nameof(this.speed)));
+			yield return updateAgentPositionAndRotation
+				.Apply(targetOrError)
+				.Apply(speedOrError);
+		} while (StraightMove.NotAtTargetPosition(agent, targetOrError));
 	}
 
 	public Result<FGetCoroutine> PrepareCoroutineFor(Entity agent, FSpeedToDelta delta) {
@@ -53,9 +60,12 @@ public class StraightMove : IMoveEditor {
 		);
 	}
 
-	public Result<OldSpeed> SetSpeed(float unitsPerSecond) {
+	public Result<OldSpeed> SetSpeed(ISpeedEditor speed) {
+		if (this.speed is null) {
+			return Result.SystemError(this.MissingField(nameof(this.speed)));
+		}
 		var oldSpeed = this.speed;
-		this.speed = unitsPerSecond;
-		return oldSpeed;
+		this.speed = speed;
+		return Result.Ok(oldSpeed);
 	}
 }
