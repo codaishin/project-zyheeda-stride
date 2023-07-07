@@ -16,6 +16,7 @@ using Stride.Core;
 /// </summary>
 /// <typeparam name="TTarget"></typeparam>
 [DataContract(Inherited = true)]
+[Display(Expand = ExpandRule.Always)]
 public abstract class Reference<TTarget> {
 	protected Result<TTarget> target;
 
