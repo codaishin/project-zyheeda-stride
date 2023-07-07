@@ -5,6 +5,7 @@ using Stride.Core;
 using Stride.Engine;
 
 [DataContract]
+[Display(Expand = ExpandRule.Always)]
 public class AnimatedMove : IAnimatedMoveEditor {
 	public static readonly string fallbackAnimationKey = "default";
 
@@ -85,9 +86,9 @@ public class AnimatedMove : IAnimatedMoveEditor {
 		return oldAnimationKey;
 	}
 
-	public Result<OldSpeed> SetSpeed(float unitsPerSecond) {
+	public Result<OldSpeed> SetSpeed(ISpeedEditor speed) {
 		return this.move
 			.OkOrSystemError(this.MissingField(nameof(this.move)))
-			.FlatMap(m => m.SetSpeed(unitsPerSecond));
+			.FlatMap(m => m.SetSpeed(speed));
 	}
 }

@@ -38,7 +38,7 @@ public class TestReferenceAnimatedMove {
 	public void PrepareCoroutineForMissingMove() {
 		this.dependencies.move = null;
 
-		var error = this.reference.PrepareCoroutineFor(new Entity(), f => f, _ => Result.Ok()).Switch(
+		var error = this.reference.PrepareCoroutineFor(new Entity(), s => s.ToUnitsPerSecond(), _ => Result.Ok()).Switch(
 			errors => (string)errors.system.FirstOrDefault(),
 			_ => "no error"
 		);
@@ -50,17 +50,20 @@ public class TestReferenceAnimatedMove {
 	public void SetSpeed() {
 		_ = Mock
 			.Get(this.dependencies.move!)
-			.Setup(m => m.SetSpeed(42f))
-			.Returns(Result.Ok(100f));
+			.Setup(m => m.SetSpeed(new UnitsPerSecond(42f)))
+			.Returns(Result.Ok<ISpeedEditor>(new UnitsPerSecond(100f)));
 
-		Assert.Equal(100f, this.reference.SetSpeed(42f).UnpackOr(-1f));
+		Assert.Equal(
+			new UnitsPerSecond(100f),
+			this.reference.SetSpeed(new UnitsPerSecond(42f)).UnpackOr(new UnitsPerSecond(-1f))
+		);
 	}
 
 	[Fact]
 	public void SetSpeedMissingMove() {
 		this.dependencies.move = null;
 
-		var error = this.reference.SetSpeed(42f).Switch(
+		var error = this.reference.SetSpeed(new UnitsPerSecond(42f)).Switch(
 			errors => (string)errors.system.FirstOrDefault(),
 			_ => "no error"
 		);

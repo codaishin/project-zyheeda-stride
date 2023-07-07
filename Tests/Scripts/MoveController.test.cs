@@ -124,7 +124,7 @@ public class TestMoveController : GameTestCollection {
 			.Setup(m => m.PrepareCoroutineFor(this.agent, It.IsAny<FSpeedToDelta>(), It.IsAny<Func<string, Result>>()))
 			.Returns((Entity _, FSpeedToDelta delta, Func<string, Result> _) => {
 				var deltaElapsed = (float)this.game.UpdateTime.Elapsed.TotalSeconds;
-				Assert.Equal(42 * deltaElapsed, delta(42));
+				Assert.Equal(42 * deltaElapsed, delta(new UnitsPerSecond(42)));
 				return Result.Ok(Mock.Of<FGetCoroutine>());
 			});
 

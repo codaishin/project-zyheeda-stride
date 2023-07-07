@@ -1,7 +1,7 @@
-global using OldSpeed = System.Single;
+global using OldSpeed = ProjectZyheeda.ISpeedEditor;
 
 namespace ProjectZyheeda;
 
 public interface ISetSpeed {
-	Result<OldSpeed> SetSpeed(float unitsPerSecond);
+	Result<OldSpeed> SetSpeed(ISpeedEditor speed);
 }

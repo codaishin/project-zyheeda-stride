@@ -25,7 +25,7 @@ public class ReferenceAnimatedMoveDependency : Reference<CharacterDependencies>,
 		return this.Move.FlatMap(m => m.SetAnimation(animationKey));
 	}
 
-	public Result<float> SetSpeed(float unitsPerSecond) {
-		return this.Move.FlatMap(m => m.SetSpeed(unitsPerSecond));
+	public Result<OldSpeed> SetSpeed(ISpeedEditor speed) {
+		return this.Move.FlatMap(m => m.SetSpeed(speed));
 	}
 }

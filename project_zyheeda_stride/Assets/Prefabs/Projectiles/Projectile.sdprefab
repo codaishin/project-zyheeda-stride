@@ -21,7 +21,8 @@ Hierarchy:
                         collider: !StaticColliderComponent ref!! 27b6a5f9-bfb3-4436-b730-1bfa11ca7931
                         baseRange: 1.0
                         move: !ProjectZyheeda.StraightMove,project_zyheeda_stride
-                            speed: 50.0
+                            speed: !ProjectZyheeda.UnitsPerSecond,project_zyheeda_stride
+                                units: 50.0
                     870541363efef1e34929afd3175d42e7: !StaticColliderComponent
                         Id: 27b6a5f9-bfb3-4436-b730-1bfa11ca7931
                         CanSleep: false

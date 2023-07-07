@@ -91,7 +91,7 @@ public class TestKineticController : GameTestCollection {
 		_ = this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(1, 1, 1), 42f);
 
 		var delta = (float)this.game.UpdateTime.Elapsed.TotalSeconds;
-		Assert.Equal(delta * 3, speedToDelta!(3));
+		Assert.Equal(delta * 3, speedToDelta!(new UnitsPerSecond(3)));
 	}
 
 	[Fact]
@@ -111,7 +111,7 @@ public class TestKineticController : GameTestCollection {
 		this.game.WaitFrames(3);
 
 		var delta = (float)this.game.UpdateTime.Elapsed.TotalSeconds;
-		Assert.Equal(delta * 10, speedToDelta!(10));
+		Assert.Equal(delta * 10, speedToDelta!(new UnitsPerSecond(10)));
 	}
 
 	[Fact]

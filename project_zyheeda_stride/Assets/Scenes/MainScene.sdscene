@@ -58,14 +58,15 @@ Hierarchy:
                                 Target: ref!! 47ebb743-2d93-40a6-880b-8b24d9fe1949
                             canBeCanceled: false
                         behavior: !ProjectZyheeda.ToggleAnimatedMoveDependency,project_zyheeda_stride
-                            toggleSpeed: 4.0
+                            toggleSpeed: !ProjectZyheeda.UnitsPerSecond,project_zyheeda_stride
+                                units: 4.0
                             toggleAnimationKey: run
                             target: ref!! 85ecd596-4896-426d-b01c-e343c44240da
                     cb9dcbc834627d05710a6e4f531852fa: !ProjectZyheeda.ExecutionController,project_zyheeda_stride
                         Id: 53dd9cd5-1d98-494b-ad11-8f809703474f
                         input: !ProjectZyheeda.KeyHoldExecutionStream,project_zyheeda_stride
                             key: MouseLeft
-                            minimumHoldMilliseconds: 200
+                            minimumHold: 0:00:00:00.2000000
                             scheduler: !ProjectZyheeda.ReferenceSchedularController,project_zyheeda_stride
                                 Target: ref!! a585c668-e48f-42e3-ba34-c0e88883834e
                         behavior: !ProjectZyheeda.ReferenceBehaviorController,project_zyheeda_stride
@@ -387,7 +388,8 @@ Hierarchy:
                         Id: 85ecd596-4896-426d-b01c-e343c44240da
                         move: !ProjectZyheeda.AnimatedMove,project_zyheeda_stride
                             move: !ProjectZyheeda.StraightMove,project_zyheeda_stride
-                                speed: 2.0
+                                speed: !ProjectZyheeda.UnitsPerSecond,project_zyheeda_stride
+                                    units: 2.0
                             animationKey: walk
         -   Entity:
                 Id: c3ebcead-ded4-4b73-a88f-2fbe1eda413c

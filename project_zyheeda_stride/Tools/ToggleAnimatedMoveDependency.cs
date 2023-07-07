@@ -4,11 +4,11 @@ using Stride.Core;
 
 [DataContract]
 public class ToggleAnimatedMoveDependency : IBehaviorEditor {
-	public float toggleSpeed;
+	public ISpeedEditor? toggleSpeed;
 	public string toggleAnimationKey = "";
 	public CharacterDependencies? target;
 
-	private Result ToggleTargetMove(IAnimatedMove move) {
+	private Result ToggleTargetMove(IAnimatedMove move, ISpeedEditor newSpeed) {
 		var storeOldValues =
 			(OldSpeed oldSpeed) =>
 			(OldAnimationKey oldAnimationKey) => {
@@ -18,14 +18,22 @@ public class ToggleAnimatedMoveDependency : IBehaviorEditor {
 			};
 
 		return storeOldValues
-			.Apply(move.SetSpeed(this.toggleSpeed))
+			.Apply(move.SetSpeed(newSpeed))
 			.Apply(move.SetAnimation(this.toggleAnimationKey));
 	}
 
 	private Result ToggleTarget(CharacterDependencies target) {
-		return target.move
-			.OkOrSystemError(target.MissingField(nameof(target.move)))
-			.FlatMap(this.ToggleTargetMove);
+		var toggle =
+			(IAnimatedMove move) =>
+			(ISpeedEditor newSpeed) =>
+				this.ToggleTargetMove(move, newSpeed);
+
+		var move = target.move.OkOrSystemError(target.MissingField(nameof(target.move)));
+		var newSpeed = this.toggleSpeed.OkOrSystemError(this.MissingField(nameof(this.toggleSpeed)));
+		return toggle
+			.Apply(move)
+			.Apply(newSpeed)
+			.Flatten();
 	}
 
 	private Coroutine Toggle() {

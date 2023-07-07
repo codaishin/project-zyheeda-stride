@@ -27,7 +27,7 @@ public class MoveController : ProjectZyheedaStartupScript, IEquipment {
 			(AnimationComponent agentAnimator) =>
 				move.PrepareCoroutineFor(
 					agent,
-					speedPerSecond => (float)this.Game.UpdateTime.Elapsed.TotalSeconds * speedPerSecond,
+					speed => (float)this.Game.UpdateTime.Elapsed.TotalSeconds * speed.ToUnitsPerSecond(),
 					key => this.Play(key, agentAnimator)
 				);
 

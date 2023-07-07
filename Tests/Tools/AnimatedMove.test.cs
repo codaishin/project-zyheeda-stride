@@ -336,19 +336,19 @@ public class TestAnimatedMove {
 	public void SetSpeed() {
 		_ = Mock
 			.Get(this.animatedMove.move!)
-			.Setup(m => m.SetSpeed(42))
-			.Returns(Result.Ok(5f));
+			.Setup(m => m.SetSpeed(new UnitsPerSecond(42)))
+			.Returns(Result.Ok<ISpeedEditor>(new UnitsPerSecond(5f)));
 
-		var oldSpeed = this.animatedMove.SetSpeed(42).UnpackOr(-1);
+		var oldSpeed = this.animatedMove.SetSpeed(new UnitsPerSecond(42)).UnpackOr(new UnitsPerSecond(-1));
 
-		Assert.Equal(5, oldSpeed);
+		Assert.Equal(new UnitsPerSecond(5), oldSpeed);
 	}
 
 	[Fact]
 	public void SetSpeedNoMove() {
 		this.animatedMove.move = null;
 
-		var errors = this.animatedMove.SetSpeed(42).Switch(
+		var errors = this.animatedMove.SetSpeed(new UnitsPerSecond(42)).Switch(
 			errors => string.Join(", ", errors.system.Select(e => (string)e)),
 			_ => "no errors"
 		);

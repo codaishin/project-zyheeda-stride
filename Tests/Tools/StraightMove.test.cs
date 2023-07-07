@@ -18,7 +18,9 @@ public class TestStraightMove : IDisposable {
 	public TestStraightMove() {
 		this.tolerance = new(0.001f);
 		this.agent = new();
-		this.move = new();
+		this.move = new() {
+			speed = new UnitsPerSecond(0),
+		};
 	}
 
 	private static FGetCoroutine Fail((IEnumerable<SystemError> system, IEnumerable<PlayerError> player) errors) {
@@ -70,10 +72,10 @@ public class TestStraightMove : IDisposable {
 
 		_ = Mock
 			.Get(delta)
-			.Setup(func => func(It.IsAny<float>()))
+			.Setup(func => func(It.IsAny<ISpeed>()))
 			.Returns(0.01f);
 
-		this.move.speed = 42;
+		this.move.speed = new UnitsPerSecond(42);
 
 		_ = runner.MoveNext();
 		_ = runner.MoveNext();
@@ -83,7 +85,7 @@ public class TestStraightMove : IDisposable {
 
 		Mock
 			.Get(delta)
-			.Verify(func => func(42), Times.Exactly(5));
+			.Verify(func => func(new UnitsPerSecond(42)), Times.Exactly(5));
 	}
 
 	[Fact]
@@ -99,23 +101,23 @@ public class TestStraightMove : IDisposable {
 
 		_ = Mock
 			.Get(delta)
-			.Setup(func => func(It.IsAny<float>()))
+			.Setup(func => func(It.IsAny<ISpeed>()))
 			.Returns(0.01f);
 
-		this.move.speed = 5;
+		this.move.speed = new UnitsPerSecond(5);
 
 		_ = runner.MoveNext();
 		_ = runner.MoveNext();
 
-		this.move.speed = 3;
+		this.move.speed = new UnitsPerSecond(3);
 
 		_ = runner.MoveNext();
 		_ = runner.MoveNext();
 		_ = runner.MoveNext();
 
 		Assert.Multiple(
-			() => Mock.Get(delta).Verify(func => func(5), Times.Exactly(2)),
-			() => Mock.Get(delta).Verify(func => func(3), Times.Exactly(3))
+			() => Mock.Get(delta).Verify(func => func(new UnitsPerSecond(5)), Times.Exactly(2)),
+			() => Mock.Get(delta).Verify(func => func(new UnitsPerSecond(3)), Times.Exactly(3))
 		);
 	}
 
@@ -156,7 +158,7 @@ public class TestStraightMove : IDisposable {
 
 		_ = Mock
 			.Get(delta)
-			.Setup(func => func(It.IsAny<float>()))
+			.Setup(func => func(It.IsAny<ISpeed>()))
 			.Returns(0.1f);
 
 		_ = runner.MoveNext();
@@ -164,7 +166,7 @@ public class TestStraightMove : IDisposable {
 
 		_ = Mock
 			.Get(delta)
-			.Setup(func => func(It.IsAny<float>()))
+			.Setup(func => func(It.IsAny<ISpeed>()))
 			.Returns(0.2f);
 
 		_ = runner.MoveNext();
@@ -342,13 +344,32 @@ public class TestStraightMove : IDisposable {
 
 	[Fact]
 	public void SetSpeed() {
-		this.move.speed = 10;
+		this.move.speed = new UnitsPerSecond(10);
 
-		var oldSpeed = this.move.SetSpeed(42).UnpackOr(-1);
+		var oldSpeed = this.move
+			.SetSpeed(new UnitsPerSecond(42))
+			.UnpackOr(new UnitsPerSecond(-1));
 
 		Assert.Multiple(
-			() => Assert.Equal(10, oldSpeed),
-			() => Assert.Equal(42, this.move.speed)
+			() => Assert.Equal(new UnitsPerSecond(10), oldSpeed),
+			() => Assert.Equal(new UnitsPerSecond(42), this.move.speed)
+		);
+	}
+
+	[Fact]
+	public void SetSpeedError() {
+		this.move.speed = null;
+
+		var error = this.move
+			.SetSpeed(new UnitsPerSecond(42))
+			.Switch(
+				errors => (string)errors.system.FirstOrDefault(),
+				_ => "no errors"
+			);
+
+		Assert.Multiple(
+			() => Assert.Equal(this.move.MissingField(nameof(this.move.speed)), error),
+			() => Assert.Null(this.move.speed)
 		);
 	}
 
@@ -371,6 +392,32 @@ public class TestStraightMove : IDisposable {
 
 		var error = enumerator.Current.Switch(errors => (string)errors.system.FirstOrDefault(), _ => "no error");
 		Assert.Equal("AAA", error);
+	}
+
+	[Fact]
+	public void MissingSpeed() {
+		this.move.speed = null;
+
+		var getTarget = Mock.Of<Func<Result<Vector3>>>();
+		var getCoroutine = this.move.PrepareCoroutineFor(this.agent, _ => 0f).Switch(
+			TestStraightMove.Fail,
+			getCoroutine => getCoroutine
+		);
+		var (coroutine, _) = getCoroutine(getTarget);
+
+		_ = Mock
+			.Get(getTarget)
+			.Setup(f => f())
+			.Returns(Result.Ok(Vector3.One));
+
+		var error = coroutine
+			.First()
+			.Switch(
+				errors => (string)errors.system.FirstOrDefault(),
+				_ => "no error"
+			);
+
+		Assert.Equal(this.move.MissingField(nameof(this.move.speed)), error);
 	}
 
 	public void Dispose() {
