@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Stride.Core;
 
 [DataContract]
+[Display(Expand = ExpandRule.Always)]
 public class KeyHoldExecutionStream : IExecutionStreamEditor, IDisposable {
 	[DataMember(0)] public InputKeys key;
 	[DataMember(1)] public int minimumHoldMilliseconds = 100;

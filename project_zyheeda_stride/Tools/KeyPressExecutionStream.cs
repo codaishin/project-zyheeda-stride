@@ -17,6 +17,7 @@ public enum InputKeys {
 }
 
 [DataContract]
+[Display(Expand = ExpandRule.Always)]
 public class KeyPressExecutionStream : IExecutionStreamEditor {
 	[DataMember(0)] public InputKeys activationKey = InputKeys.None;
 	[DataMember(1)] public InputActivation activation = InputActivation.OnPress;
