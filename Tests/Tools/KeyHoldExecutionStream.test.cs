@@ -50,7 +50,7 @@ public class TestKeyHoldExecutionStream : IDisposable {
 
 		_ = this.stream.ProcessEvent(InputKeys.MouseLeft, true);
 
-		await Task.Delay(this.stream.minimumHoldMilliseconds + 25);
+		await Task.Delay(this.stream.minimumHold + TimeSpan.FromMilliseconds(25));
 
 		_ = this.stream.ProcessEvent(InputKeys.MouseLeft, false);
 
@@ -63,7 +63,7 @@ public class TestKeyHoldExecutionStream : IDisposable {
 
 		_ = this.stream.ProcessEvent(InputKeys.MouseLeft, true);
 
-		await Task.Delay(this.stream.minimumHoldMilliseconds + 25);
+		await Task.Delay(this.stream.minimumHold + TimeSpan.FromMilliseconds(25));
 
 		_ = this.stream.ProcessEvent(InputKeys.MouseLeft, false);
 
@@ -71,7 +71,7 @@ public class TestKeyHoldExecutionStream : IDisposable {
 
 		_ = this.stream.ProcessEvent(InputKeys.MouseLeft, true);
 
-		await Task.Delay(this.stream.minimumHoldMilliseconds + 25);
+		await Task.Delay(this.stream.minimumHold + TimeSpan.FromMilliseconds(25));
 
 		Assert.Multiple(
 			() => Assert.True(taskA.IsCompletedSuccessfully),
@@ -86,14 +86,14 @@ public class TestKeyHoldExecutionStream : IDisposable {
 
 		_ = this.stream.ProcessEvent(InputKeys.MouseLeft, true);
 
-		await Task.Delay(this.stream.minimumHoldMilliseconds + 25);
+		await Task.Delay(this.stream.minimumHold + TimeSpan.FromMilliseconds(25));
 
 		Assert.True(task.IsCompletedSuccessfully);
 	}
 
 	[Fact]
 	public async Task NoExecutionBeforeMinimumHoldTime() {
-		this.stream.minimumHoldMilliseconds = 200;
+		this.stream.minimumHold = TimeSpan.FromMilliseconds(200);
 
 		var task = this.stream.NewExecute();
 
@@ -110,7 +110,7 @@ public class TestKeyHoldExecutionStream : IDisposable {
 
 	[Fact]
 	public async Task NewExecutionWhenPreviousWasCanceled() {
-		this.stream.minimumHoldMilliseconds = 200;
+		this.stream.minimumHold = TimeSpan.FromMilliseconds(200);
 
 		var task = this.stream.NewExecute();
 
@@ -141,7 +141,7 @@ public class TestKeyHoldExecutionStream : IDisposable {
 		Assert.Multiple(
 			() => Assert.True(ok),
 			async () => {
-				await Task.Delay(this.stream.minimumHoldMilliseconds + 25);
+				await Task.Delay(this.stream.minimumHold + TimeSpan.FromMilliseconds(25));
 				Assert.False(task.IsCompletedSuccessfully);
 			}
 		);
@@ -149,7 +149,7 @@ public class TestKeyHoldExecutionStream : IDisposable {
 
 	[Fact]
 	public async Task ExecutionCallsSchedulerRun() {
-		this.stream.minimumHoldMilliseconds = 0;
+		this.stream.minimumHold = TimeSpan.FromMilliseconds(0);
 
 		Cancel cancel = () => Result.Ok();
 		var task = this.stream.NewExecute();
@@ -167,7 +167,7 @@ public class TestKeyHoldExecutionStream : IDisposable {
 
 	[Fact]
 	public async Task CoroutineCanceledOnHoldRelease() {
-		this.stream.minimumHoldMilliseconds = 0;
+		this.stream.minimumHold = TimeSpan.FromMilliseconds(0);
 		var modifiedCoroutine = Enumerable.Empty<Result<IWait>>();
 
 		_ = Mock
@@ -205,7 +205,7 @@ public class TestKeyHoldExecutionStream : IDisposable {
 
 	[Fact]
 	public async Task CallCancelOnHoldRelease() {
-		this.stream.minimumHoldMilliseconds = 0;
+		this.stream.minimumHold = TimeSpan.FromMilliseconds(0);
 		var modifiedCoroutine = Enumerable.Empty<Result<IWait>>();
 		var cancel = Mock.Of<Cancel>();
 
@@ -269,7 +269,7 @@ public class TestKeyHoldExecutionStream : IDisposable {
 
 	[Fact]
 	public void CancelInSameFrameAsStart() {
-		this.stream.minimumHoldMilliseconds = 100;
+		this.stream.minimumHold = TimeSpan.FromMilliseconds(100);
 
 		var beginAwaiting = async (Task t) => await t;
 		var task = this.stream.NewExecute();

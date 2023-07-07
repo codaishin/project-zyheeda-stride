@@ -65,7 +65,7 @@ Hierarchy:
                         Id: 53dd9cd5-1d98-494b-ad11-8f809703474f
                         input: !ProjectZyheeda.KeyHoldExecutionStream,project_zyheeda_stride
                             key: MouseLeft
-                            minimumHoldMilliseconds: 200
+                            minimumHold: 0:00:00:00.2000000
                             scheduler: !ProjectZyheeda.ReferenceSchedularController,project_zyheeda_stride
                                 Target: ref!! a585c668-e48f-42e3-ba34-c0e88883834e
                         behavior: !ProjectZyheeda.ReferenceBehaviorController,project_zyheeda_stride

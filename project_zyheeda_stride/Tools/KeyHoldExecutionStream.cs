@@ -8,7 +8,7 @@ using Stride.Core;
 [Display(Expand = ExpandRule.Always)]
 public class KeyHoldExecutionStream : IExecutionStreamEditor, IDisposable {
 	[DataMember(0)] public InputKeys key;
-	[DataMember(1)] public int minimumHoldMilliseconds = 100;
+	[DataMember(1)] public TimeSpan minimumHold = TimeSpan.FromMilliseconds(100);
 	[DataMember(2)] public ISchedulerEditor? scheduler;
 
 	private TaskCompletionSource<Result<FExecute>> beginToken = new();
@@ -37,7 +37,7 @@ public class KeyHoldExecutionStream : IExecutionStreamEditor, IDisposable {
 	}
 
 	private async void NewExecutionAfterMinimumHold(Task keyReleased) {
-		var firstDone = await Task.WhenAny(Task.Delay(this.minimumHoldMilliseconds), keyReleased);
+		var firstDone = await Task.WhenAny(Task.Delay(this.minimumHold), keyReleased);
 		if (keyReleased == firstDone) {
 			return;
 		}
