@@ -5,6 +5,7 @@ using Stride.Core;
 using Stride.Engine;
 
 [DataContract]
+[Display(Expand = ExpandRule.Always)]
 public class AnimatedMove : IAnimatedMoveEditor {
 	public static readonly string fallbackAnimationKey = "default";
 

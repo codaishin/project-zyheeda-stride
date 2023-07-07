@@ -6,6 +6,7 @@ using Stride.Core.Mathematics;
 using Stride.Engine;
 
 [DataContract]
+[Display(Expand = ExpandRule.Always)]
 public class StraightMove : IMoveEditor {
 	public float speed;
 
