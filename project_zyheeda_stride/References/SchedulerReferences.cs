@@ -1,12 +1,23 @@
 namespace ProjectZyheeda;
 
-public abstract class ReferenceScheduler<TScheduler> : Reference<TScheduler>, ISchedulerEditor
+using Stride.Core;
+
+[DataContract(Inherited = true)]
+[Display(Expand = ExpandRule.Always)]
+public abstract class ReferenceScheduler<TScheduler> : IReference<TScheduler>, ISchedulerEditor
 	where TScheduler :
+		class,
 		IScheduler {
 
+	private Result<TScheduler> target;
+
+	protected ReferenceScheduler() {
+		this.target = Result.SystemError(this.MissingTarget());
+	}
+
 	public TScheduler? Target {
-		get => this.GetRef();
-		set => this.SetRef(value);
+		get => this.target.UnpackOrDefault();
+		set => this.target = value.OkOrSystemError(this.MissingTarget());
 	}
 
 	public Result Clear() {
