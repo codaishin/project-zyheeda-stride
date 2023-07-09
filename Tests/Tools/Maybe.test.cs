@@ -4,7 +4,7 @@ using System.Linq;
 using ProjectZyheeda;
 using Xunit;
 
-public class MaybeTest {
+public class TestMaybe {
 	[Fact]
 	public void SwitchSome() {
 		var maybe = Maybe.Some(42);
