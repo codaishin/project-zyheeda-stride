@@ -34,8 +34,22 @@ public class TestExecutionController : GameTestCollection {
 
 		_ = Mock
 			.Get(this.controller.input)
+			.Setup(s => s.ProcessEvent(It.IsAny<InputKeys>(), It.IsAny<bool>()))
+			.Returns(Result.Ok());
+
+		_ = Mock
+			.Get(this.controller.input)
 			.Setup(i => i.NewExecute())
 			.Returns(() => this.newActionFnTaskTokens[newActionCallCount++].Task);
+
+		_ = Mock
+			.Get(this.controller.behavior)
+			.Setup(b => b.GetExecution())
+			.Returns(
+				Result.Ok<(IEnumerable<Result<IWait>>, Cancel)>(
+					(Enumerable.Empty<Result<IWait>>(), () => Result.Ok())
+				)
+			);
 
 		this.game.Services.RemoveService<ISystemMessage>();
 		this.game.Services.AddService(this.systemMessage = Mock.Of<ISystemMessage>());
@@ -43,6 +57,10 @@ public class TestExecutionController : GameTestCollection {
 		this.game.Services.AddService(this.playerMessage = Mock.Of<IPlayerMessage>());
 		this.game.Services.RemoveService<IInputDispatcher>();
 		this.game.Services.AddService(this.dispatcher = Mock.Of<IInputDispatcher>());
+
+		Mock
+			.Get(this.dispatcher)
+			.SetReturnsDefault<Result>(Result.Ok());
 
 		this.scene.Entities.Add(new Entity { this.controller });
 
@@ -81,12 +99,17 @@ public class TestExecutionController : GameTestCollection {
 			Enumerable.Empty<Result<IWait>>(),
 			() => Result.Ok()
 		);
+		var execute = Mock.Of<FExecute>();
 
 		_ = Mock.Get(this.behavior)
 			.Setup(c => c.GetExecution())
 			.Returns(execution);
 
-		this.newActionFnTaskTokens[0].SetResult(Mock.Of<FExecute>());
+		Mock
+			.Get(execute)
+			.SetReturnsDefault<Result>(Result.Ok());
+
+		this.newActionFnTaskTokens[0].SetResult(execute);
 
 		await this.game.Frames(1);
 
@@ -103,6 +126,13 @@ public class TestExecutionController : GameTestCollection {
 		);
 		var executeA = Mock.Of<FExecute>();
 		var executeB = Mock.Of<FExecute>();
+
+		Mock
+			.Get(executeA)
+			.SetReturnsDefault<Result>(Result.Ok());
+		Mock
+			.Get(executeB)
+			.SetReturnsDefault<Result>(Result.Ok());
 
 		_ = Mock
 			.Get(this.behavior)

@@ -323,6 +323,10 @@ public class SchedulerControllerTest : GameTestCollection {
 		}
 		var cancel = Mock.Of<Cancel>();
 
+		Mock
+			.Get(cancel)
+			.SetReturnsDefault<Result>(Result.Ok());
+
 		_ = this.schedulerController.Enqueue(Idle2Frames(), cancel);
 		await this.game.Frames(1);
 

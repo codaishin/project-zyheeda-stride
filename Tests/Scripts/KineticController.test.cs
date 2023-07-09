@@ -19,13 +19,11 @@ public class TestKineticController : GameTestCollection {
 	private readonly IPlayerMessage playerMEssage;
 
 	public TestKineticController(GameFixture fixture) : base(fixture) {
-		this.systemMessage = Mock.Of<ISystemMessage>();
 		this.game.Services.RemoveService<ISystemMessage>();
-		this.game.Services.AddService<ISystemMessage>(this.systemMessage);
+		this.game.Services.AddService<ISystemMessage>(this.systemMessage = Mock.Of<ISystemMessage>());
 
-		this.playerMEssage = Mock.Of<IPlayerMessage>();
 		this.game.Services.RemoveService<IPlayerMessage>();
-		this.game.Services.AddService<IPlayerMessage>(this.playerMEssage);
+		this.game.Services.AddService<IPlayerMessage>(this.playerMEssage = Mock.Of<IPlayerMessage>());
 
 		this.game.Frames(1).Wait();
 
@@ -218,7 +216,7 @@ public class TestKineticController : GameTestCollection {
 		_ = Mock
 			.Get(this.getCoroutine)
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Result<Vector3>>>()))
-			.Returns((Coroutine(), Mock.Of<Cancel>()));
+			.Returns((Coroutine(), () => Result.Ok()));
 
 		_ = this.kineticController.Follow(new Vector3(1, 2, 3), () => new Vector3(3, 2, 1), 42f);
 		_ = this.kineticController.Follow(new Vector3(100, 200, 300), () => new Vector3(3, 2, 1), 42f);
@@ -243,7 +241,7 @@ public class TestKineticController : GameTestCollection {
 		_ = Mock
 			.Get(this.getCoroutine)
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Result<Vector3>>>()))
-			.Returns((Coroutine(), Mock.Of<Cancel>()));
+			.Returns((Coroutine(), () => Result.Ok()));
 
 		var obstacle = new Entity {
 			new StaticColliderComponent {
@@ -277,6 +275,9 @@ public class TestKineticController : GameTestCollection {
 			}
 		}
 		var cancel = Mock.Of<Cancel>();
+		Mock
+			.Get(cancel)
+			.SetReturnsDefault<Result>(Result.Ok());
 		_ = Mock
 			.Get(this.getCoroutine)
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Result<Vector3>>>()))
@@ -314,7 +315,7 @@ public class TestKineticController : GameTestCollection {
 		_ = Mock
 			.Get(this.getCoroutine)
 			.Setup(getCoroutine => getCoroutine(It.IsAny<Func<Result<Vector3>>>()))
-			.Returns((Coroutine(), Mock.Of<Cancel>()));
+			.Returns((Coroutine(), () => Result.Ok()));
 
 		var onRangeLimit = Mock.Of<Action>();
 		this.kineticController.OnRangeLimit += onRangeLimit;
