@@ -384,6 +384,18 @@ public class TestGenericResultExtensions {
 	}
 
 	[Fact]
+	public void UnpackDefaultWhenError() {
+		var error = new Result<string>((Array.Empty<SystemError>(), new PlayerError[] { "ERROR" }));
+		Assert.Null(error.UnpackOrDefault());
+	}
+
+	[Fact]
+	public void UnpackOrDefaultValue() {
+		var value = new Result<string>("4.2f");
+		Assert.Equal("4.2f", value.UnpackOrDefault());
+	}
+
+	[Fact]
 	public void ApplyMultipleElementsErrorConcatElementErrors() {
 		var fst = new Result<int>(4);
 		var snd = new Result<int>((Array.Empty<SystemError>(), new PlayerError[] { "ERROR 2" }));
