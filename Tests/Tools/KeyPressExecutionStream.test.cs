@@ -9,7 +9,7 @@ using Xunit;
 
 public class TestKeyPressExecutionStream {
 	[Fact]
-	public void NewExecutionRun() {
+	public async void NewExecutionRun() {
 		var stream = new KeyPressExecutionStream {
 			activationKey = InputKeys.ShiftLeft,
 			activation = InputActivation.OnPress,
@@ -25,21 +25,19 @@ public class TestKeyPressExecutionStream {
 			.Setup(s => s.Run(coroutine, cancel))
 			.Returns(schedulerResult);
 
-		var task = stream.NewExecute();
+		var executeTask = stream.NewExecute();
 
-		Assert.False(task.IsCompletedSuccessfully);
+		Assert.False(executeTask.IsCompletedSuccessfully);
 
 		var result = stream.ProcessEvent(InputKeys.ShiftLeft, isDown: true);
 
-
 		Assert.Multiple(
 			() => Assert.True(result.Switch(_ => false, () => true)),
-			() => Assert.True(task.IsCompletedSuccessfully),
-			async () => {
-				var execute = (await task).UnpackOr(Mock.Of<FExecute>());
-				Assert.Equal(schedulerResult, execute(coroutine, cancel));
-			}
+			() => Assert.True(executeTask.IsCompletedSuccessfully)
 		);
+
+		var execute = (await executeTask).UnpackOr(Mock.Of<FExecute>());
+		Assert.Equal(schedulerResult, execute(coroutine, cancel));
 	}
 
 	[Fact]
@@ -95,7 +93,7 @@ public class TestKeyPressExecutionStream {
 	}
 
 	[Fact]
-	public void NewExecutionRunnerEnqueue() {
+	public async void NewExecutionRunnerEnqueue() {
 		var stream = new KeyPressExecutionStream {
 			activationKey = InputKeys.MouseRight,
 			enqueueKey = InputKeys.ShiftLeft,
@@ -112,7 +110,7 @@ public class TestKeyPressExecutionStream {
 			.Setup(s => s.Enqueue(coroutine, cancel))
 			.Returns(schedulerResult);
 
-		var task = stream.NewExecute();
+		var executeTask = stream.NewExecute();
 
 		var result = stream.ProcessEvent(InputKeys.ShiftLeft, isDown: true);
 
@@ -122,16 +120,15 @@ public class TestKeyPressExecutionStream {
 
 		Assert.Multiple(
 			() => Assert.True(result.Switch(_ => false, () => true)),
-			() => Assert.True(task.IsCompletedSuccessfully),
-			async () => {
-				var execute = (await task).UnpackOr(Mock.Of<FExecute>());
-				Assert.Equal(schedulerResult, execute(coroutine, cancel));
-			}
+			() => Assert.True(executeTask.IsCompletedSuccessfully)
 		);
+
+		var execute = (await executeTask).UnpackOr(Mock.Of<FExecute>());
+		Assert.Equal(schedulerResult, execute(coroutine, cancel));
 	}
 
 	[Fact]
-	public void NewExecutionRunnerRunWhenEnqueueKeyUp() {
+	public async void NewExecutionRunnerRunWhenEnqueueKeyUp() {
 		var stream = new KeyPressExecutionStream {
 			activationKey = InputKeys.MouseRight,
 			enqueueKey = InputKeys.ShiftLeft,
@@ -148,22 +145,19 @@ public class TestKeyPressExecutionStream {
 			.Setup(s => s.Run(coroutine, cancel))
 			.Returns(schedulerResult);
 
-		var task = stream.NewExecute();
+		var executeTask = stream.NewExecute();
 
 		_ = stream.ProcessEvent(InputKeys.ShiftLeft, isDown: false);
 		_ = stream.ProcessEvent(InputKeys.MouseRight, isDown: true);
 
-		Assert.Multiple(
-			() => Assert.True(task.IsCompletedSuccessfully),
-			async () => {
-				var execute = (await task).UnpackOr(Mock.Of<FExecute>());
-				Assert.Equal(schedulerResult, execute(coroutine, cancel));
-			}
-		);
+		Assert.True(executeTask.IsCompletedSuccessfully);
+
+		var execute = (await executeTask).UnpackOr(Mock.Of<FExecute>());
+		Assert.Equal(schedulerResult, execute(coroutine, cancel));
 	}
 
 	[Fact]
-	public void NewExecutionRunNoCancel() {
+	public async void NewExecutionRunNoCancel() {
 		var stream = new KeyPressExecutionStream {
 			activationKey = InputKeys.ShiftLeft,
 			activation = InputActivation.OnPress,
@@ -180,21 +174,18 @@ public class TestKeyPressExecutionStream {
 			.Setup(s => s.Run(coroutine, null))
 			.Returns(schedulerResult);
 
-		var task = stream.NewExecute();
+		var executeTask = stream.NewExecute();
 
 		_ = stream.ProcessEvent(InputKeys.ShiftLeft, isDown: true);
 
-		Assert.Multiple(
-			() => Assert.True(task.IsCompletedSuccessfully),
-			async () => {
-				var execute = (await task).UnpackOr(Mock.Of<FExecute>());
-				Assert.Equal(schedulerResult, execute(coroutine, cancel));
-			}
-		);
+		Assert.True(executeTask.IsCompletedSuccessfully);
+
+		var execute = (await executeTask).UnpackOr(Mock.Of<FExecute>());
+		Assert.Equal(schedulerResult, execute(coroutine, cancel));
 	}
 
 	[Fact]
-	public void NewExecutionEnqueueNoCancel() {
+	public async void NewExecutionEnqueueNoCancel() {
 		var stream = new KeyPressExecutionStream {
 			activationKey = InputKeys.ShiftLeft,
 			activation = InputActivation.OnPress,
@@ -212,18 +203,15 @@ public class TestKeyPressExecutionStream {
 			.Setup(s => s.Enqueue(coroutine, null))
 			.Returns(schedulerResult);
 
-		var task = stream.NewExecute();
+		var executeTask = stream.NewExecute();
 
 		_ = stream.ProcessEvent(InputKeys.CapsLock, isDown: true);
 		_ = stream.ProcessEvent(InputKeys.ShiftLeft, isDown: true);
 
-		Assert.Multiple(
-			() => Assert.True(task.IsCompletedSuccessfully),
-			async () => {
-				var execute = (await task).UnpackOr(Mock.Of<FExecute>());
-				Assert.Equal(schedulerResult, execute(coroutine, cancel));
-			}
-		);
+		Assert.True(executeTask.IsCompletedSuccessfully);
+
+		var execute = (await executeTask).UnpackOr(Mock.Of<FExecute>());
+		Assert.Equal(schedulerResult, execute(coroutine, cancel));
 	}
 
 	[Fact]

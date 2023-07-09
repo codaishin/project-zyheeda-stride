@@ -2,7 +2,6 @@ namespace Tests;
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using ProjectZyheeda;
@@ -21,6 +20,8 @@ public class SchedulerControllerTest : GameTestCollection {
 
 		this.schedulerController = new();
 		this.scene.Entities.Add(new Entity { this.schedulerController });
+
+		this.game.Frames(5).Wait();
 	}
 
 	[Fact]
@@ -52,12 +53,12 @@ public class SchedulerControllerTest : GameTestCollection {
 
 		Assert.Multiple(
 			() => Assert.True(ok),
-			async () => {
-				await this.game.Frames(1);
+			() => {
+				this.game.Frames(1).Wait();
 				Assert.Equal(1, count);
 			},
-			async () => {
-				await this.game.Frames(1);
+			() => {
+				this.game.Frames(1).Wait();
 				Assert.Equal(2, count);
 			}
 		);
@@ -114,12 +115,12 @@ public class SchedulerControllerTest : GameTestCollection {
 
 		Assert.Multiple(
 			() => Assert.True(ok),
-			async () => {
-				await this.game.Frames(1);
+			() => {
+				this.game.Frames(1).Wait();
 				Assert.Equal(1, count);
 			},
-			async () => {
-				await this.game.Frames(1);
+			() => {
+				this.game.Frames(1).Wait();
 				Assert.Equal(2, count);
 			}
 		);
@@ -158,22 +159,22 @@ public class SchedulerControllerTest : GameTestCollection {
 	}
 
 	[Fact]
-	public void RunAndWaitSeconds() {
+	public async void RunAndWaitSeconds() {
 		var result = "";
 		IEnumerable<Result<IWait>> Coroutine() {
-			result += "A";
 			yield return new WaitMilliSeconds(100);
 			result += "A";
 			yield return new WaitMilliSeconds(200);
+			result += "A";
 		};
 
 
 		_ = this.schedulerController.Run(Coroutine(), () => Result.Ok());
 
-		Thread.Sleep(100);
+		await Task.Delay(125);
 		Assert.Equal("A", result);
 
-		Thread.Sleep(200);
+		await Task.Delay(225);
 		Assert.Equal("AA", result);
 	}
 
