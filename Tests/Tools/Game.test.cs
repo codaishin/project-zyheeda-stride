@@ -13,7 +13,7 @@ public class GameFixture : IDisposable {
 	public GameFixture() {
 		this.game = new Game();
 		_ = Task.Run(() => this.game.Run());
-		this.game.WaitFrames(2);
+		this.game.Frames(2).Wait();
 	}
 
 	public void Dispose() {
@@ -59,13 +59,13 @@ public class GameTestCollection : IDisposable {
 		_ = this.fixture.RootScene.Children.Remove(this.scene);
 	}
 
-	public void RemoveEssentialServices() {
+	public async void RemoveEssentialServices() {
 		this.game.Services.RemoveService<IInputWrapper>();
 		this.game.Services.RemoveService<IAnimation>();
 		this.game.Services.RemoveService<ISystemMessage>();
 		this.game.Services.RemoveService<IPlayerMessage>();
 		this.game.Services.RemoveService<IPrefabLoader>();
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 	}
 
 	public void Dispose() {
@@ -76,15 +76,17 @@ public class GameTestCollection : IDisposable {
 }
 
 public static class TestTools {
-	public static void WaitFrames(this Game game, int count) {
+	public static Task Frames(this Game game, int count) {
 		var token = new TaskCompletionSource();
 		_ = game.Script.AddTask(async () => {
+			// adding the task will delay the execution by one frame,
+			// so we start counting frames beginning with 1 instead of 0
 			for (var frames = 1; frames < count; ++frames) {
 				_ = await game.Script.NextFrame();
 			}
 			token.SetResult();
 		});
-		token.Task.Wait();
+		return token.Task;
 	}
 }
 
@@ -97,16 +99,16 @@ public class TestGameTestCollection : GameTestCollection {
 	}
 
 	[Fact]
-	public void RunUpdate() {
+	public async Task RunUpdate() {
 		var frame = this.game.UpdateTime.FrameCount;
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		Assert.Equal(frame + 1, this.game.UpdateTime.FrameCount);
 	}
 
 	[Fact]
-	public void RunTasks() {
+	public async void RunTasks() {
 		var counter = 0;
 		var incrementCounterOnePerFrame = async () => {
 			while (true) {
@@ -116,7 +118,7 @@ public class TestGameTestCollection : GameTestCollection {
 		};
 
 		this.tasks.AddTask(incrementCounterOnePerFrame);
-		this.game.WaitFrames(10);
+		await this.game.Frames(10);
 
 		Assert.Equal(9, counter);
 	}

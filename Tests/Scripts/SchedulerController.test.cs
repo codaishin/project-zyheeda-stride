@@ -34,7 +34,7 @@ public class SchedulerControllerTest : GameTestCollection {
 	}
 
 	[Fact]
-	public void EnqueueOneCoroutine() {
+	public async void EnqueueOneCoroutine() {
 		var count = 0;
 
 		IEnumerable<Result<IWait>> Coroutine() {
@@ -48,23 +48,23 @@ public class SchedulerControllerTest : GameTestCollection {
 			_ => false,
 			() => true
 		);
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		Assert.Multiple(
 			() => Assert.True(ok),
-			() => {
-				this.game.WaitFrames(1);
+			async () => {
+				await this.game.Frames(1);
 				Assert.Equal(1, count);
 			},
-			() => {
-				this.game.WaitFrames(1);
+			async () => {
+				await this.game.Frames(1);
 				Assert.Equal(2, count);
 			}
 		);
 	}
 
 	[Fact]
-	public void EnqueueTwoCoroutines() {
+	public async void EnqueueTwoCoroutines() {
 		var result = "";
 		IEnumerable<Result<IWait>> CoroutineA() {
 			result += "A";
@@ -82,21 +82,21 @@ public class SchedulerControllerTest : GameTestCollection {
 		_ = this.schedulerController.Enqueue(CoroutineA(), () => Result.Ok());
 		_ = this.schedulerController.Enqueue(CoroutineB(), () => Result.Ok());
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 		Assert.Equal("A", result);
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 		Assert.Equal("AA", result);
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 		Assert.Equal("AAB", result);
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 		Assert.Equal("AABB", result);
 	}
 
 	[Fact]
-	public void RunsCoroutine() {
+	public async void RunsCoroutine() {
 		var count = 0;
 
 		IEnumerable<Result<IWait>> Coroutine() {
@@ -110,23 +110,23 @@ public class SchedulerControllerTest : GameTestCollection {
 			_ => false,
 			() => true
 		);
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		Assert.Multiple(
 			() => Assert.True(ok),
-			() => {
-				this.game.WaitFrames(1);
+			async () => {
+				await this.game.Frames(1);
 				Assert.Equal(1, count);
 			},
-			() => {
-				this.game.WaitFrames(1);
+			async () => {
+				await this.game.Frames(1);
 				Assert.Equal(2, count);
 			}
 		);
 	}
 
 	[Fact]
-	public void RunAndEnqueueCoroutine() {
+	public async void RunAndEnqueueCoroutine() {
 		var result = "";
 		IEnumerable<Result<IWait>> CoroutineA() {
 			result += "A";
@@ -144,16 +144,16 @@ public class SchedulerControllerTest : GameTestCollection {
 		_ = this.schedulerController.Run(CoroutineA(), () => Result.Ok());
 		_ = this.schedulerController.Enqueue(CoroutineB(), () => Result.Ok());
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 		Assert.Equal("A", result);
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 		Assert.Equal("AA", result);
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 		Assert.Equal("AAB", result);
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 		Assert.Equal("AABB", result);
 	}
 
@@ -178,7 +178,7 @@ public class SchedulerControllerTest : GameTestCollection {
 	}
 
 	[Fact]
-	public void RunAfterEnqueueShouldClear() {
+	public async void RunAfterEnqueueShouldClear() {
 		var result = "";
 		IEnumerable<Result<IWait>> CoroutineA() {
 			result += "A";
@@ -192,12 +192,12 @@ public class SchedulerControllerTest : GameTestCollection {
 		_ = this.schedulerController.Enqueue(CoroutineA(), () => Result.Ok());
 		_ = this.schedulerController.Run(CoroutineB(), () => Result.Ok());
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 		Assert.Equal("B", result);
 	}
 
 	[Fact]
-	public void RunAfterEnqueueShouldCancel() {
+	public async void RunAfterEnqueueShouldCancel() {
 		var result = "";
 		IEnumerable<Result<IWait>> CoroutineA() {
 			yield return new WaitFrame();
@@ -210,17 +210,17 @@ public class SchedulerControllerTest : GameTestCollection {
 
 		_ = this.schedulerController.Enqueue(CoroutineA(), () => Result.Ok());
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		_ = this.schedulerController.Run(CoroutineB(), () => Result.Ok());
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		Assert.Equal("B", result);
 	}
 
 	[Fact]
-	public void EnqueueClearEnqueue() {
+	public async void EnqueueClearEnqueue() {
 		var result = "";
 		IEnumerable<Result<IWait>> CoroutineA() {
 			result += "A";
@@ -235,7 +235,7 @@ public class SchedulerControllerTest : GameTestCollection {
 		_ = this.schedulerController.Clear();
 		_ = this.schedulerController.Enqueue(CoroutineB(), () => Result.Ok());
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 		Assert.Equal("B", result);
 	}
 
@@ -250,7 +250,7 @@ public class SchedulerControllerTest : GameTestCollection {
 	}
 
 	[Fact]
-	public void EnqueueClearEnqueueCancelFirstEnqueue() {
+	public async void EnqueueClearEnqueueCancelFirstEnqueue() {
 		var result = "";
 		IEnumerable<Result<IWait>> CoroutineA() {
 			yield return new WaitFrame();
@@ -263,21 +263,21 @@ public class SchedulerControllerTest : GameTestCollection {
 
 		_ = this.schedulerController.Enqueue(CoroutineA(), () => Result.Ok());
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		_ = this.schedulerController.Clear();
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		_ = this.schedulerController.Enqueue(CoroutineB(), () => Result.Ok());
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		Assert.Equal("B", result);
 	}
 
 	[Fact]
-	public void LogRunErrors() {
+	public async void LogRunErrors() {
 		static IEnumerable<Result<IWait>> FaultyRun() {
 			yield return Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "BBB" }));
 		}
@@ -287,7 +287,7 @@ public class SchedulerControllerTest : GameTestCollection {
 		}
 
 		_ = this.schedulerController.Enqueue(FaultyRun(), cancel);
-		this.game.WaitFrames(10);
+		await this.game.Frames(10);
 
 		Mock
 			.Get(this.game.Services.GetService<ISystemMessage>())
@@ -298,7 +298,7 @@ public class SchedulerControllerTest : GameTestCollection {
 	}
 
 	[Fact]
-	public void CallCancelOnClear() {
+	public async void CallCancelOnClear() {
 		static IEnumerable<Result<IWait>> Idle2Frames() {
 			yield return new WaitFrame();
 			yield return new WaitFrame();
@@ -306,7 +306,7 @@ public class SchedulerControllerTest : GameTestCollection {
 		var cancel = Mock.Of<Cancel>();
 
 		_ = this.schedulerController.Enqueue(Idle2Frames(), cancel);
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		Mock.Get(cancel).Verify(cancel => cancel(), Times.Never);
 
@@ -316,7 +316,7 @@ public class SchedulerControllerTest : GameTestCollection {
 	}
 
 	[Fact]
-	public void CallCancelOnRun() {
+	public async void CallCancelOnRun() {
 		static IEnumerable<Result<IWait>> Idle2Frames() {
 			yield return new WaitFrame();
 			yield return new WaitFrame();
@@ -324,7 +324,7 @@ public class SchedulerControllerTest : GameTestCollection {
 		var cancel = Mock.Of<Cancel>();
 
 		_ = this.schedulerController.Enqueue(Idle2Frames(), cancel);
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		Mock.Get(cancel).Verify(cancel => cancel(), Times.Never);
 
@@ -334,7 +334,7 @@ public class SchedulerControllerTest : GameTestCollection {
 	}
 
 	[Fact]
-	public void CallCurrentCancel() {
+	public async void CallCurrentCancel() {
 		static IEnumerable<Result<IWait>> Idle2Frames() {
 			yield return new WaitFrame();
 			yield return new WaitFrame();
@@ -345,7 +345,7 @@ public class SchedulerControllerTest : GameTestCollection {
 		_ = this.schedulerController.Enqueue(Idle2Frames(), cancelA);
 		_ = this.schedulerController.Enqueue(Idle2Frames(), cancelB);
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		_ = this.schedulerController.Clear();
 
@@ -356,7 +356,7 @@ public class SchedulerControllerTest : GameTestCollection {
 	}
 
 	[Fact]
-	public void CallCancelOnClearJustOnce() {
+	public async void CallCancelOnClearJustOnce() {
 		static IEnumerable<Result<IWait>> Idle2Frames() {
 			yield return new WaitFrame();
 			yield return new WaitFrame();
@@ -364,7 +364,7 @@ public class SchedulerControllerTest : GameTestCollection {
 		var cancel = Mock.Of<Cancel>();
 
 		_ = this.schedulerController.Enqueue(Idle2Frames(), cancel);
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		Mock.Get(cancel).Verify(cancel => cancel(), Times.Never);
 
@@ -375,7 +375,7 @@ public class SchedulerControllerTest : GameTestCollection {
 	}
 
 	[Fact]
-	public void ReturnClearErrors() {
+	public async void ReturnClearErrors() {
 		static IEnumerable<Result<IWait>> Idle2Frames() {
 			yield return new WaitFrame();
 			yield return new WaitFrame();
@@ -387,7 +387,7 @@ public class SchedulerControllerTest : GameTestCollection {
 
 		_ = this.schedulerController.Enqueue(Idle2Frames(), cancel);
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		var errors = this.schedulerController.Clear().Switch(
 			errors => $"{(string)errors.system.FirstOrDefault()}, {(string)errors.player.FirstOrDefault()}",
@@ -398,7 +398,7 @@ public class SchedulerControllerTest : GameTestCollection {
 	}
 
 	[Fact]
-	public void ReturnClearErrorsOnRun() {
+	public async void ReturnClearErrorsOnRun() {
 		static IEnumerable<Result<IWait>> Idle2Frames() {
 			yield return new WaitFrame();
 			yield return new WaitFrame();
@@ -410,7 +410,7 @@ public class SchedulerControllerTest : GameTestCollection {
 
 		_ = this.schedulerController.Enqueue(Idle2Frames(), cancel);
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		var errors = this.schedulerController.Run(Idle2Frames(), cancel).Switch(
 			errors => $"{(string)errors.system.FirstOrDefault()}, {(string)errors.player.FirstOrDefault()}",
@@ -421,7 +421,7 @@ public class SchedulerControllerTest : GameTestCollection {
 	}
 
 	[Fact]
-	public void EnqueueOnRunEvenIfClearHadErrors() {
+	public async void EnqueueOnRunEvenIfClearHadErrors() {
 		var count = 0;
 
 		IEnumerable<Result<IWait>> CountUp2Times() {
@@ -437,17 +437,17 @@ public class SchedulerControllerTest : GameTestCollection {
 
 		_ = this.schedulerController.Enqueue(CountUp2Times(), cancel);
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		_ = this.schedulerController.Run(CountUp2Times(), cancel);
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		Assert.True(count > 0);
 	}
 
 	[Fact]
-	public void DoNotCallCancelAfterExecutionFinished() {
+	public async void DoNotCallCancelAfterExecutionFinished() {
 		static IEnumerable<Result<IWait>> DoNotWait() {
 			yield break;
 		}
@@ -455,7 +455,7 @@ public class SchedulerControllerTest : GameTestCollection {
 
 		_ = this.schedulerController.Enqueue(DoNotWait(), cancel);
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		_ = this.schedulerController.Clear();
 
@@ -463,7 +463,7 @@ public class SchedulerControllerTest : GameTestCollection {
 	}
 
 	[Fact]
-	public void LogWaitErrors() {
+	public async void LogWaitErrors() {
 		var wait = Mock.Of<IWait>();
 		var errors = (new SystemError[] { "AAA" }, new PlayerError[] { "LLL" });
 		var token = new TaskCompletionSource<Result>();
@@ -482,7 +482,7 @@ public class SchedulerControllerTest : GameTestCollection {
 
 		_ = this.schedulerController.Run(DoNotWait(), cancel);
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		Mock
 			.Get(this.game.Services.GetService<ISystemMessage>())
@@ -520,7 +520,7 @@ public class SchedulerControllerTest : GameTestCollection {
 	}
 
 	[Fact]
-	public void ClearOnlyClearsQueueWhenActiveHasNoCancel() {
+	public async void ClearOnlyClearsQueueWhenActiveHasNoCancel() {
 		var result = "";
 
 		IEnumerable<Result<IWait>> CoroutineA() {
@@ -547,12 +547,12 @@ public class SchedulerControllerTest : GameTestCollection {
 
 		_ = this.schedulerController.Run(CoroutineA());
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		_ = this.schedulerController.Run(CoroutineB(), Cancel);
 		_ = this.schedulerController.Run(CoroutineC(), Cancel);
 
-		this.game.WaitFrames(5);
+		await this.game.Frames(5);
 
 		Assert.Equal("aacc", result);
 	}

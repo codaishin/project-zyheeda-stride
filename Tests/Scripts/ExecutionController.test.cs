@@ -46,7 +46,7 @@ public class TestExecutionController : GameTestCollection {
 
 		this.scene.Entities.Add(new Entity { this.controller });
 
-		this.game.WaitFrames(2);
+		this.game.Frames(2).Wait();
 	}
 
 	[Fact]
@@ -57,18 +57,18 @@ public class TestExecutionController : GameTestCollection {
 	}
 
 	[Fact]
-	public void RemoveInputStreamFromDispatcher() {
+	public async void RemoveInputStreamFromDispatcher() {
 		_ = this.scene.Entities.Remove(this.controller.Entity);
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		this.scene.Entities.Add(this.controller.Entity);
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		_ = this.scene.Entities.Remove(this.controller.Entity);
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		Mock
 			.Get(this.game.Services.GetService<IInputDispatcher>())
@@ -76,7 +76,7 @@ public class TestExecutionController : GameTestCollection {
 	}
 
 	[Fact]
-	public void RunBehavior() {
+	public async void RunBehavior() {
 		(IEnumerable<Result<IWait>>, Cancel) execution = (
 			Enumerable.Empty<Result<IWait>>(),
 			() => Result.Ok()
@@ -88,7 +88,7 @@ public class TestExecutionController : GameTestCollection {
 
 		this.newActionFnTaskTokens[0].SetResult(Mock.Of<FExecute>());
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		Mock
 			.Get(this.behavior)
@@ -96,7 +96,7 @@ public class TestExecutionController : GameTestCollection {
 	}
 
 	[Fact]
-	public void RunBehaviorTwice() {
+	public async void RunBehaviorTwice() {
 		(IEnumerable<Result<IWait>> coroutine, Cancel cancel) execution = (
 			Enumerable.Empty<Result<IWait>>(),
 			() => Result.Ok()
@@ -112,7 +112,7 @@ public class TestExecutionController : GameTestCollection {
 		this.newActionFnTaskTokens[0].SetResult(executeA);
 		this.newActionFnTaskTokens[1].SetResult(executeB);
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		Assert.Multiple(
 			() => Mock.Get(executeA).Verify(e => e(execution.coroutine, execution.cancel), Times.Once),
@@ -121,14 +121,14 @@ public class TestExecutionController : GameTestCollection {
 	}
 
 	[Fact]
-	public void MissingBehavior() {
+	public async void MissingBehavior() {
 		_ = this.scene.Entities.Remove(this.controller.Entity);
 
 		this.controller.behavior = null;
 
 		this.scene.Entities.Add(this.controller.Entity);
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		Mock
 			.Get(this.systemMessage)
@@ -136,14 +136,14 @@ public class TestExecutionController : GameTestCollection {
 	}
 
 	[Fact]
-	public void InputNotSet() {
+	public async void InputNotSet() {
 		_ = this.scene.Entities.Remove(this.controller.Entity);
 
 		this.controller.input = null;
 
 		this.scene.Entities.Add(this.controller.Entity);
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		Mock
 			.Get(this.systemMessage)
@@ -151,7 +151,7 @@ public class TestExecutionController : GameTestCollection {
 	}
 
 	[Fact]
-	public void AllFieldsMissing() {
+	public async void AllFieldsMissing() {
 		_ = this.scene.Entities.Remove(this.controller.Entity);
 
 		this.controller.input = null;
@@ -159,7 +159,7 @@ public class TestExecutionController : GameTestCollection {
 
 		this.scene.Entities.Add(this.controller.Entity);
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		Mock
 			.Get(this.systemMessage)
@@ -170,7 +170,7 @@ public class TestExecutionController : GameTestCollection {
 	}
 
 	[Fact]
-	public void LogCoroutineError() {
+	public async void LogCoroutineError() {
 		_ = Mock
 			.Get(this.behavior)
 			.Setup(b => b.GetExecution())
@@ -178,7 +178,7 @@ public class TestExecutionController : GameTestCollection {
 
 		this.newActionFnTaskTokens[0].SetResult(Mock.Of<FExecute>());
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		Mock
 			.Get(this.systemMessage)
@@ -189,7 +189,7 @@ public class TestExecutionController : GameTestCollection {
 	}
 
 	[Fact]
-	public void LogActionError() {
+	public async void LogActionError() {
 		_ = Mock
 			.Get(this.behavior)
 			.Setup(b => b.GetExecution())
@@ -197,7 +197,7 @@ public class TestExecutionController : GameTestCollection {
 
 		this.newActionFnTaskTokens[0].SetResult(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		Mock
 			.Get(this.systemMessage)
@@ -208,7 +208,7 @@ public class TestExecutionController : GameTestCollection {
 	}
 
 	[Fact]
-	public void LogCoroutineRunError() {
+	public async void LogCoroutineRunError() {
 		_ = Mock
 			.Get(this.behavior)
 			.Setup(b => b.GetExecution())
@@ -217,7 +217,7 @@ public class TestExecutionController : GameTestCollection {
 		var errors = Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" }));
 		this.newActionFnTaskTokens[0].SetResult(errors);
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		Mock
 			.Get(this.systemMessage)
@@ -228,7 +228,7 @@ public class TestExecutionController : GameTestCollection {
 	}
 
 	[Fact]
-	public void LogInputDispatcherAddErrors() {
+	public async void LogInputDispatcherAddErrors() {
 		_ = Mock
 			.Get(this.dispatcher)
 			.Setup(d => d.Add(It.IsAny<IExecutionStreamEditor>()))
@@ -237,7 +237,7 @@ public class TestExecutionController : GameTestCollection {
 		_ = this.scene.Entities.Remove(this.controller.Entity);
 		this.scene.Entities.Add(this.controller.Entity);
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		Mock
 			.Get(this.systemMessage)
@@ -248,17 +248,17 @@ public class TestExecutionController : GameTestCollection {
 	}
 
 	[Fact]
-	public void LogInputDispatcherRemoveErrors() {
+	public async void LogInputDispatcherRemoveErrors() {
 		_ = Mock
 			.Get(this.dispatcher)
 			.Setup(d => d.Remove(It.IsAny<IExecutionStreamEditor>()))
 			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		_ = this.scene.Entities.Remove(this.controller.Entity);
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		Mock
 			.Get(this.systemMessage)

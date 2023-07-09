@@ -26,7 +26,7 @@ public class BehaviorControllerTest : GameTestCollection {
 			.Setup(g => g.GetTarget())
 			.Returns(Result.Ok(() => Result.Ok(Vector3.Zero)));
 
-		this.game.WaitFrames(2);
+		this.game.Frames(2).Wait();
 	}
 
 	private static (IEnumerable<Result<IWait>>, Cancel) Fail(

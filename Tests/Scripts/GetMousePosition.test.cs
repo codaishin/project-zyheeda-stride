@@ -30,7 +30,7 @@ public class TestGetMousePosition : GameTestCollection {
 			.Get(this.game.Services.GetService<IInputWrapper>())
 			.SetReturnsDefault<Result<Vector2>>(Vector2.Zero);
 
-		this.game.WaitFrames(2);
+		this.game.Frames(2).Wait();
 
 		var viewProjection = new Matrix() {
 			Row1 = new Vector4(0.2f, 0, 0, 0),
@@ -55,14 +55,14 @@ public class TestGetMousePosition : GameTestCollection {
 
 		this.scene.Entities.Add(box);
 
-		this.game.WaitFrames(2);
+		this.game.Frames(2).Wait();
 
 		this.scene.Entities.Add(new Entity { this.cameraComponent });
 		this.scene.Entities.Add(new Entity { this.getMousePosition });
 	}
 
 	[Fact]
-	public void ProofOfConcept() {
+	public async void ProofOfConcept() {
 		var invViewProj = Matrix.Invert(this.cameraComponent.ViewProjectionMatrix);
 
 		// Implementation adapted from stride documentation
@@ -77,7 +77,7 @@ public class TestGetMousePosition : GameTestCollection {
 		var farVector = Vector3.Transform(farPos, invViewProj);
 		farVector /= farVector.W;
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		var hit = this.game
 			.SceneSystem
@@ -93,12 +93,12 @@ public class TestGetMousePosition : GameTestCollection {
 	}
 
 	[Fact]
-	public void Get00N5() {
+	public async void Get00N5() {
 		_ = Mock.Get(this.game.Services.GetService<IInputWrapper>())
 			.SetupGet(i => i.MousePosition)
 			.Returns(new Vector2(0.5f, 0.5f));
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		this.getMousePosition
 			.GetTarget()
@@ -109,12 +109,12 @@ public class TestGetMousePosition : GameTestCollection {
 	}
 
 	[Fact]
-	public void GetN55N5() {
+	public async void GetN55N5() {
 		_ = Mock.Get(this.game.Services.GetService<IInputWrapper>())
 			.SetupGet(i => i.MousePosition)
 			.Returns(new Vector2(0.3f, 0.3f));
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		this.getMousePosition
 			.GetTarget()
@@ -129,14 +129,14 @@ public class TestGetMousePosition : GameTestCollection {
 	}
 
 	[Fact]
-	public void GetPositionWithContinuousRaycast() {
+	public async void GetPositionWithContinuousRaycast() {
 		this.getMousePosition.continuousRaycast = true;
 		_ = Mock.Get(this.game.Services.GetService<IInputWrapper>())
 			.SetupSequence(i => i.MousePosition)
 			.Returns(new Vector2(0.5f, 0.5f))
 			.Returns(new Vector2(0.3f, 0.3f));
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		var getTarget = this.getMousePosition.GetTarget().UnpackOr(Mock.Of<Func<Result<Vector3>>>());
 
@@ -147,12 +147,12 @@ public class TestGetMousePosition : GameTestCollection {
 	}
 
 	[Fact]
-	public void NoHit() {
+	public async void NoHit() {
 		_ = Mock.Get(this.game.Services.GetService<IInputWrapper>())
 			.SetupGet(i => i.MousePosition)
 			.Returns(new Vector2(0, 0));
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		this.getMousePosition
 			.GetTarget()
@@ -168,12 +168,12 @@ public class TestGetMousePosition : GameTestCollection {
 	}
 
 	[Fact]
-	public void MousePositionError() {
+	public async void MousePositionError() {
 		_ = Mock.Get(this.game.Services.GetService<IInputWrapper>())
 			.SetupGet(i => i.MousePosition)
 			.Returns(Result.Errors((new SystemError[] { "AAA" }, new PlayerError[] { "aaa" })));
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		var errors = this.getMousePosition
 			.GetTarget()
@@ -186,10 +186,10 @@ public class TestGetMousePosition : GameTestCollection {
 	}
 
 	[Fact]
-	public void MissingCamera() {
+	public async void MissingCamera() {
 		this.getMousePosition.camera = null;
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		var result = this.getMousePosition.GetTarget();
 
@@ -201,14 +201,14 @@ public class TestGetMousePosition : GameTestCollection {
 	}
 
 	[Fact]
-	public void NoHitOnFilterMismatch() {
+	public async void NoHitOnFilterMismatch() {
 		_ = Mock.Get(this.game.Services.GetService<IInputWrapper>())
 			.SetupGet(i => i.MousePosition)
 			.Returns(new Vector2(0.5f, 0.5f));
 
 		this.getMousePosition.collideWith = CollisionFilterGroupFlags.CustomFilter2;
 
-		this.game.WaitFrames(2);
+		await this.game.Frames(2);
 
 		this.getMousePosition
 			.GetTarget()

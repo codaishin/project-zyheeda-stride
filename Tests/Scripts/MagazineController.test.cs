@@ -34,7 +34,7 @@ public class MagazineControllerTests : GameTestCollection {
 			.Setup(l => l.Instantiate(It.IsAny<Prefab>()))
 			.Returns(Result.Ok(new List<Entity> { this.projectileInstance }));
 
-		this.game.WaitFrames(2);
+		this.game.Frames(2).Wait();
 	}
 
 	[Fact]
