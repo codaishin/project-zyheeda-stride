@@ -40,6 +40,12 @@ public class SchedulerController : ProjectZyheedaStartupScript, IScheduler {
 			return;
 		}
 		this.dequeueThread = this.Script.AddTask(this.Dequeue);
+		_ = this.dequeueThread.CancellationToken.Register(this.CancelCurrentStep);
+	}
+
+	private void CancelCurrentStep() {
+		this.currentStepToken?.SetCanceled();
+		this.currentStepToken = null;
 	}
 
 	public Result Clear() {
@@ -53,8 +59,6 @@ public class SchedulerController : ProjectZyheedaStartupScript, IScheduler {
 		this.cancelExecution = null;
 		this.dequeueThread?.Cancel();
 		this.dequeueThread = null;
-		_ = (this.currentStepToken?.TrySetCanceled());
-		this.currentStepToken = null;
 		return result;
 	}
 
