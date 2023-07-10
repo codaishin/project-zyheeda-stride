@@ -140,8 +140,8 @@ public class TestKeyHoldExecutionStream : IDisposable {
 
 		Assert.Multiple(
 			() => Assert.True(ok),
-			async () => {
-				await Task.Delay(this.stream.minimumHold + TimeSpan.FromMilliseconds(25));
+			() => {
+				Task.Delay(this.stream.minimumHold + TimeSpan.FromMilliseconds(25)).Wait();
 				Assert.False(task.IsCompletedSuccessfully);
 			}
 		);

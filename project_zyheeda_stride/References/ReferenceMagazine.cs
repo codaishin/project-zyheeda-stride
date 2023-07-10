@@ -1,12 +1,23 @@
 namespace ProjectZyheeda;
 
-public abstract class ReferenceMagazine<TMagazine> : Reference<TMagazine>, IMagazineEditor
+using Stride.Core;
+
+[DataContract(Inherited = true)]
+[Display(Expand = ExpandRule.Always)]
+public abstract class ReferenceMagazine<TMagazine> : IReference<TMagazine>, IMagazineEditor
 	where TMagazine :
+		class,
 		IMagazine {
 
+	private Result<TMagazine> target;
+
+	protected ReferenceMagazine() {
+		this.target = Result.SystemError(this.MissingTarget());
+	}
+
 	public TMagazine? Target {
-		get => this.GetRef();
-		set => this.SetRef(value);
+		get => this.target.UnpackOrDefault();
+		set => this.target = value.OkOrSystemError(this.MissingTarget());
 	}
 
 	public Result<IProjectile> GetProjectile() {

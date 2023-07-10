@@ -1,17 +1,27 @@
 namespace ProjectZyheeda;
 
 using System;
+using Stride.Core;
 using Stride.Engine;
 
-public class ReferenceAnimatedMoveDependency : Reference<CharacterDependencies>, IAnimatedMoveEditor {
+[DataContract(Inherited = true)]
+[Display(Expand = ExpandRule.Always)]
+public class ReferenceAnimatedMoveDependency : IReference<CharacterDependencies>, IAnimatedMoveEditor {
+
+	private Result<CharacterDependencies> target;
+
 	public CharacterDependencies? Target {
-		get => this.GetRef();
-		set => this.SetRef(value);
+		get => this.target.UnpackOrDefault();
+		set => this.target = value.OkOrSystemError(this.MissingTarget());
 	}
 
 	private Result<IAnimatedMove> Move =>
 		this.target
 			.FlatMap(t => t.move.OkOrSystemError(t.MissingField(nameof(t.move))));
+
+	public ReferenceAnimatedMoveDependency() {
+		this.target = Result.Error(this.MissingTarget());
+	}
 
 	public Result<FGetCoroutine> PrepareCoroutineFor(
 		Entity agent,

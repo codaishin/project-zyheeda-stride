@@ -119,6 +119,13 @@ public static class GenericResultExtensions {
 		);
 	}
 
+	public static T? UnpackOrDefault<T>(this Result<T> target) {
+		return target.Switch<T?>(
+			_ => default,
+			value => value
+		);
+	}
+
 	public static Result<TOut> Apply<TIn, TOut>(this Result<Func<TIn, TOut>> apply, Result<TIn> result) {
 		return apply.Switch(
 			errors => result.Switch(

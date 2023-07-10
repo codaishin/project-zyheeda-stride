@@ -3,8 +3,7 @@ namespace ProjectZyheeda;
 using System;
 using System.Linq;
 
-
-public readonly struct Result : IResult<(SystemErrors system, PlayerErrors player)> {
+public record class Result : IResult<(SystemErrors system, PlayerErrors player)> {
 	public readonly struct ResultErrors : IResult<(SystemErrors system, PlayerErrors player)> {
 		public readonly (SystemErrors system, PlayerErrors player) errors;
 
@@ -90,7 +89,7 @@ public readonly struct Result : IResult<(SystemErrors system, PlayerErrors playe
 	}
 }
 
-public readonly struct Result<T> : IResult<(SystemErrors system, PlayerErrors player), T> {
+public record class Result<T> : IResult<(SystemErrors system, PlayerErrors player), T> {
 	private struct Value : IResult<(SystemErrors system, PlayerErrors player), T> {
 		public T value;
 		public TOut Switch<TOut>(Func<(SystemErrors system, PlayerErrors player), TOut> fst, Func<T, TOut> snd) {

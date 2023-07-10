@@ -44,7 +44,7 @@ public class TestMoveController : GameTestCollection {
 		this.scene.Entities.Add(new Entity { this.moveController });
 		this.scene.Entities.Add(this.agent);
 
-		this.game.WaitFrames(1);
+		this.game.Frames(1).Wait();
 	}
 
 	[Fact]

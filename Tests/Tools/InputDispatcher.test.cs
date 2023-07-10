@@ -17,6 +17,10 @@ public class TestInputDispatcher {
 		this.systemMessage = Mock.Of<ISystemMessage>();
 		this.playerMessage = Mock.Of<IPlayerMessage>();
 		this.dispatcher = new(new InputManager(), this.systemMessage, this.playerMessage);
+
+		Mock
+			.Get(this.stream)
+			.SetReturnsDefault<Result>(Result.Ok());
 	}
 
 	[Fact]

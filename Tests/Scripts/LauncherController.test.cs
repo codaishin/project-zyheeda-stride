@@ -43,7 +43,7 @@ public class LauncherControllerTests : GameTestCollection {
 			.Setup(a => a.Play(It.IsAny<AnimationComponent>(), It.IsAny<string>()))
 			.Returns(Result.Ok(Mock.Of<IPlayingAnimation>()));
 
-		this.game.WaitFrames(2);
+		this.game.Frames(2).Wait();
 	}
 
 	private static FGetCoroutine Fail(string message) {
@@ -223,13 +223,13 @@ public class LauncherControllerTests : GameTestCollection {
 	}
 
 	[Fact]
-	public void FollowTargetOk() {
+	public async void FollowTargetOk() {
 		var target = () => Result.Ok(new Vector3(1, 2, 3));
 		var spawn = new Vector3(5, 6, 7);
 		this.controller.rangeModifier = 2f;
 		this.controller.spawnProjectileAt!.Position = spawn;
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		var getCoroutine = this.controller.PrepareCoroutineFor(this.agent).Switch(
 			_ => LauncherControllerTests.Fail("got errors"),
@@ -250,7 +250,7 @@ public class LauncherControllerTests : GameTestCollection {
 	}
 
 	[Fact]
-	public void FollowTargetSpawnWorldPosition() {
+	public async void FollowTargetSpawnWorldPosition() {
 		var target = () => Result.Ok(new Vector3(1, 2, 3));
 		var spawn = new Vector3(5, 6, 7);
 		var spawnEntityParent = new Entity();
@@ -262,7 +262,7 @@ public class LauncherControllerTests : GameTestCollection {
 		this.controller.spawnProjectileAt = spawnEntityParent.GetChild(0).Transform;
 		spawnEntityParent.Transform.Position = spawn;
 
-		this.game.WaitFrames(1);
+		await this.game.Frames(1);
 
 		var getCoroutine = this.controller.PrepareCoroutineFor(this.agent).Switch(
 			_ => LauncherControllerTests.Fail("got errors"),
