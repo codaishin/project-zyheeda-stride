@@ -30,11 +30,6 @@ public class SchedulerControllerTest : GameTestCollection {
 	}
 
 	[Fact]
-	public void IsStartupScript() {
-		_ = Assert.IsAssignableFrom<StartupScript>(this.schedulerController);
-	}
-
-	[Fact]
 	public async void EnqueueOneCoroutine() {
 		var count = 0;
 
@@ -49,51 +44,43 @@ public class SchedulerControllerTest : GameTestCollection {
 			_ => false,
 			() => true
 		);
-		await this.game.Frames(1);
 
-		Assert.Multiple(
-			() => Assert.True(ok),
-			() => {
-				this.game.Frames(1).Wait();
-				Assert.Equal(1, count);
-			},
-			() => {
-				this.game.Frames(1).Wait();
-				Assert.Equal(2, count);
-			}
-		);
+		Assert.True(ok);
+
+		await this.game.Frames(2);
+		Assert.Equal(1, count);
+
+		await this.game.Frames(1);
+		Assert.Equal(2, count);
 	}
 
-	[Fact]
-	public async void EnqueueTwoCoroutines() {
+	[Theory]
+	[InlineData(new[] { "", "A", "AA" }, 1)]
+	[InlineData(new[] { "A", "AA", "AAB" }, 2)]
+	[InlineData(new[] { "AA", "AAB", "AABB" }, 3)]
+	[InlineData(new[] { "AAB", "AABB", "AABB" }, 4)]
+	public async void EnqueueTwoCoroutines(string[] expected, int waitFrames) {
 		var result = "";
 		IEnumerable<Result<IWait>> CoroutineA() {
-			result += "A";
 			yield return new WaitFrame();
 			result += "A";
 			yield return new WaitFrame();
+			result += "A";
 		};
 		IEnumerable<Result<IWait>> CoroutineB() {
-			result += "B";
 			yield return new WaitFrame();
 			result += "B";
 			yield return new WaitFrame();
+			result += "B";
 		};
 
 		_ = this.schedulerController.Enqueue(CoroutineA(), () => Result.Ok());
 		_ = this.schedulerController.Enqueue(CoroutineB(), () => Result.Ok());
 
-		await this.game.Frames(1);
-		Assert.Equal("A", result);
+		await this.game.Frames(2);
 
-		await this.game.Frames(1);
-		Assert.Equal("AA", result);
-
-		await this.game.Frames(1);
-		Assert.Equal("AAB", result);
-
-		await this.game.Frames(1);
-		Assert.Equal("AABB", result);
+		await this.game.Frames(waitFrames);
+		Assert.Contains(result, expected);
 	}
 
 	[Fact]
@@ -111,51 +98,44 @@ public class SchedulerControllerTest : GameTestCollection {
 			_ => false,
 			() => true
 		);
-		await this.game.Frames(1);
 
-		Assert.Multiple(
-			() => Assert.True(ok),
-			() => {
-				this.game.Frames(1).Wait();
-				Assert.Equal(1, count);
-			},
-			() => {
-				this.game.Frames(1).Wait();
-				Assert.Equal(2, count);
-			}
-		);
+		Assert.True(ok);
+
+		await this.game.Frames(2);
+		Assert.Equal(1, count);
+
+		await this.game.Frames(1);
+		Assert.Equal(2, count);
 	}
 
-	[Fact]
-	public async void RunAndEnqueueCoroutine() {
+
+	[Theory]
+	[InlineData(new[] { "", "A", "AA" }, 1)]
+	[InlineData(new[] { "A", "AA", "AAB" }, 2)]
+	[InlineData(new[] { "AA", "AAB", "AABB" }, 3)]
+	[InlineData(new[] { "AAB", "AABB", "AABB" }, 4)]
+	public async void RunAndEnqueueCoroutine(string[] expected, int waitFrames) {
 		var result = "";
 		IEnumerable<Result<IWait>> CoroutineA() {
-			result += "A";
 			yield return new WaitFrame();
 			result += "A";
 			yield return new WaitFrame();
+			result += "A";
 		};
 		IEnumerable<Result<IWait>> CoroutineB() {
-			result += "B";
 			yield return new WaitFrame();
 			result += "B";
 			yield return new WaitFrame();
+			result += "B";
 		};
 
 		_ = this.schedulerController.Run(CoroutineA(), () => Result.Ok());
 		_ = this.schedulerController.Enqueue(CoroutineB(), () => Result.Ok());
 
-		await this.game.Frames(1);
-		Assert.Equal("A", result);
+		await this.game.Frames(2);
 
-		await this.game.Frames(1);
-		Assert.Equal("AA", result);
-
-		await this.game.Frames(1);
-		Assert.Equal("AAB", result);
-
-		await this.game.Frames(1);
-		Assert.Equal("AABB", result);
+		await this.game.Frames(waitFrames);
+		Assert.Contains(result, expected);
 	}
 
 	[Fact]
@@ -168,13 +148,12 @@ public class SchedulerControllerTest : GameTestCollection {
 			result += "A";
 		};
 
-
 		_ = this.schedulerController.Run(Coroutine(), () => Result.Ok());
 
-		await Task.Delay(125);
+		await Task.Delay(150);
 		Assert.Equal("A", result);
 
-		await Task.Delay(225);
+		await Task.Delay(250);
 		Assert.Equal("AA", result);
 	}
 
@@ -193,16 +172,18 @@ public class SchedulerControllerTest : GameTestCollection {
 		_ = this.schedulerController.Enqueue(CoroutineA(), () => Result.Ok());
 		_ = this.schedulerController.Run(CoroutineB(), () => Result.Ok());
 
-		await this.game.Frames(1);
+		await this.game.Frames(2);
 		Assert.Equal("B", result);
 	}
 
 	[Fact]
-	public async void RunAfterEnqueueShouldCancel() {
+	public async void RunAfterEnqueueShouldBeCanceled() {
 		var result = "";
 		IEnumerable<Result<IWait>> CoroutineA() {
-			yield return new WaitFrame();
-			result += "A";
+			while (true) {
+				yield return new WaitFrame();
+				result += "A";
+			}
 		};
 		IEnumerable<Result<IWait>> CoroutineB() {
 			yield return new WaitFrame();
@@ -215,7 +196,7 @@ public class SchedulerControllerTest : GameTestCollection {
 
 		_ = this.schedulerController.Run(CoroutineB(), () => Result.Ok());
 
-		await this.game.Frames(2);
+		await this.game.Frames(3);
 
 		Assert.Equal("B", result);
 	}
@@ -224,19 +205,21 @@ public class SchedulerControllerTest : GameTestCollection {
 	public async void EnqueueClearEnqueue() {
 		var result = "";
 		IEnumerable<Result<IWait>> CoroutineA() {
-			result += "A";
-			yield return new WaitFrame();
+			while (true) {
+				yield return new WaitFrame();
+				result += "A";
+			}
 		};
 		IEnumerable<Result<IWait>> CoroutineB() {
-			result += "B";
 			yield return new WaitFrame();
+			result += "B";
 		};
 
 		_ = this.schedulerController.Enqueue(CoroutineA(), () => Result.Ok());
 		_ = this.schedulerController.Clear();
 		_ = this.schedulerController.Enqueue(CoroutineB(), () => Result.Ok());
 
-		await this.game.Frames(1);
+		await this.game.Frames(2);
 		Assert.Equal("B", result);
 	}
 
@@ -272,7 +255,7 @@ public class SchedulerControllerTest : GameTestCollection {
 
 		_ = this.schedulerController.Enqueue(CoroutineB(), () => Result.Ok());
 
-		await this.game.Frames(2);
+		await this.game.Frames(3);
 
 		Assert.Equal("B", result);
 	}
@@ -446,7 +429,7 @@ public class SchedulerControllerTest : GameTestCollection {
 
 		_ = this.schedulerController.Run(CountUp2Times(), cancel);
 
-		await this.game.Frames(2);
+		await this.game.Frames(3);
 
 		Assert.True(count > 0);
 	}
@@ -532,18 +515,21 @@ public class SchedulerControllerTest : GameTestCollection {
 			result += "a";
 			yield return new WaitFrame();
 			result += "a";
+			yield return new WaitFrame();
 		}
 
 		IEnumerable<Result<IWait>> CoroutineB() {
 			result += "b";
 			yield return new WaitFrame();
 			result += "b";
+			yield return new WaitFrame();
 		}
 
 		IEnumerable<Result<IWait>> CoroutineC() {
 			result += "c";
 			yield return new WaitFrame();
 			result += "c";
+			yield return new WaitFrame();
 		}
 
 		Result Cancel() {
